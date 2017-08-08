@@ -1,4 +1,6 @@
-package cmd
+/*Package icmd executes binaries and provides convenient assertions for testing the results.
+ */
+package icmd
 
 import (
 	"bytes"
@@ -10,9 +12,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"github.com/docker/docker/pkg/system"
-	"github.com/go-check/check"
 )
 
 type testingT interface {
@@ -61,7 +60,7 @@ func (r *Result) Assert(t testingT, exp Expected) *Result {
 	}
 	_, file, line, ok := runtime.Caller(1)
 	if ok {
-		t.Fatalf("at %s:%d - %s", filepath.Base(file), line, err.Error())
+		t.Fatalf("at %s:%d - %s\n", filepath.Base(file), line, err.Error())
 	} else {
 		t.Fatalf("(no file/line info) - %s", err.Error())
 	}
@@ -70,6 +69,7 @@ func (r *Result) Assert(t testingT, exp Expected) *Result {
 
 // Compare returns a formatted error with the command, stdout, stderr, exit
 // code, and any failed expectations
+// nolint: gocyclo
 func (r *Result) Compare(exp Expected) error {
 	errors := []string{}
 	add := func(format string, args ...interface{}) {
@@ -108,7 +108,7 @@ func (r *Result) Compare(exp Expected) error {
 	if len(errors) == 0 {
 		return nil
 	}
-	return fmt.Errorf("%s\nFailures:\n%s\n", r, strings.Join(errors, "\n"))
+	return fmt.Errorf("%s\nFailures:\n%s", r, strings.Join(errors, "\n"))
 }
 
 func matchOutput(expected string, actual string) bool {
@@ -151,7 +151,8 @@ type Expected struct {
 	Err      string
 }
 
-// Success is the default expected result
+// Success is the default expected result. A Success result is one with a 0
+// ExitCode.
 var Success = Expected{}
 
 // Stdout returns the stdout of the process as a string
@@ -175,39 +176,8 @@ func (r *Result) SetExitError(err error) {
 		return
 	}
 	r.Error = err
-	r.ExitCode = system.ProcessExitCode(err)
+	r.ExitCode = processExitCode(err)
 }
-
-type matches struct{}
-
-// Info returns the CheckerInfo
-func (m *matches) Info() *check.CheckerInfo {
-	return &check.CheckerInfo{
-		Name:   "CommandMatches",
-		Params: []string{"result", "expected"},
-	}
-}
-
-// Check compares a result against the expected
-func (m *matches) Check(params []interface{}, names []string) (bool, string) {
-	result, ok := params[0].(*Result)
-	if !ok {
-		return false, fmt.Sprintf("result must be a *Result, not %T", params[0])
-	}
-	expected, ok := params[1].(Expected)
-	if !ok {
-		return false, fmt.Sprintf("expected must be an Expected, not %T", params[1])
-	}
-
-	err := result.Compare(expected)
-	if err == nil {
-		return true, ""
-	}
-	return false, err.Error()
-}
-
-// Matches is a gocheck.Checker for comparing a Result against an Expected
-var Matches = &matches{}
 
 // Cmd contains the arguments and options for a process to run as part of a test
 // suite.

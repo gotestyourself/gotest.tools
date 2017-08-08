@@ -1,4 +1,4 @@
-package cmd
+package icmd
 
 import (
 	"runtime"
@@ -9,32 +9,14 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRunCommand(t *testing.T) {
+func TestRunCommandSuccess(t *testing.T) {
 	// TODO Windows: Port this test
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs porting to Windows")
 	}
 
-	var cmd string
-	if runtime.GOOS == "solaris" {
-		cmd = "gls"
-	} else {
-		cmd = "ls"
-	}
-	result := RunCommand(cmd)
-	result.Assert(t, Expected{})
-
-	result = RunCommand("doesnotexists")
-	expectedError := `exec: "doesnotexists": executable file not found`
-	result.Assert(t, Expected{ExitCode: 127, Error: expectedError})
-
-	result = RunCommand(cmd, "-z")
-	result.Assert(t, Expected{
-		ExitCode: 2,
-		Error:    "exit status 2",
-		Err:      "invalid option",
-	})
-	assert.Contains(t, result.Combined(), "invalid option")
+	result := RunCommand("ls")
+	result.Assert(t, Success)
 }
 
 func TestRunCommandWithCombined(t *testing.T) {
@@ -78,8 +60,9 @@ func TestRunCommandWithTimeoutKilled(t *testing.T) {
 }
 
 func TestRunCommandWithErrors(t *testing.T) {
-	result := RunCommand("/foobar")
-	result.Assert(t, Expected{Error: "foobar", ExitCode: 127})
+	result := RunCommand("doesnotexists")
+	expected := `exec: "doesnotexists": executable file not found`
+	result.Assert(t, Expected{Out: None, Err: None, ExitCode: 127, Error: expected})
 }
 
 func TestRunCommandWithStdoutStderr(t *testing.T) {
@@ -88,31 +71,13 @@ func TestRunCommandWithStdoutStderr(t *testing.T) {
 }
 
 func TestRunCommandWithStdoutStderrError(t *testing.T) {
-	result := RunCommand("doesnotexists")
+	expected := "ls: unrecognized option"
 
-	expected := `exec: "doesnotexists": executable file not found`
-	result.Assert(t, Expected{Out: None, Err: None, ExitCode: 127, Error: expected})
-
-	switch runtime.GOOS {
-	case "windows":
-		expected = "ls: unknown option"
-	case "solaris":
-		expected = "gls: invalid option"
-	default:
-		expected = "ls: invalid option"
-	}
-
-	var cmd string
-	if runtime.GOOS == "solaris" {
-		cmd = "gls"
-	} else {
-		cmd = "ls"
-	}
-	result = RunCommand(cmd, "-z")
+	result := RunCommand("ls", "-z")
 	result.Assert(t, Expected{
 		Out:      None,
 		Err:      expected,
-		ExitCode: 2,
-		Error:    "exit status 2",
+		ExitCode: 1,
+		Error:    "exit status 1",
 	})
 }
