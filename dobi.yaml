@@ -35,7 +35,7 @@ job=test-unit:
   use: builder
   mounts: [source]
   interactive: true
-  command: go test -v ./icmd
+  command: scripts/test-unit
 
 job=deps:
   use: builder
