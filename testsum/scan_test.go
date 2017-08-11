@@ -7,6 +7,8 @@ import (
 
 	"time"
 
+	"io/ioutil"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -73,6 +75,78 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 				output: "Some output\nMore output\n",
 				logs:   "        dummy_test.go:11: test is bad\n        dummy_test.go:12: another failure\n",
 			},
+		},
+	}
+	assert.Equal(t, expected, summary)
+}
+
+func TestScanWithNested(t *testing.T) {
+	source := `=== RUN   TestNested
+=== RUN   TestNested/a
+=== RUN   TestNested/b
+=== RUN   TestNested/c
+--- PASS: TestNested (0.00s)
+    --- PASS: TestNested/a (0.00s)
+        dummy_test.go:27: Doing something for a
+    --- PASS: TestNested/b (0.00s)
+        dummy_test.go:27: Doing something for b
+    --- PASS: TestNested/c (0.00s)
+        dummy_test.go:27: Doing something for c
+PASS
+`
+
+	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
+	require.NoError(t, err)
+	assert.NotZero(t, summary.Elapsed)
+	summary.Elapsed = 0 // ignore elapsed
+
+	expected := &Summary{Total: 1}
+	assert.Equal(t, expected, summary)
+}
+
+func TestScanWithNestedFailures(t *testing.T) {
+	source := `=== RUN   TestNested
+=== RUN   TestNested/a
+Output from  a
+=== RUN   TestNested/b
+Output from  b
+=== RUN   TestNested/c
+Output from  c
+--- FAIL: TestNested (0.00s)
+    --- FAIL: TestNested/a (0.00s)
+        dummy_test.go:28: Doing something for a
+    --- FAIL: TestNested/b (0.00s)
+        dummy_test.go:28: Doing something for b
+    --- FAIL: TestNested/c (0.00s)
+        dummy_test.go:28: Doing something for c
+FAIL
+exit status 1
+`
+
+	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
+	require.NoError(t, err)
+	assert.NotZero(t, summary.Elapsed)
+	summary.Elapsed = 0 // ignore elapsed
+
+	expectedOutput := `=== RUN   TestNested/a
+Output from  a
+=== RUN   TestNested/b
+Output from  b
+=== RUN   TestNested/c
+Output from  c
+`
+	expectedLogs := `    --- FAIL: TestNested/a (0.00s)
+        dummy_test.go:28: Doing something for a
+    --- FAIL: TestNested/b (0.00s)
+        dummy_test.go:28: Doing something for b
+    --- FAIL: TestNested/c (0.00s)
+        dummy_test.go:28: Doing something for c
+`
+
+	expected := &Summary{
+		Total: 1,
+		Failures: []Failure{
+			{name: "TestNested", output: expectedOutput, logs: expectedLogs},
 		},
 	}
 	assert.Equal(t, expected, summary)

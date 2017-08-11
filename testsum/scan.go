@@ -100,9 +100,18 @@ func Scan(in io.Reader, out io.Writer) (*Summary, error) {
 	return summary, nil
 }
 
+type state int
+
+const (
+	stateNone = iota
+	stateRun
+	stateFail
+)
+
 type scanState struct {
 	buffer      *bytes.Buffer
 	currentFail *Failure
+	state       state
 }
 
 func newScanState() *scanState {
@@ -110,6 +119,7 @@ func newScanState() *scanState {
 }
 
 func (s *scanState) end() {
+	s.state = stateNone
 	s.currentFail = nil
 	s.buffer.Reset()
 }
@@ -119,19 +129,23 @@ func (s *scanState) addLine(line string) {
 }
 
 func (s *scanState) start(name string) {
+	s.state = stateRun
 	s.currentFail = &Failure{name: name}
 }
 
 func (s *scanState) getFailure() *Failure {
-	failure := s.currentFail
-	if failure != nil {
-		failure.logs = s.buffer.String()
+	defer s.end()
+
+	if s.state != stateFail {
+		return nil
 	}
-	s.end()
+	failure := s.currentFail
+	failure.logs = s.buffer.String()
 	return failure
 }
 
 func (s *scanState) setFailed() {
+	s.state = stateFail
 	s.currentFail.output = s.buffer.String()
 	s.buffer.Reset()
 }
@@ -139,18 +153,19 @@ func (s *scanState) setFailed() {
 var runPrefixLength = len("=== RUN ")
 
 func parseLine(summary *Summary, state *scanState, line string) {
-	trimmed := strings.TrimSpace(line)
 	switch {
-	case strings.HasPrefix(trimmed, "=== RUN   "):
+	// Nested tests start with the same line prefix so only start a new test
+	// if not already in a run state
+	case state.state != stateRun && strings.HasPrefix(line, "=== RUN   "):
 		summary.addFailure(state.getFailure())
-		state.start(strings.TrimSpace(trimmed[runPrefixLength:]))
+		state.start(strings.TrimSpace(line[runPrefixLength:]))
 		summary.Total++
-	case strings.HasPrefix(trimmed, "--- PASS: "):
+	case strings.HasPrefix(line, "--- PASS: "):
 		state.end()
-	case strings.HasPrefix(trimmed, "--- SKIP: "):
+	case strings.HasPrefix(line, "--- SKIP: "):
 		summary.Skipped++
 		state.end()
-	case strings.HasPrefix(trimmed, "--- FAIL: "):
+	case strings.HasPrefix(line, "--- FAIL: "):
 		state.setFailed()
 	case isEndOfTestRun(line):
 		summary.addFailure(state.getFailure())
