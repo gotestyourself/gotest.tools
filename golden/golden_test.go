@@ -1,14 +1,13 @@
-package golden_test
+package golden
 
 import (
 	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/golden"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"path/filepath"
 )
 
 type FakeT struct {
@@ -23,26 +22,29 @@ func (t *FakeT) Fatalf(string, ...interface{}) {
 	t.Failed = true
 }
 
-func (t *FakeT) Errorf(format string, args ...interface{}) {
-	_, _ = format, args
+func (t *FakeT) Errorf(_ string, _ ...interface{}) {
+}
+
+func (t *FakeT) FailNow() {
+	t.Failed = true
 }
 
 func TestGoldenGetInvalidFile(t *testing.T) {
 	fakeT := new(FakeT)
 
-	golden.Get(fakeT, []byte("foo"), "/invalid/path")
+	Get(fakeT, "/invalid/path")
 	require.True(t, fakeT.Failed)
 }
 
 func TestGoldenGet(t *testing.T) {
-	expected := "content"
+	expected := "content\nline1\nline2"
 
 	filename, clean := setupGoldenFile(t, expected)
 	defer clean()
 
 	fakeT := new(FakeT)
 
-	actual := golden.Get(fakeT, []byte("foo"), filename)
+	actual := Get(fakeT, filename)
 	assert.False(t, fakeT.Failed)
 	assert.Equal(t, actual, []byte(expected))
 }
@@ -53,7 +55,7 @@ func TestGoldenAssertInvalidContent(t *testing.T) {
 
 	fakeT := new(FakeT)
 
-	success := golden.Assert(fakeT, []byte("foo"), filename)
+	success := Assert(fakeT, "foo", filename)
 	assert.False(t, fakeT.Failed)
 	assert.False(t, success)
 }
@@ -64,12 +66,13 @@ func TestGoldenAssert(t *testing.T) {
 
 	fakeT := new(FakeT)
 
-	success := golden.Assert(fakeT, []byte("foo"), filename)
+	success := Assert(fakeT, "foo", filename)
 	assert.False(t, fakeT.Failed)
 	assert.True(t, success)
 }
 
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
+	_ = os.Mkdir("testdata", 0755)
 	f, err := ioutil.TempFile("testdata", "")
 	require.NoError(t, err, "fail to setup test golden file")
 	err = ioutil.WriteFile(f.Name(), []byte(content), 0660)
