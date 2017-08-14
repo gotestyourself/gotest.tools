@@ -10,12 +10,16 @@ patterns.
 
 ## Packages
 
-* `fs` - create test files and directories
-* `golden` - compare large multi-line strings
-* `testsum` - a program to summarize `go test` output and test failures
+* [fs](http://godoc.org/github.com/gotestyourself/gotestyourself/fs) -
+  create test files and directories
+* [golden](http://godoc.org/github.com/gotestyourself/gotestyourself/golden) -
+  compare large multi-line strings
+* [testsum](http://godoc.org/github.com/gotestyourself/gotestyourself/testsum) -
+  a program to summarize `go test` output and test failures
 * [icmd](http://godoc.org/github.com/gotestyourself/gotestyourself/icmd) -
   execute binaries and test the output
-* `skip` - skip tests based on conditions
+* [skip](http://godoc.org/github.com/gotestyourself/gotestyourself/skip) -
+  skip tests based on conditions
 
 
 ## Related
