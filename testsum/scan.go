@@ -8,6 +8,26 @@ Build the executable:
 Usage:
 
     go test -v ./... | gotestsum
+
+Example output:
+
+    === RUN   TestPass
+    --- PASS: TestPass (0.00s)
+    === RUN   TestSkip
+    --- SKIP: TestSkip (0.00s)
+            example_test.go:11:
+    === RUN   TestFail
+    Some test output
+    --- FAIL: TestFail (0.00s)
+            example_test.go:22: some log output
+    FAIL
+    exit status 1
+    FAIL    example.com/gotestyourself/testpkg        0.002s
+    ======== 3 tests, 1 skipped, 1 failed in 2.28 seconds ========
+    --- FAIL: TestFail
+    Some test output
+
+            example_test.go:22: some log output
 */
 package testsum
 
