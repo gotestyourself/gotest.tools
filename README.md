@@ -12,7 +12,7 @@ patterns.
 
 * `fs` - create test files and directories
 * `golden` - compare large multi-line strings
-* `gotestsum` - a program to summarize `go test` output and test failures
+* `testsum` - a program to summarize `go test` output and test failures
 * [icmd](http://godoc.org/github.com/gotestyourself/gotestyourself/icmd) -
   execute binaries and test the output
 * `skip` - skip tests based on conditions

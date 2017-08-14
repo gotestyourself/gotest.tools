@@ -44,7 +44,7 @@ jobs:
             docker build -f $dockerfile --tag cli-builder:$CIRCLE_BUILD_NUM .
             docker run --name \
                 test-$CIRCLE_BUILD_NUM cli-builder:$CIRCLE_BUILD_NUM \
-                bash -c 'dep ensure && scripts/test-unit'
+                bash -c 'dep ensure && scripts/binary-testsum && scripts/test-unit'
 
 workflows:
   version: 2

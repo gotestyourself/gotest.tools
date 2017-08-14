@@ -3,4 +3,4 @@
 exec filewatcher \
     -x 'vendor' \
     -x 'scripts' \
-    go test -v -timeout 10s './${dir}'
+    scripts/test-unit './${dir}'

@@ -46,5 +46,10 @@ job=lint:
   use: linter
   mounts: [source]
 
+job=binary-testsum:
+  use: builder
+  mounts: [source]
+  command: scripts/binary-testsum
+
 alias=test:
   tasks: [test-unit]
