@@ -55,7 +55,8 @@ func IfCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
 }
 
 func getConditionSource() (string, error) {
-	lines, err := getSourceLine(3)
+	const callstackIndex = 3
+	lines, err := getSourceLine(callstackIndex)
 	if err != nil {
 		return "", err
 	}
@@ -70,6 +71,14 @@ func getConditionSource() (string, error) {
 	return "", errors.Wrapf(err, "failed to parse source")
 }
 
+// maxContextLines is the maximum number of lines to scan for a complete
+// skip.If() statement
+const maxContextLines = 10
+
+// getSourceLines returns the source line which called skip.If() along with a
+// few preceding lines. To properly parse the AST a complete statement is
+// required, and that statement may be split across multiple lines, so include
+// up to maxContextLines.
 func getSourceLine(stackIndex int) ([]string, error) {
 	_, filename, line, ok := runtime.Caller(stackIndex)
 	if !ok {
@@ -85,7 +94,7 @@ func getSourceLine(stackIndex int) ([]string, error) {
 	if len(lines) < line {
 		return nil, errors.Errorf("file %s does not have line %d", filename, line)
 	}
-	firstLine := line - 10
+	firstLine := line - maxContextLines
 	if firstLine < 0 {
 		firstLine = 0
 	}
