@@ -2,4 +2,4 @@
 set -eu -o pipefail
 
 paths=${@:-$(go list ./... | grep -v '/vendor/')}
-go test -v $paths | ./dist/gotestsum
+go test -test.timeout 10s -v $paths | ./dist/gotestsum
