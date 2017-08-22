@@ -1,11 +1,15 @@
-package golden
+package golden_test
 
-var t = &FakeT{}
+import (
+	"testing"
+
+	"github.com/gotestyourself/gotestyourself/golden"
+)
 
 func ExampleAssert() {
-	Assert(t, "foo", "foo-content.golden")
+	golden.Assert(&testing.T{}, "foo", "foo-content.golden")
 }
 
 func ExampleAssertBytes() {
-	AssertBytes(t, []byte("foo"), "foo-content.golden")
+	golden.AssertBytes(&testing.T{}, []byte("foo"), "foo-content.golden")
 }
