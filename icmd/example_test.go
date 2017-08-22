@@ -12,7 +12,7 @@ func ExampleRunCommand() {
 }
 
 func ExampleRunCmd() {
-	result := RunCmd(Command("cat /does/not/exist"))
+	result := RunCmd(Command("cat", "/does/not/exist"))
 	result.Assert(t, Expected{
 		ExitCode: 1,
 		Err:      "cat: /does/not/exist: No such file or directory",
