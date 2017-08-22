@@ -7,11 +7,14 @@ import (
 	"time"
 )
 
-// TestingT is the subset of testing.T used by WaitOn and passed to the check
-// function
+// TestingT is the subset of testing.T used by WaitOn
 type TestingT interface {
-	Fatal(args ...interface{})
+	LogT
 	Fatalf(format string, args ...interface{})
+}
+
+// LogT is a logging interface that is passed to the WaitOn check function
+type LogT interface {
 	Log(args ...interface{})
 	Logf(format string, args ...interface{})
 }
@@ -48,13 +51,19 @@ func WithTimeout(timeout time.Duration) SettingOp {
 
 // Result of a check performed by WaitOn
 type Result interface {
+	// Error indicates that the check failed and polling should stop, and the
+	// the has failed
+	Error() error
+	// Done indicates that polling should stop, and the test should proceed
 	Done() bool
+	// Message provides the most recent state when polling has not completed
 	Message() string
 }
 
 type result struct {
 	done    bool
 	message string
+	err     error
 }
 
 func (r result) Done() bool {
@@ -63,6 +72,10 @@ func (r result) Done() bool {
 
 func (r result) Message() string {
 	return r.message
+}
+
+func (r result) Error() error {
+	return r.err
 }
 
 // Continue returns a Result that indicates to WaitOn that it should continue
@@ -78,10 +91,16 @@ func Success() Result {
 	return result{done: true}
 }
 
+// Error returns a Result that indicates to WaitOn that it should fail the test
+// and stop polling.
+func Error(err error) Result {
+	return result{err: err}
+}
+
 // WaitOn a condition or until a timeout. Poll by calling check and exit when
 // check returns a done Result. To fail a test and exit polling with an error
-// call t.Fatal() on the testing object passed to check.
-func WaitOn(t TestingT, check func(t TestingT) Result, pollOps ...SettingOp) {
+// return a error result.
+func WaitOn(t TestingT, check func(t LogT) Result, pollOps ...SettingOp) {
 	config := defaultConfig()
 	for _, pollOp := range pollOps {
 		pollOp(config)
@@ -101,7 +120,10 @@ func WaitOn(t TestingT, check func(t TestingT) Result, pollOps ...SettingOp) {
 			}
 			t.Fatalf("timeout hit after %s: %s", config.Timeout, lastMessage)
 		case result := <-chResult:
-			if result.Done() {
+			switch {
+			case result.Error() != nil:
+				t.Fatalf("polling check failed: %s", result.Error())
+			case result.Done():
 				return
 			}
 			time.Sleep(config.Delay)

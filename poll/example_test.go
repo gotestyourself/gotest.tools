@@ -1,6 +1,10 @@
 package poll
 
-import "time"
+import (
+	"time"
+
+	"github.com/pkg/errors"
+)
 
 var t TestingT
 
@@ -11,10 +15,10 @@ func numOfProcesses() (int, error) {
 func ExampleWaitOn() {
 	desired := 10
 
-	check := func(t TestingT) Result {
+	check := func(t LogT) Result {
 		actual, err := numOfProcesses()
 		if err != nil {
-			t.Fatalf("failed to get number of processes: %s", err)
+			return Error(errors.Wrapf(err, "failed to get number of processes: %s"))
 		}
 		if actual == desired {
 			return Success()
@@ -30,7 +34,7 @@ func isDesiredState() bool { return false }
 func getState() string     { return "" }
 
 func ExampleSettingOp() {
-	check := func(t TestingT) Result {
+	check := func(t LogT) Result {
 		if isDesiredState() {
 			return Success()
 		}
