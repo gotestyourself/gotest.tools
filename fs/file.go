@@ -1,5 +1,5 @@
-/*Package fs provides tools for creating and working with temporary files and
-directories.
+/*Package fs provides tools for creating temporary files, and testing the
+contents and structure of a directory.
 */
 package fs
 
