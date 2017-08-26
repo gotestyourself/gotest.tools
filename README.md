@@ -22,12 +22,14 @@ patterns.
   test asynchronous code by polling until a desired state is reached
 * [skip](http://godoc.org/github.com/gotestyourself/gotestyourself/skip) -
   skip tests based on conditions
+* [tags](http://godoc.org/github.com/gotestyourself/gotestyourself/tags) -
+  select which tests to run or skip based on tags applied to each test
 
 ## Related
 
-* [testify/assert](https://godoc.org/github.com/stretchr/testify/assert) and 
+* [testify/assert](https://godoc.org/github.com/stretchr/testify/assert) and
   [testify/require](https://godoc.org/github.com/stretchr/testify/require) -
   assertion libraries with common assertions
 * [golang/mock](https://github.com/golang/mock) - generate mocks for interfaces
-* [testify/suite](https://godoc.org/github.com/stretchr/testify/suite) - 
+* [testify/suite](https://godoc.org/github.com/stretchr/testify/suite) -
   group test into suites to share common setup/teardown logic
