@@ -1,10 +1,10 @@
-package fs
+package fs_test
 
 import (
 	"io/ioutil"
-
 	"os"
 
+	"github.com/gotestyourself/gotestyourself/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,7 +18,7 @@ var t = fakeTesting{}
 
 // Create a temporary directory which contains a single file
 func ExampleNewDir() {
-	dir := NewDir(t, "test-name", WithFile("file1", "content\n"))
+	dir := fs.NewDir(t, "test-name", fs.WithFile("file1", "content\n"))
 	defer dir.Remove()
 
 	files, err := ioutil.ReadDir(dir.Path())
@@ -28,7 +28,7 @@ func ExampleNewDir() {
 
 // Create a new file with some content
 func ExampleNewFile() {
-	file := NewFile(t, "test-name", WithContent("content\n"), AsUser(0, 0))
+	file := fs.NewFile(t, "test-name", fs.WithContent("content\n"), fs.AsUser(0, 0))
 	defer file.Remove()
 
 	content, err := ioutil.ReadFile(file.Path())
@@ -38,10 +38,10 @@ func ExampleNewFile() {
 
 // Create a directory and subdirectory with files
 func ExampleWithDir() {
-	dir := NewDir(t, "test-name",
-		WithDir("subdir",
-			WithMode(os.FileMode(0700)),
-			WithFile("file1", "content\n")),
+	dir := fs.NewDir(t, "test-name",
+		fs.WithDir("subdir",
+			fs.WithMode(os.FileMode(0700)),
+			fs.WithFile("file1", "content\n")),
 	)
 	defer dir.Remove()
 }

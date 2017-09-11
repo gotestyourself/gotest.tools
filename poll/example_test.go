@@ -1,12 +1,13 @@
-package poll
+package poll_test
 
 import (
 	"time"
 
+	"github.com/gotestyourself/gotestyourself/poll"
 	"github.com/pkg/errors"
 )
 
-var t TestingT
+var t poll.TestingT
 
 func numOfProcesses() (int, error) {
 	return 0, nil
@@ -15,30 +16,30 @@ func numOfProcesses() (int, error) {
 func ExampleWaitOn() {
 	desired := 10
 
-	check := func(t LogT) Result {
+	check := func(t poll.LogT) poll.Result {
 		actual, err := numOfProcesses()
 		if err != nil {
-			return Error(errors.Wrapf(err, "failed to get number of processes: %s"))
+			return poll.Error(errors.Wrapf(err, "failed to get number of processes: %s"))
 		}
 		if actual == desired {
-			return Success()
+			return poll.Success()
 		}
 		t.Logf("waiting on process count to be %d...", desired)
-		return Continue("number of processes is %d, not %d", actual, desired)
+		return poll.Continue("number of processes is %d, not %d", actual, desired)
 	}
 
-	WaitOn(t, check)
+	poll.WaitOn(t, check)
 }
 
 func isDesiredState() bool { return false }
 func getState() string     { return "" }
 
 func ExampleSettingOp() {
-	check := func(t LogT) Result {
+	check := func(t poll.LogT) poll.Result {
 		if isDesiredState() {
-			return Success()
+			return poll.Success()
 		}
-		return Continue("state is: %s", getState())
+		return poll.Continue("state is: %s", getState())
 	}
-	WaitOn(t, check, WithTimeout(30*time.Second), WithDelay(15*time.Millisecond))
+	poll.WaitOn(t, check, poll.WithTimeout(30*time.Second), poll.WithDelay(15*time.Millisecond))
 }

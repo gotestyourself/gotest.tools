@@ -10,27 +10,27 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type FakeT struct {
+type fakeT struct {
 	Failed bool
 }
 
-func (t *FakeT) Fatal(_ ...interface{}) {
+func (t *fakeT) Fatal(_ ...interface{}) {
 	t.Failed = true
 }
 
-func (t *FakeT) Fatalf(string, ...interface{}) {
+func (t *fakeT) Fatalf(string, ...interface{}) {
 	t.Failed = true
 }
 
-func (t *FakeT) Errorf(_ string, _ ...interface{}) {
+func (t *fakeT) Errorf(_ string, _ ...interface{}) {
 }
 
-func (t *FakeT) FailNow() {
+func (t *fakeT) FailNow() {
 	t.Failed = true
 }
 
 func TestGoldenGetInvalidFile(t *testing.T) {
-	fakeT := new(FakeT)
+	fakeT := new(fakeT)
 
 	Get(fakeT, "/invalid/path")
 	require.True(t, fakeT.Failed)
@@ -42,7 +42,7 @@ func TestGoldenGet(t *testing.T) {
 	filename, clean := setupGoldenFile(t, expected)
 	defer clean()
 
-	fakeT := new(FakeT)
+	fakeT := new(fakeT)
 
 	actual := Get(fakeT, filename)
 	assert.False(t, fakeT.Failed)
@@ -53,7 +53,7 @@ func TestGoldenAssertInvalidContent(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "content")
 	defer clean()
 
-	fakeT := new(FakeT)
+	fakeT := new(fakeT)
 
 	success := Assert(fakeT, "foo", filename)
 	assert.False(t, fakeT.Failed)
@@ -64,7 +64,7 @@ func TestGoldenAssert(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "foo")
 	defer clean()
 
-	fakeT := new(FakeT)
+	fakeT := new(fakeT)
 
 	success := Assert(fakeT, "foo", filename)
 	assert.False(t, fakeT.Failed)
