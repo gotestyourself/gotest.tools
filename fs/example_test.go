@@ -3,6 +3,8 @@ package fs
 import (
 	"io/ioutil"
 
+	"os"
+
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -32,4 +34,14 @@ func ExampleNewFile() {
 	content, err := ioutil.ReadFile(file.Path())
 	require.NoError(t, err)
 	assert.Equal(t, "content\n", content)
+}
+
+// Create a directory and subdirectory with files
+func ExampleWithDir() {
+	dir := NewDir(t, "test-name",
+		WithDir("subdir",
+			WithMode(os.FileMode(0700)),
+			WithFile("file1", "content\n")),
+	)
+	defer dir.Remove()
 }
