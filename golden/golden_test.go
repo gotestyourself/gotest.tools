@@ -14,7 +14,7 @@ type fakeT struct {
 	Failed bool
 }
 
-func (t *fakeT) Fatal(a ...interface{}) {
+func (t *fakeT) Fatal(_ ...interface{}) {
 	t.Failed = true
 }
 

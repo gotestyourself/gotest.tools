@@ -6,10 +6,12 @@ import (
 	"github.com/gotestyourself/gotestyourself/golden"
 )
 
+var t = &testing.T{}
+
 func ExampleAssert() {
-	golden.Assert(&testing.T{}, "foo", "foo-content.golden")
+	golden.Assert(t, "foo", "foo-content.golden")
 }
 
 func ExampleAssertBytes() {
-	golden.AssertBytes(&testing.T{}, []byte("foo"), "foo-content.golden")
+	golden.AssertBytes(t, []byte("foo"), "foo-content.golden")
 }
