@@ -10,6 +10,8 @@ patterns.
 
 ## Packages
 
+* [env](http://godoc.org/github.com/gotestyourself/gotestyourself/env) -
+  test code that uses environment variables
 * [fs](http://godoc.org/github.com/gotestyourself/gotestyourself/fs) -
   create test files and directories
 * [golden](http://godoc.org/github.com/gotestyourself/gotestyourself/golden) -
