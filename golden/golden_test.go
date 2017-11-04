@@ -71,6 +71,17 @@ func TestGoldenAssert(t *testing.T) {
 	assert.True(t, success)
 }
 
+func TestGoldenAssertBytes(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "foo")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	success := AssertBytes(fakeT, []byte("foo"), filename)
+	assert.False(t, fakeT.Failed)
+	assert.True(t, success)
+}
+
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
 	_ = os.Mkdir("testdata", 0755)
 	f, err := ioutil.TempFile("testdata", "")
