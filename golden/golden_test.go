@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/gotestyourself/gotestyourself/fs"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -34,6 +35,15 @@ func TestGoldenGetInvalidFile(t *testing.T) {
 
 	Get(fakeT, "/invalid/path")
 	require.True(t, fakeT.Failed)
+}
+
+func TestGoldenGetAbsolutePath(t *testing.T) {
+	file := fs.NewFile(t, "abs-test", fs.WithContent("content\n"))
+	defer file.Remove()
+	fakeT := new(fakeT)
+
+	Get(fakeT, file.Path())
+	require.False(t, fakeT.Failed)
 }
 
 func TestGoldenGet(t *testing.T) {

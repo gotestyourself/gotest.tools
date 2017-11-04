@@ -26,6 +26,9 @@ func Get(t require.TestingT, filename string) []byte {
 
 // Path returns the full path to a golden file
 func Path(filename string) string {
+	if filepath.IsAbs(filename) {
+		return filename
+	}
 	return filepath.Join("testdata", filename)
 }
 
