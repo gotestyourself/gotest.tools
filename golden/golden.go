@@ -41,8 +41,8 @@ func update(t require.TestingT, filename string, actual []byte) {
 // to the golden file.
 // Returns whether the assertion was successful (true) or not (false)
 func Assert(t require.TestingT, actual string, filename string, msgAndArgs ...interface{}) bool {
-	expected := Get(t, filename)
 	update(t, filename, []byte(actual))
+	expected := Get(t, filename)
 
 	if assert.ObjectsAreEqual(expected, []byte(actual)) {
 		return true
@@ -65,7 +65,7 @@ func Assert(t require.TestingT, actual string, filename string, msgAndArgs ...in
 // Returns whether the assertion was successful (true) or not (false)
 // nolint: lll
 func AssertBytes(t require.TestingT, actual []byte, filename string, msgAndArgs ...interface{}) bool {
-	expected := Get(t, filename)
 	update(t, filename, actual)
+	expected := Get(t, filename)
 	return assert.Equal(t, expected, actual, msgAndArgs...)
 }
