@@ -30,6 +30,6 @@ patterns.
 * [testify/assert](https://godoc.org/github.com/stretchr/testify/assert) and 
   [testify/require](https://godoc.org/github.com/stretchr/testify/require) -
   assertion libraries with common assertions
-* [golang/mock](https://github.com/golang/mock) - generate mocks for interfaces
+* [maxbrunsfeld/counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) - generate fakes for interfaces
 * [testify/suite](https://godoc.org/github.com/stretchr/testify/suite) - 
   group test into suites to share common setup/teardown logic
