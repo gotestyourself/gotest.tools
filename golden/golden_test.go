@@ -70,6 +70,19 @@ func TestGoldenAssertInvalidContent(t *testing.T) {
 	assert.False(t, success)
 }
 
+func TestGoldenAssertInvalidContentUpdate(t *testing.T) {
+	undo := setUpdateFlag()
+	defer undo()
+	filename, clean := setupGoldenFile(t, "content")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	success := Assert(fakeT, "foo", filename)
+	assert.False(t, fakeT.Failed)
+	assert.True(t, success)
+}
+
 func TestGoldenAssert(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "foo")
 	defer clean()
@@ -90,6 +103,12 @@ func TestGoldenAssertBytes(t *testing.T) {
 	success := AssertBytes(fakeT, []byte("foo"), filename)
 	assert.False(t, fakeT.Failed)
 	assert.True(t, success)
+}
+
+func setUpdateFlag() func() {
+	oldFlagUpdate := *flagUpdate
+	*flagUpdate = true
+	return func() { *flagUpdate = oldFlagUpdate }
 }
 
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
