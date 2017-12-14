@@ -20,8 +20,8 @@ const maxContextLines = 20
 // GetCondition returns the condition string by reading it from the file
 // identified in the callstack. In golang 1.9 the line number changed from
 // being the line where the statement ended to the line where the statement began.
-func GetCondition(argPos int) (string, error) {
-	lines, err := getSourceLines()
+func GetCondition(stackIndex int, argPos int) (string, error) {
+	lines, err := getSourceLines(stackIndex)
 	if err != nil {
 		return "", err
 	}
@@ -39,8 +39,7 @@ func GetCondition(argPos int) (string, error) {
 // few preceding lines. To properly parse the AST a complete statement is
 // required, and that statement may be split across multiple lines, so include
 // up to maxContextLines.
-func getSourceLines() ([]string, error) {
-	const stackIndex = 3
+func getSourceLines(stackIndex int) ([]string, error) {
 	_, filename, lineNum, ok := runtime.Caller(stackIndex)
 	if !ok {
 		return nil, errors.New("failed to get caller info")
