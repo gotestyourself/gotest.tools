@@ -3,19 +3,13 @@
 package skip
 
 import (
-	"bytes"
 	"fmt"
-	"go/ast"
-	"go/format"
-	"go/parser"
-	"go/token"
-	"io/ioutil"
 	"path"
 	"reflect"
 	"runtime"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
 type skipT interface {
@@ -46,68 +40,13 @@ func IfCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
 	if !condition {
 		return
 	}
-	source, err := getConditionSource()
+	const argPos = 1
+	source, err := source.GetCondition(argPos)
 	if err != nil {
 		t.Log(err.Error())
 		t.Skip(formatMessage(msgAndArgs...))
 	}
 	t.Skip(formatWithCustomMessage(source, formatMessage(msgAndArgs...)))
-}
-
-// getConditionSource returns the condition string by reading it from the file
-// identified in the callstack. In golang 1.9 the line number changed from
-// being the line where the statement ended to the line where the statement began.
-func getConditionSource() (string, error) {
-	lines, err := getSourceLine()
-	if err != nil {
-		return "", err
-	}
-
-	for i := range lines {
-		node, err := parser.ParseExpr(getSource(lines, i))
-		if err == nil {
-			return getConditionArgFromAST(node)
-		}
-	}
-	return "", errors.Wrapf(err, "failed to parse source")
-}
-
-// maxContextLines is the maximum number of lines to scan for a complete
-// skip.If() statement
-const maxContextLines = 10
-
-// getSourceLines returns the source line which called skip.If() along with a
-// few preceding lines. To properly parse the AST a complete statement is
-// required, and that statement may be split across multiple lines, so include
-// up to maxContextLines.
-func getSourceLine() ([]string, error) {
-	const stackIndex = 3
-	_, filename, line, ok := runtime.Caller(stackIndex)
-	if !ok {
-		return nil, errors.New("failed to get caller info")
-	}
-
-	raw, err := ioutil.ReadFile(filename)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read source file: %s", filename)
-	}
-
-	lines := strings.Split(string(raw), "\n")
-	if len(lines) < line {
-		return nil, errors.Errorf("file %s does not have line %d", filename, line)
-	}
-	firstLine, lastLine := getSourceLinesRange(line, len(lines))
-	return lines[firstLine:lastLine], nil
-}
-
-func getConditionArgFromAST(node ast.Expr) (string, error) {
-	switch expr := node.(type) {
-	case *ast.CallExpr:
-		buf := new(bytes.Buffer)
-		err := format.Node(buf, token.NewFileSet(), expr.Args[1])
-		return buf.String(), err
-	}
-	return "", errors.New("unexpected ast")
 }
 
 func formatMessage(msgAndArgs ...interface{}) string {

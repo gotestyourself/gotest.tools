@@ -1,6 +1,6 @@
 // +build !go1.9,!go.10,!go.11,!go1.12
 
-package skip
+package source
 
 import "strings"
 
