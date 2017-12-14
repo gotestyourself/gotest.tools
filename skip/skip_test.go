@@ -32,7 +32,7 @@ func version(v string) string {
 func TestIfCondition(t *testing.T) {
 	skipT := &fakeSkipT{}
 	apiVersion := "v1.4"
-	IfCondition(skipT, apiVersion < version("v1.6"))
+	If(skipT, apiVersion < version("v1.6"))
 
 	assert.Equal(t, `apiVersion < version("v1.6")`, skipT.reason)
 	assert.Len(t, skipT.logs, 0)
@@ -41,7 +41,7 @@ func TestIfCondition(t *testing.T) {
 func TestIfConditionWithMessage(t *testing.T) {
 	skipT := &fakeSkipT{}
 	apiVersion := "v1.4"
-	IfCondition(skipT, apiVersion < "v1.6", "see notes")
+	If(skipT, apiVersion < "v1.6", "see notes")
 
 	assert.Equal(t, `apiVersion < "v1.6": see notes`, skipT.reason)
 	assert.Len(t, skipT.logs, 0)
@@ -50,7 +50,7 @@ func TestIfConditionWithMessage(t *testing.T) {
 func TestIfConditionMultiline(t *testing.T) {
 	skipT := &fakeSkipT{}
 	apiVersion := "v1.4"
-	IfCondition(
+	If(
 		skipT,
 		apiVersion < "v1.6")
 
@@ -61,7 +61,7 @@ func TestIfConditionMultiline(t *testing.T) {
 func TestIfConditionMultilineWithMessage(t *testing.T) {
 	skipT := &fakeSkipT{}
 	apiVersion := "v1.4"
-	IfCondition(
+	If(
 		skipT,
 		apiVersion < "v1.6",
 		"see notes")
@@ -72,7 +72,7 @@ func TestIfConditionMultilineWithMessage(t *testing.T) {
 
 func TestIfConditionNoSkip(t *testing.T) {
 	skipT := &fakeSkipT{}
-	IfCondition(skipT, false)
+	If(skipT, false)
 
 	assert.Equal(t, "", skipT.reason)
 	assert.Len(t, skipT.logs, 0)
