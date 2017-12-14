@@ -1,15 +1,18 @@
-package source
+package source_test
+
+// using a separate package for test to avoid circular imports with the assert
+// package
 
 import (
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
 func TestGetConditionSingleLine(t *testing.T) {
 	msg, err := shim("not", "this", "this text")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, `"this text"`, msg)
 }
 
@@ -19,7 +22,7 @@ func TestGetConditionMultiLine(t *testing.T) {
 		"second",
 		"this text",
 	)
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, `"this text"`, msg)
 }
 
@@ -29,11 +32,11 @@ func TestGetConditionIfStatement(t *testing.T) {
 		"second",
 		"this text",
 	); true {
-		require.NoError(t, err)
+		assert.NoError(t, err)
 		assert.Equal(t, `"this text"`, msg)
 	}
 }
 
 func shim(_, _, _ string) (string, error) {
-	return GetCondition(1, 2)
+	return source.GetCondition(1, 2)
 }

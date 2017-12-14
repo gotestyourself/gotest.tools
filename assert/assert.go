@@ -105,24 +105,15 @@ func (t Tester) Check(comparison BoolOrComparison, msgAndArgs ...interface{}) bo
 	return t.assert(t.t.Fail, comparison, msgAndArgs...)
 }
 
-// NoError fails the test immediately if the last arg is a non-nil error
+// NoError fails the test immediately if the last arg is a non-nil error.
+// This is equivalent to Assert(cmp.NoError(err))
 func (t Tester) NoError(args ...interface{}) {
 	t.t.Helper()
-	if len(args) == 0 {
-		return
-	}
-	switch lastArg := args[len(args)-1].(type) {
-	case error:
-		t.t.Log(fmt.Sprintf("expected no error, got %s", lastArg))
-		t.t.FailNow()
-	case nil:
-	default:
-		t.t.Log(fmt.Sprintf("last argument to NoError() must be an error, got %T", lastArg))
-		t.t.FailNow()
-	}
+	t.assert(t.t.FailNow, cmp.NoError(args...))
 }
 
-// Equal uses the == operator to assert two values are the equal
+// Equal uses the == operator to assert two values are the equal.
+// This is equivalent to Assert(cmp.Equal(x, y))
 func (t Tester) Equal(x, y interface{}, msgAndArgs ...interface{}) {
 	t.t.Helper()
 	t.assert(t.t.FailNow, cmp.Equal(x, y), msgAndArgs...)

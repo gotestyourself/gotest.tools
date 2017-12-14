@@ -10,17 +10,19 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	"github.com/gotestyourself/gotestyourself/internal/format"
 	"github.com/pmezard/go-difflib/difflib"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
 
 // Get returns the golden file content
-func Get(t require.TestingT, filename string) []byte {
+func Get(t assert.TestingT, filename string) []byte {
+	t.Helper()
 	expected, err := ioutil.ReadFile(Path(filename))
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	return expected
 }
 
@@ -32,10 +34,10 @@ func Path(filename string) string {
 	return filepath.Join("testdata", filename)
 }
 
-func update(t require.TestingT, filename string, actual []byte) {
+func update(t assert.TestingT, filename string, actual []byte) {
 	if *flagUpdate {
 		err := ioutil.WriteFile(Path(filename), actual, 0644)
-		require.NoError(t, err)
+		assert.NoError(t, err)
 	}
 }
 
@@ -43,14 +45,16 @@ func update(t require.TestingT, filename string, actual []byte) {
 // If the `-test.update-golden` flag is set then the actual content is written
 // to the golden file.
 // Returns whether the assertion was successful (true) or not (false)
-func Assert(t require.TestingT, actual string, filename string, msgAndArgs ...interface{}) bool {
+func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...interface{}) bool {
+	t.Helper()
 	update(t, filename, []byte(actual))
 	expected := Get(t, filename)
 
-	if assert.ObjectsAreEqual(expected, []byte(actual)) {
+	if success, _ := cmp.Compare(expected, []byte(actual))(); success {
 		return true
 	}
 
+	// TODO: make this an assert.Comparison and Deprecate Assert/AssertBytes
 	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(expected)),
 		B:        difflib.SplitLines(actual),
@@ -58,8 +62,10 @@ func Assert(t require.TestingT, actual string, filename string, msgAndArgs ...in
 		ToFile:   "Actual",
 		Context:  3,
 	})
-	require.NoError(t, err, msgAndArgs...)
-	return assert.Fail(t, fmt.Sprintf("Not Equal: \n%s", diff), msgAndArgs...)
+	assert.Assert(t, cmp.NoError(err), msgAndArgs...)
+	t.Log(format.WithCustomMessage(fmt.Sprintf("Not Equal: \n%s", diff), msgAndArgs...))
+	t.Fail()
+	return false
 }
 
 // AssertBytes compares the actual result to the expected result in the golden
@@ -67,8 +73,9 @@ func Assert(t require.TestingT, actual string, filename string, msgAndArgs ...in
 // written to the golden file.
 // Returns whether the assertion was successful (true) or not (false)
 // nolint: lll
-func AssertBytes(t require.TestingT, actual []byte, filename string, msgAndArgs ...interface{}) bool {
+func AssertBytes(t assert.TestingT, actual []byte, filename string, msgAndArgs ...interface{}) bool {
+	t.Helper()
 	update(t, filename, actual)
 	expected := Get(t, filename)
-	return assert.Equal(t, expected, actual, msgAndArgs...)
+	return assert.Check(t, cmp.Compare(expected, actual), msgAndArgs...)
 }

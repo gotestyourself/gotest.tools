@@ -62,11 +62,11 @@ func ToMap(env []string) map[string]string {
 
 // ChangeWorkingDir to the directory, and return a function which restores the
 // previous working directory.
-func ChangeWorkingDir(t require.TestingT, dir string) func() {
+func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(dir))
+	assert.NilError(t, err)
+	assert.NilError(t, os.Chdir(dir))
 	return func() {
-		require.NoError(t, os.Chdir(cwd))
+		assert.NilError(t, os.Chdir(cwd))
 	}
 }
