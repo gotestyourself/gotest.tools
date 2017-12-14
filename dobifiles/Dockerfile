@@ -9,7 +9,7 @@ RUN     go get -d github.com/dnephin/filewatcher && \
         go build -v -o /usr/bin/filewatcher . && \
         rm -rf /go/src/* /go/pkg/* /go/bin/*
 
-ARG     DEP_TAG=v0.3.0
+ARG     DEP_TAG=v0.3.2
 RUN     go get -d github.com/golang/dep/cmd/dep && \
         cd /go/src/github.com/golang/dep && \
         git checkout -q "$DEP_TAG" && \
