@@ -57,7 +57,7 @@ func ifCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
 		return
 	}
 	const (
-		stackIndex = 4
+		stackIndex = 2
 		argPos     = 1
 	)
 	source, err := source.GetCondition(stackIndex, argPos)
