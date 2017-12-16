@@ -6,64 +6,104 @@ import (
 	"go/format"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"runtime"
-	"strings"
 
 	"github.com/pkg/errors"
 )
 
-// maxContextLines is the maximum number of lines to scan for a complete
-// expression
-const maxContextLines = 20
+const baseStackIndex = 1
 
 // GetCondition returns the condition string by reading it from the file
 // identified in the callstack. In golang 1.9 the line number changed from
 // being the line where the statement ended to the line where the statement began.
 func GetCondition(stackIndex int, argPos int) (string, error) {
-	lines, err := getSourceLines(stackIndex)
+	_, filename, lineNum, ok := runtime.Caller(baseStackIndex + stackIndex)
+	if !ok {
+		return "", errors.New("failed to get caller info")
+	}
+
+	node, err := getNodeAtLine(filename, lineNum)
 	if err != nil {
 		return "", err
 	}
-
-	for i := range lines {
-		node, err := parser.ParseExpr(getSource(lines, i))
-		if err == nil {
-			return getArgSourceFromAST(node, argPos)
-		}
-	}
-	return "", errors.Wrapf(err, "failed to parse source")
+	return getArgSourceFromAST(node, argPos)
 }
 
-// getSourceLines returns the source line which called skip.If() along with a
-// few preceding lines. To properly parse the AST a complete statement is
-// required, and that statement may be split across multiple lines, so include
-// up to maxContextLines.
-func getSourceLines(stackIndex int) ([]string, error) {
-	_, filename, lineNum, ok := runtime.Caller(stackIndex)
-	if !ok {
-		return nil, errors.New("failed to get caller info")
-	}
-
-	raw, err := ioutil.ReadFile(filename)
+func getNodeAtLine(filename string, lineNum int) (ast.Node, error) {
+	fileset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read source file: %s", filename)
+		return nil, errors.Wrapf(err, "failed to parse source file: %s", filename)
 	}
 
-	lines := strings.Split(string(raw), "\n")
-	if len(lines) < lineNum {
-		return nil, errors.Errorf("file %s does not have line %d", filename, lineNum)
+	node := scanToLine(fileset, astFile, lineNum)
+	if node == nil {
+		return nil, errors.Wrapf(err,
+			"failed to find an expression on line %d in %s", lineNum, filename)
 	}
-	firstLine, lastLine := getSourceLinesRange(lineNum, len(lines))
-	return lines[firstLine:lastLine], nil
+	return node, nil
 }
 
-func getArgSourceFromAST(node ast.Expr, argPos int) (string, error) {
-	switch expr := node.(type) {
-	case *ast.CallExpr:
-		buf := new(bytes.Buffer)
-		err := format.Node(buf, token.NewFileSet(), expr.Args[argPos])
-		return buf.String(), err
+func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
+	v := &scanToLineVisitor{lineNum: lineNum, fileset: fileset}
+	ast.Walk(v, node)
+	return v.matchedNode
+}
+
+type scanToLineVisitor struct {
+	lineNum     int
+	matchedNode ast.Node
+	fileset     *token.FileSet
+}
+
+func (v *scanToLineVisitor) Visit(node ast.Node) ast.Visitor {
+	if node == nil || v.matchedNode != nil {
+		return nil
 	}
-	return "", errors.New("unexpected ast")
+
+	var position token.Position
+	switch {
+	case runtime.Version() < "go1.9":
+		position = v.fileset.Position(node.End())
+	default:
+		position = v.fileset.Position(node.Pos())
+	}
+
+	if position.Line == v.lineNum {
+		v.matchedNode = node
+		return nil
+	}
+	return v
+}
+
+func getArgSourceFromAST(node ast.Node, argPos int) (string, error) {
+	visitor := &callExprVisitor{}
+	ast.Walk(visitor, node)
+	if visitor.expr == nil {
+		return "", errors.Errorf("unexpected ast")
+	}
+
+	buf := new(bytes.Buffer)
+	err := format.Node(buf, token.NewFileSet(), visitor.expr.Args[argPos])
+	return buf.String(), err
+}
+
+type callExprVisitor struct {
+	expr *ast.CallExpr
+}
+
+func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
+	switch typed := node.(type) {
+	case nil:
+		return nil
+	case *ast.IfStmt:
+		ast.Walk(v, typed.Cond)
+	case *ast.CallExpr:
+		v.expr = typed
+	}
+
+	if v.expr != nil {
+		return nil
+	}
+	return v
 }
