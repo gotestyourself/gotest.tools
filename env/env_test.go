@@ -18,7 +18,7 @@ func TestPatchFromUnset(t *testing.T) {
 	assert.Assert(t, value == os.Getenv(key))
 	revert()
 	_, isSet := os.LookupEnv(key)
-	assert.Assert(t, isSet == false)
+	assert.Assert(t, !isSet)
 }
 
 func TestPatch(t *testing.T) {

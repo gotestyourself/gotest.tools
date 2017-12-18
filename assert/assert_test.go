@@ -156,8 +156,6 @@ func TestTesterNoErrorWithMultiArgFailure(t *testing.T) {
 }
 
 func TestTesterCheckFailure(t *testing.T) {
-	t.Skip("internal/source does not parse statements, only expressions")
-
 	fakeT := &fakeTestingT{}
 	assert := New(fakeT)
 
@@ -204,8 +202,15 @@ func TestTesterEqualFailureTypes(t *testing.T) {
 	expectFailNowed(t, fakeT, `assertion failed: 3 (int) != 3 (string)`)
 }
 
-func expectFailNowed(t *testing.T, fakeT *fakeTestingT, expected string) {
-	t.Helper()
+type testingT interface {
+	Errorf(msg string, args ...interface{})
+	Fatalf(msg string, args ...interface{})
+}
+
+func expectFailNowed(t testingT, fakeT *fakeTestingT, expected string) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	if fakeT.failed {
 		t.Errorf("should not have failed, got messages %s", fakeT.msgs)
 	}
@@ -217,8 +222,11 @@ func expectFailNowed(t *testing.T, fakeT *fakeTestingT, expected string) {
 	}
 }
 
-func expectFailed(t *testing.T, fakeT *fakeTestingT, expected string) {
-	t.Helper()
+// nolint: unparam
+func expectFailed(t testingT, fakeT *fakeTestingT, expected string) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	if fakeT.failNowed {
 		t.Errorf("should not have failNowed, got messages %s", fakeT.msgs)
 	}
@@ -230,8 +238,10 @@ func expectFailed(t *testing.T, fakeT *fakeTestingT, expected string) {
 	}
 }
 
-func expectSuccess(t *testing.T, fakeT *fakeTestingT) {
-	t.Helper()
+func expectSuccess(t testingT, fakeT *fakeTestingT) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	if fakeT.failNowed {
 		t.Errorf("should not have failNowed, got messages %s", fakeT.msgs)
 	}

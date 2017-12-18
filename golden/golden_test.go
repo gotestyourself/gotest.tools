@@ -15,8 +15,6 @@ type fakeT struct {
 	Failed bool
 }
 
-func (t *fakeT) Helper() {}
-
 func (t *fakeT) Log(...interface{}) {
 }
 

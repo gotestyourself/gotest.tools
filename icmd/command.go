@@ -14,6 +14,9 @@ import (
 
 type testingT interface {
 	Fatalf(string, ...interface{})
+}
+
+type helperT interface {
 	Helper()
 }
 
@@ -52,7 +55,9 @@ type Result struct {
 // any of the expectations are not met.
 // TODO: deprecate and replace with assert.CompareFunc
 func (r *Result) Assert(t testingT, exp Expected) *Result {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	err := r.Compare(exp)
 	if err == nil {
 		return r

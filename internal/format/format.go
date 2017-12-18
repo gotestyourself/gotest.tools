@@ -8,7 +8,7 @@ func Message(msgAndArgs ...interface{}) string {
 	case 0:
 		return ""
 	case 1:
-		return msgAndArgs[0].(string)
+		return fmt.Sprintf("%v", msgAndArgs[0])
 	default:
 		return fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
 	}

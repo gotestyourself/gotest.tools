@@ -5,6 +5,7 @@ Golden files are files in the ./testdata/ subdirectory of the package under test
 package golden
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -18,9 +19,15 @@ import (
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
 
+type helperT interface {
+	Helper()
+}
+
 // Get returns the golden file content
 func Get(t assert.TestingT, filename string) []byte {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	expected, err := ioutil.ReadFile(Path(filename))
 	assert.NoError(t, err)
 	return expected
@@ -46,15 +53,16 @@ func update(t assert.TestingT, filename string, actual []byte) {
 // to the golden file.
 // Returns whether the assertion was successful (true) or not (false)
 func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...interface{}) bool {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	update(t, filename, []byte(actual))
 	expected := Get(t, filename)
 
-	if success, _ := cmp.Compare(expected, []byte(actual))(); success {
+	if bytes.Equal(expected, []byte(actual)) {
 		return true
 	}
 
-	// TODO: make this an assert.Comparison and Deprecate Assert/AssertBytes
 	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
 		A:        difflib.SplitLines(string(expected)),
 		B:        difflib.SplitLines(actual),
@@ -74,7 +82,9 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 // Returns whether the assertion was successful (true) or not (false)
 // nolint: lll
 func AssertBytes(t assert.TestingT, actual []byte, filename string, msgAndArgs ...interface{}) bool {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	update(t, filename, actual)
 	expected := Get(t, filename)
 	return assert.Check(t, cmp.Compare(expected, actual), msgAndArgs...)

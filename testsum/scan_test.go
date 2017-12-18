@@ -7,14 +7,18 @@ import (
 	"testing"
 	"time"
 
-	//gocmp "github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
+	gocmp "github.com/google/go-cmp/cmp"
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 func compare(x, y interface{}) func() (bool, string) {
-	return cmp.Compare(x, y, cmpopts.IgnoreUnexported(Failure{}))
+	elapsedPath := func(path gocmp.Path) bool {
+		return path.Last().String() == ".Elapsed"
+	}
+	return cmp.Compare(x, y,
+		gocmp.AllowUnexported(Failure{}),
+		gocmp.FilterPath(elapsedPath, gocmp.Ignore()))
 }
 
 func TestScanNoFailures(t *testing.T) {
@@ -34,7 +38,7 @@ func TestScanNoFailures(t *testing.T) {
 --- PASS: TestRunCommandWithStdoutStderrError (0.00s)
 === RUN   TestSkippedBecauseSomething
 --- SKIP: TestSkippedBecauseSomething (0.00s)
-        scan_test.go:39: becausde blah
+        scan_test.go:39: because blah
 PASS
 ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 `
@@ -42,10 +46,10 @@ ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NoError(t, err)
-	assert.Check(t, cmp.NotZero(summary.Elapsed))
-	summary.Elapsed = 0 // ignore elapsed
+	assert.Check(t, summary.Elapsed != 0)
 	assert.Check(t, compare(&Summary{Total: 8, Skipped: 1}, summary))
 	assert.Equal(t, source, out.String())
+
 }
 
 func TestScanWithFailure(t *testing.T) {
@@ -67,8 +71,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NoError(t, err)
-	assert.Check(t, cmp.NotZero(summary.Elapsed))
-	summary.Elapsed = 0 // ignore elapsed
+	assert.Check(t, summary.Elapsed != 0)
 	assert.Check(t, cmp.Equal(source, out.String()))
 
 	expected := &Summary{
@@ -101,8 +104,7 @@ PASS
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NoError(t, err)
-	assert.Check(t, cmp.NotZero(summary.Elapsed))
-	summary.Elapsed = 0 // ignore elapsed
+	assert.Check(t, summary.Elapsed != 0)
 
 	expected := &Summary{Total: 1}
 	assert.Check(t, compare(expected, summary))
@@ -129,8 +131,7 @@ exit status 1
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NoError(t, err)
-	assert.Check(t, cmp.NotZero(summary.Elapsed))
-	summary.Elapsed = 0 // ignore elapsed
+	assert.Check(t, summary.Elapsed != 0)
 
 	expectedOutput := `=== RUN   TestNested/a
 Output from  a

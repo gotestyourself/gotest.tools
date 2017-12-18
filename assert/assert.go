@@ -31,6 +31,9 @@ type TestingT interface {
 	FailNow()
 	Fail()
 	Log(args ...interface{})
+}
+
+type helperT interface {
 	Helper()
 }
 
@@ -54,12 +57,16 @@ func New(t TestingT) Tester {
 // Assert performs a comparison, marks the test as having failed if the comparison
 // returns false, and stops execution immediately.
 func (t Tester) Assert(comparison BoolOrComparison, msgAndArgs ...interface{}) {
-	t.t.Helper()
+	if ht, ok := t.t.(helperT); ok {
+		ht.Helper()
+	}
 	t.assert(t.t.FailNow, comparison, msgAndArgs...)
 }
 
 func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
-	t.t.Helper()
+	if ht, ok := t.t.(helperT); ok {
+		ht.Helper()
+	}
 	switch check := comparison.(type) {
 	case bool:
 		if check {
@@ -89,7 +96,9 @@ func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ..
 }
 
 func runCompareFunc(failer func(), t TestingT, f CompareFunc, msgAndArgs ...interface{}) bool {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	if success, message := f(); !success {
 		t.Log(format.WithCustomMessage(failureMessage+message, msgAndArgs...))
 		failer()
@@ -101,46 +110,60 @@ func runCompareFunc(failer func(), t TestingT, f CompareFunc, msgAndArgs ...inte
 // Check performs a comparison and marks the test as having failed if the comparison
 // returns false. Returns the result of the comparison.
 func (t Tester) Check(comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
-	t.t.Helper()
+	if ht, ok := t.t.(helperT); ok {
+		ht.Helper()
+	}
 	return t.assert(t.t.Fail, comparison, msgAndArgs...)
 }
 
 // NoError fails the test immediately if the last arg is a non-nil error.
 // This is equivalent to Assert(cmp.NoError(err))
 func (t Tester) NoError(args ...interface{}) {
-	t.t.Helper()
+	if ht, ok := t.t.(helperT); ok {
+		ht.Helper()
+	}
 	t.assert(t.t.FailNow, cmp.NoError(args...))
 }
 
 // Equal uses the == operator to assert two values are the equal.
 // This is equivalent to Assert(cmp.Equal(x, y))
 func (t Tester) Equal(x, y interface{}, msgAndArgs ...interface{}) {
-	t.t.Helper()
+	if ht, ok := t.t.(helperT); ok {
+		ht.Helper()
+	}
 	t.assert(t.t.FailNow, cmp.Equal(x, y), msgAndArgs...)
 }
 
 // Assert fails the test immediate if comparison is not a success
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	newPackageScopeTester(t).Assert(comparison, msgAndArgs...)
 }
 
 // Check performs a comparison and marks the test as having failed if the comparison
 // returns false. Returns the result of the comparison.
 func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	return newPackageScopeTester(t).Check(comparison, msgAndArgs...)
 }
 
 // NoError fails the test immediately if the last arg is a non-nil error
 func NoError(t TestingT, args ...interface{}) {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	newPackageScopeTester(t).NoError(args...)
 }
 
 // Equal uses the == operator to assert two values are the equal
 func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
-	t.Helper()
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	newPackageScopeTester(t).Equal(x, y, msgAndArgs...)
 }
 
