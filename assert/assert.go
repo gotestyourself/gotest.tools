@@ -1,5 +1,52 @@
 /*Package assert provides assertions and checks for comparing expected values to
-actual values, and printing helpful failure messages.
+actual values. When an assertion or check fails a helpful error message is
+printed.
+
+Assert and Check
+
+Assert() and Check() both accept a Comparison, and fail the test when the
+comparison fails. The one difference is that Assert() will end the test execution
+immediately (using t.FailNow()) whereas Check() will return the value of the
+comparison, then proceed with the rest of the test case (using t.Fail()).
+
+Example Usage
+
+The example below shows assert used with some common types.
+
+
+	import (
+	    "testing"
+
+	    "github.com/gotestyourself/gotestyourself/assert"
+	    "github.com/gotestyourself/gotestyourself/assert/cmp"
+	)
+
+	func TestEverything(t *testing.T) {
+	    // booleans
+	    assert.Assert(t, isOk)
+	    assert.Assert(t, !missing)
+
+	    // primitives
+	    assert.Equal(t, count, 1)
+	    assert.Equal(t, msg, "the message")
+
+	    // errors
+	    assert.NoError(t, closer.Close())
+	    assert.Assert(t, cmp.Error(err, "the exact error message"))
+	    assert.Assert(t, cmp.ErrorContains(err, "includes this"))
+
+	    // complex types
+	    assert.Assert(t, cmp.Len(items, 3))
+	    assert.Assert(t, cmp.Contains(mapping, "key"))
+	    assert.Assert(t, cmp.Compare(result, myStruct{name: "title"}))
+	}
+
+Comparisons
+
+https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp provides
+many common comparisons. For less common tests, a custom comparisons can be
+written.
+
 */
 package assert
 
@@ -15,7 +62,10 @@ import (
 // panic
 type BoolOrComparison interface{}
 
-// Comparison provides a compare method for comparing values
+// Comparison provides a compare method for comparing values.
+//
+// https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp
+// provides many commonly used Comparisons.
 type Comparison interface {
 	// Compare performs a comparison and returns true if actual value matches
 	// the expected value. If the values do not match it returns a message

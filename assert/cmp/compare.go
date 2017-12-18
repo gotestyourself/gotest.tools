@@ -10,8 +10,8 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-// Compare two complex values using github.com/google/go-cmp/cmp and
-// succeeds if the values are equal
+// Compare two complex values using https://godoc.org/github.com/google/go-cmp/cmp
+// and succeeds if the values are equal.
 func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	return func() (bool, string) {
 		diff := cmp.Diff(x, y, opts...)

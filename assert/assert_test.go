@@ -97,8 +97,8 @@ func TestTesterAssertWithComparisonAndExtraMessage(t *testing.T) {
 	assert := New(fakeT)
 
 	cmp := exampleComparison{message: "oops, not good"}
-	assert.Assert(cmp, "extra stuff")
-	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff")
+	assert.Assert(cmp, "extra stuff %v", true)
+	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
 }
 
 func TestAssertWithBoolFailure(t *testing.T) {
