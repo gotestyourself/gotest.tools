@@ -3,18 +3,14 @@ package fs_test
 import (
 	"io/ioutil"
 	"os"
+	"testing"
 
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/fs"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
-type fakeTesting struct{}
-
-func (t fakeTesting) Errorf(format string, args ...interface{}) {}
-func (t fakeTesting) FailNow()                                  {}
-
-var t = fakeTesting{}
+var t = &testing.T{}
 
 // Create a temporary directory which contains a single file
 func ExampleNewDir() {
@@ -22,8 +18,8 @@ func ExampleNewDir() {
 	defer dir.Remove()
 
 	files, err := ioutil.ReadDir(dir.Path())
-	require.NoError(t, err)
-	assert.Len(t, files, 0)
+	assert.NoError(t, err)
+	assert.Assert(t, cmp.Len(files, 0))
 }
 
 // Create a new file with some content
@@ -32,7 +28,7 @@ func ExampleNewFile() {
 	defer file.Remove()
 
 	content, err := ioutil.ReadFile(file.Path())
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	assert.Equal(t, "content\n", content)
 }
 

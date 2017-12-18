@@ -4,8 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 func TestFromDir(t *testing.T) {
@@ -20,7 +19,7 @@ func TestFromDir(t *testing.T) {
 
 func assertFileWithContent(t *testing.T, path, content string) {
 	actual, err := ioutil.ReadFile(path)
-	require.NoError(t, err, "file %s does not exist", path)
+	assert.NoError(t, err)
 
-	assert.Equal(t, content, string(actual), "file %s")
+	assert.Equal(t, content, string(actual), "file %s", path)
 }

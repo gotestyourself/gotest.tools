@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/stretchr/testify/require"
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 // Path objects return their filesystem path. Both File and Dir implement Path.
@@ -23,14 +23,14 @@ type File struct {
 
 // NewFile creates a new file in a temporary directory using prefix as part of
 // the filename. The PathOps are applied to the before returning the File.
-func NewFile(t require.TestingT, prefix string, ops ...PathOp) *File {
+func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	tempfile, err := ioutil.TempFile("", prefix+"-")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	file := &File{path: tempfile.Name()}
-	require.NoError(t, tempfile.Close())
+	assert.NoError(t, tempfile.Close())
 
 	for _, op := range ops {
-		require.NoError(t, op(file))
+		assert.NoError(t, op(file))
 	}
 	return file
 }
@@ -53,13 +53,13 @@ type Dir struct {
 
 // NewDir returns a new temporary directory using prefix as part of the directory
 // name. The PathOps are applied before returning the Dir.
-func NewDir(t require.TestingT, prefix string, ops ...PathOp) *Dir {
+func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	path, err := ioutil.TempDir("", prefix+"-")
-	require.NoError(t, err)
+	assert.NoError(t, err)
 	dir := &Dir{path: path}
 
 	for _, op := range ops {
-		require.NoError(t, op(dir))
+		assert.NoError(t, op(dir))
 	}
 	return dir
 }

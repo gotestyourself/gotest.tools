@@ -6,30 +6,31 @@ import (
 
 	"sort"
 
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/skip"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestPatchFromUnset(t *testing.T) {
 	key, value := "FOO_IS_UNSET", "VALUE"
 	revert := Patch(t, key, value)
 
-	assert.Equal(t, value, os.Getenv(key))
+	assert.Assert(t, value == os.Getenv(key))
 	revert()
 	_, isSet := os.LookupEnv(key)
-	assert.False(t, isSet)
+	assert.Assert(t, isSet == false)
 }
 
 func TestPatch(t *testing.T) {
-	skip.IfCondition(t, os.Getenv("PATH") == "")
+	skip.If(t, os.Getenv("PATH") == "")
 	oldVal := os.Getenv("PATH")
 
 	key, value := "PATH", "NEWVALUE"
 	revert := Patch(t, key, value)
 
-	assert.Equal(t, value, os.Getenv(key))
+	assert.Assert(t, value == os.Getenv(key))
 	revert()
-	assert.Equal(t, oldVal, os.Getenv(key))
+	assert.Assert(t, oldVal == os.Getenv(key))
 }
 
 func TestPatchAll(t *testing.T) {
@@ -43,10 +44,10 @@ func TestPatchAll(t *testing.T) {
 
 	actual := os.Environ()
 	sort.Strings(actual)
-	assert.Equal(t, []string{"FIRST=STARS", "THEN=MOON"}, actual)
+	assert.Assert(t, cmp.Compare([]string{"FIRST=STARS", "THEN=MOON"}, actual))
 
 	revert()
-	assert.Equal(t, sorted(oldEnv), sorted(os.Environ()))
+	assert.Assert(t, cmp.Compare(sorted(oldEnv), sorted(os.Environ())))
 }
 
 func sorted(source []string) []string {
@@ -58,5 +59,5 @@ func TestToMap(t *testing.T) {
 	source := []string{"key=value", "novaluekey"}
 	actual := ToMap(source)
 	expected := map[string]string{"key": "value", "novaluekey": ""}
-	assert.Equal(t, expected, actual)
+	assert.Assert(t, cmp.Compare(expected, actual))
 }

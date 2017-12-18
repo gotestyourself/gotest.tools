@@ -7,37 +7,39 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stretchr/testify/require"
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 // Patch changes the value of an environment variable, and returns a
 // function which will reset the the value of that variable back to the
 // previous state.
-func Patch(t require.TestingT, key, value string) func() {
+func Patch(t assert.TestingT, key, value string) func() {
+	assert := assert.New(t)
 	oldValue, ok := os.LookupEnv(key)
-	require.NoError(t, os.Setenv(key, value))
+	assert.NoError(os.Setenv(key, value))
 	return func() {
 		if !ok {
-			require.NoError(t, os.Unsetenv(key))
+			assert.NoError(os.Unsetenv(key))
 			return
 		}
-		require.NoError(t, os.Setenv(key, oldValue))
+		assert.NoError(os.Setenv(key, oldValue))
 	}
 }
 
 // PatchAll sets the environment to env, and returns a function which will
 // reset the environment back to the previous state.
-func PatchAll(t require.TestingT, env map[string]string) func() {
+func PatchAll(t assert.TestingT, env map[string]string) func() {
+	assert := assert.New(t)
 	oldEnv := os.Environ()
 	os.Clearenv()
 
 	for key, value := range env {
-		require.NoError(t, os.Setenv(key, value))
+		assert.NoError(os.Setenv(key, value))
 	}
 	return func() {
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			require.NoError(t, os.Setenv(key, oldVal))
+			assert.NoError(os.Setenv(key, oldVal))
 		}
 	}
 }

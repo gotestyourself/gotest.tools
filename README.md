@@ -10,6 +10,8 @@ patterns.
 
 ## Packages
 
+* [assert](http://godoc.org/github.com/gotestyourself/gotestyourself/assert) -
+  compare values and fail the test when the comparison fails
 * [env](http://godoc.org/github.com/gotestyourself/gotestyourself/env) -
   test code that uses environment variables
 * [fs](http://godoc.org/github.com/gotestyourself/gotestyourself/fs) -
@@ -27,9 +29,4 @@ patterns.
 
 ## Related
 
-* [testify/assert](https://godoc.org/github.com/stretchr/testify/assert) and 
-  [testify/require](https://godoc.org/github.com/stretchr/testify/require) -
-  assertion libraries with common assertions
 * [maxbrunsfeld/counterfeiter](https://github.com/maxbrunsfeld/counterfeiter) - generate fakes for interfaces
-* [testify/suite](https://godoc.org/github.com/stretchr/testify/suite) - 
-  group test into suites to share common setup/teardown logic
