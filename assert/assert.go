@@ -127,7 +127,8 @@ func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ..
 			t.t.Log(err.Error())
 		}
 
-		t.t.Log(format.WithCustomMessage(failureMessage+source, msgAndArgs...))
+		msg := " is false"
+		t.t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
 		failer()
 		return false
 
