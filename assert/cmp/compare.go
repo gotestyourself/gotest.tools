@@ -163,3 +163,25 @@ func ErrorContains(err error, substring string) func() (bool, string) {
 		return true, ""
 	}
 }
+
+// Nil succeeds if obj is a nil interface, pointer, or function.
+//
+// Use NoError() for comparing errors. Use Len(obj, 0) for comparing slices,
+// maps, and channels.
+func Nil(obj interface{}) func() (bool, string) {
+	return func() (bool, string) {
+		if obj == nil {
+			return true, ""
+		}
+		value := reflect.ValueOf(obj)
+		kind := value.Type().Kind()
+		if kind >= reflect.Chan && kind <= reflect.Slice {
+			if value.IsNil() {
+				return true, ""
+			}
+			return false, fmt.Sprintf("%v (%T) is not nil", reflect.Indirect(value), obj)
+		}
+
+		return false, fmt.Sprintf("type %T can not be nil", obj)
+	}
+}

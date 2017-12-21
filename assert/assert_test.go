@@ -80,7 +80,7 @@ func TestTesterAssertWithComparisonSuccess(t *testing.T) {
 	assert := New(fakeT)
 
 	cmp := exampleComparison{success: true}
-	assert.Assert(cmp)
+	assert.Assert(cmp.Compare)
 	expectSuccess(t, fakeT)
 }
 
@@ -89,7 +89,7 @@ func TestTesterAssertWithComparisonFailure(t *testing.T) {
 	assert := New(fakeT)
 
 	cmp := exampleComparison{message: "oops, not good"}
-	assert.Assert(cmp)
+	assert.Assert(cmp.Compare)
 	expectFailNowed(t, fakeT, "assertion failed: oops, not good")
 }
 
@@ -98,7 +98,7 @@ func TestTesterAssertWithComparisonAndExtraMessage(t *testing.T) {
 	assert := New(fakeT)
 
 	cmp := exampleComparison{message: "oops, not good"}
-	assert.Assert(cmp, "extra stuff %v", true)
+	assert.Assert(cmp.Compare, "extra stuff %v", true)
 	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
 }
 

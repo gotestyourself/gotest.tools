@@ -2,6 +2,7 @@ package cmp
 
 import (
 	"fmt"
+	"io"
 	"reflect"
 	"testing"
 
@@ -216,6 +217,29 @@ func TestErrorContains(t *testing.T) {
 	msg := "the full message"
 	success, message = ErrorContains(errors.New(msg), "full")()
 	assertSuccess(t, success, message)
+}
+
+func TestNil(t *testing.T) {
+	success, message := Nil(nil)()
+	assertSuccess(t, success, message)
+
+	var s *string
+	success, message = Nil(s)()
+	assertSuccess(t, success, message)
+
+	var closer io.Closer
+	success, message = Nil(closer)()
+	assertSuccess(t, success, message)
+
+	success, message = Nil("wrong")()
+	assertFailure(t, success, message, "type string can not be nil")
+
+	notnil := "notnil"
+	success, message = Nil(&notnil)()
+	assertFailure(t, success, message, "notnil (*string) is not nil")
+
+	success, message = Nil([]string{"a"})()
+	assertFailure(t, success, message, "[a] ([]string) is not nil")
 }
 
 type testingT interface {

@@ -6,8 +6,8 @@ Assert and Check
 
 Assert() and Check() both accept a Comparison, and fail the test when the
 comparison fails. The one difference is that Assert() will end the test execution
-immediately (using t.FailNow()) whereas Check() will return the value of the
-comparison, then proceed with the rest of the test case (using t.Fail()).
+immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail())
+return the value of the comparison, then proceed with the rest of the test case.
 
 Example Usage
 
@@ -29,6 +29,7 @@ The example below shows assert used with some common types.
 	    // primitives
 	    assert.Equal(t, count, 1)
 	    assert.Equal(t, msg, "the message")
+	    assert.Assert(t, total != 10) // NotEqual
 
 	    // errors
 	    assert.NoError(t, closer.Close())
@@ -37,15 +38,30 @@ The example below shows assert used with some common types.
 
 	    // complex types
 	    assert.Assert(t, cmp.Len(items, 3))
+	    assert.Assert(t, len(sequence) != 0) // NotEmpty
 	    assert.Assert(t, cmp.Contains(mapping, "key"))
 	    assert.Assert(t, cmp.Compare(result, myStruct{name: "title"}))
+
+	    // pointers and interface
+	    assert.Assert(t, cmp.Nil(ref))
+	    assert.Assert(t, ref != nil) // NotNil
 	}
 
 Comparisons
 
 https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp provides
-many common comparisons. For less common tests, a custom comparisons can be
-written.
+many common comparisons. Additional comparisons can be written to compare
+values in other ways.
+
+Below is an example of a custom comparison using a regex pattern:
+
+	func RegexP(value string, pattern string) func() (bool, string) {
+	    return func() (bool, string) {
+	        re := regexp.MustCompile(pattern)
+	        msg := fmt.Sprintf("%q did not match pattern %q", value, pattern)
+	        return re.MatchString(value), msg
+	    }
+	}
 
 */
 package assert
@@ -58,23 +74,16 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// BoolOrComparison can be a bool, Comparison, or CompareFunc, other types will
-// panic
+// BoolOrComparison can be a bool, or Comparison, other types will panic
 type BoolOrComparison interface{}
 
-// Comparison provides a compare method for comparing values.
+// Comparison is a function which compares values and returns true if the actual
+// value matches the expected value. If the values do not match it returns a message
+// with details about why it failed.
 //
 // https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp
 // provides many commonly used Comparisons.
-type Comparison interface {
-	// Compare performs a comparison and returns true if actual value matches
-	// the expected value. If the values do not match it returns a message
-	// with details about why it failNowed.
-	Compare() (success bool, message string)
-}
-
-// CompareFunc is a Comparison.Compare()
-type CompareFunc func() (success bool, message string)
+type Comparison func() (success bool, message string)
 
 // TestingT is the subset of testing.T used by the assert package
 type TestingT interface {
@@ -133,12 +142,9 @@ func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ..
 		return false
 
 	case Comparison:
-		return runCompareFunc(failer, t.t, check.Compare, msgAndArgs...)
-
-	case func() (success bool, message string):
 		return runCompareFunc(failer, t.t, check, msgAndArgs...)
 
-	case CompareFunc:
+	case func() (success bool, message string):
 		return runCompareFunc(failer, t.t, check, msgAndArgs...)
 
 	default:
@@ -146,7 +152,7 @@ func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ..
 	}
 }
 
-func runCompareFunc(failer func(), t TestingT, f CompareFunc, msgAndArgs ...interface{}) bool {
+func runCompareFunc(failer func(), t TestingT, f Comparison, msgAndArgs ...interface{}) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
