@@ -20,7 +20,7 @@ func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	}
 }
 
-// Equal compares two values using the == operator
+// Equal succeeds if x == y returns true
 func Equal(x, y interface{}) func() (success bool, message string) {
 	return func() (bool, string) {
 		return x == y, fmt.Sprintf("%v (%T) != %v (%T)", x, x, y, y)
@@ -54,39 +54,48 @@ func NoError(args ...interface{}) func() (bool, string) {
 	}
 }
 
-// Contains succeeds if item is in the seq. seq may be a string, map, slice, or
-// array. reflect.DeepEqual() is used to compare the item with each value in the
-// sequence.
-func Contains(seq interface{}, item interface{}) func() (bool, string) {
+// Contains succeeds if item is in collection. Collection may be a string, map,
+// slice, or array.
+//
+// If collection is a string, item must also be a string, and is compared using
+// strings.Contains().
+// If collection is a Map, contains will succeed if item is a key in the map.
+// If collection is a slice or array, item is compared to each item in the
+// sequence using reflect.DeepEqual().
+func Contains(collection interface{}, item interface{}) func() (bool, string) {
 	return func() (bool, string) {
-		seqValue := reflect.ValueOf(seq)
-		if !seqValue.IsValid() {
+		colValue := reflect.ValueOf(collection)
+		if !colValue.IsValid() {
 			return false, fmt.Sprintf("nil does not contain items")
 		}
-		msg := fmt.Sprintf("%v does not contain %v", seq, item)
+		msg := fmt.Sprintf("%v does not contain %v", collection, item)
 
-		switch seqValue.Type().Kind() {
+		itemValue := reflect.ValueOf(item)
+		switch colValue.Type().Kind() {
 		case reflect.String:
-			itemValue := reflect.ValueOf(item)
-			success := strings.Contains(seqValue.String(), itemValue.String())
-			return success, msg
-		case reflect.Map:
-			mapKeys := seqValue.MapKeys()
-			for i := 0; i < len(mapKeys); i++ {
-				if reflect.DeepEqual(mapKeys[i].Interface(), item) {
-					return true, ""
-				}
+			if itemValue.Type().Kind() != reflect.String {
+				return false, "string may only contain strings"
 			}
-			return false, msg
+			success := strings.Contains(colValue.String(), itemValue.String())
+			return success, fmt.Sprintf("string %q does not contain %q", collection, item)
+
+		case reflect.Map:
+			if itemValue.Type() != colValue.Type().Key() {
+				return false, fmt.Sprintf(
+					"%v can not contain a %v key", colValue.Type(), itemValue.Type())
+			}
+			index := colValue.MapIndex(itemValue)
+			return index.IsValid(), msg
+
 		case reflect.Slice, reflect.Array:
-			for i := 0; i < seqValue.Len(); i++ {
-				if reflect.DeepEqual(seqValue.Index(i).Interface(), item) {
+			for i := 0; i < colValue.Len(); i++ {
+				if reflect.DeepEqual(colValue.Index(i).Interface(), item) {
 					return true, ""
 				}
 			}
 			return false, msg
 		default:
-			return false, fmt.Sprintf("type %T does not contain items", seq)
+			return false, fmt.Sprintf("type %T does not contain items", collection)
 		}
 	}
 }
@@ -104,8 +113,8 @@ func Panics(f func()) func() (bool, string) {
 	}
 }
 
-// EqualMultiLine succeeds if the two string are equal. If they are not equal
-// the failure message with be a unified diff of the difference.
+// EqualMultiLine succeeds if the two strings are equal. If they are not equal
+// the failure message will be the difference between the two strings.
 func EqualMultiLine(x, y string) func() (bool, string) {
 	return func() (bool, string) {
 		if x == y {

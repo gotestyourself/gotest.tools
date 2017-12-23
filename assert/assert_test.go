@@ -135,7 +135,7 @@ func TestTesterNoErrorBadArg(t *testing.T) {
 	assert := New(fakeT)
 
 	assert.NoError(3, 4, 5)
-	expectFailNowed(t, fakeT, "assertion failed: last argument to NoError() must be an error, got int")
+	expectFailNowed(t, fakeT, "assertion failed: type int can not be nil")
 }
 
 func TestTesterNoErrorFailure(t *testing.T) {
@@ -143,7 +143,7 @@ func TestTesterNoErrorFailure(t *testing.T) {
 	assert := New(fakeT)
 
 	assert.NoError(fmt.Errorf("this is the error"))
-	expectFailNowed(t, fakeT, "assertion failed: expected no error, got this is the error")
+	expectFailNowed(t, fakeT, "assertion failed: {this is the error} (*errors.errorString) is not nil")
 }
 
 func TestTesterNoErrorWithMultiArgFailure(t *testing.T) {
@@ -153,7 +153,7 @@ func TestTesterNoErrorWithMultiArgFailure(t *testing.T) {
 	assert.NoError(func() (bool, int, error) {
 		return true, 3, fmt.Errorf("this is the error")
 	}())
-	expectFailNowed(t, fakeT, "assertion failed: expected no error, got this is the error")
+	expectFailNowed(t, fakeT, "assertion failed: {this is the error} (*errors.errorString) is not nil")
 }
 
 func TestTesterCheckFailure(t *testing.T) {

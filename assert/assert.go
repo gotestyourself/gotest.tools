@@ -6,7 +6,7 @@ Assert and Check
 
 Assert() and Check() both accept a Comparison, and fail the test when the
 comparison fails. The one difference is that Assert() will end the test execution
-immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail())
+immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail()),
 return the value of the comparison, then proceed with the rest of the test case.
 
 Example Usage
@@ -18,7 +18,7 @@ The example below shows assert used with some common types.
 	    "testing"
 
 	    "github.com/gotestyourself/gotestyourself/assert"
-	    "github.com/gotestyourself/gotestyourself/assert/cmp"
+	    is "github.com/gotestyourself/gotestyourself/assert/cmp"
 	)
 
 	func TestEverything(t *testing.T) {
@@ -32,18 +32,18 @@ The example below shows assert used with some common types.
 	    assert.Assert(t, total != 10) // NotEqual
 
 	    // errors
-	    assert.NoError(t, closer.Close())
-	    assert.Assert(t, cmp.Error(err, "the exact error message"))
-	    assert.Assert(t, cmp.ErrorContains(err, "includes this"))
+	    assert.NilError(t, closer.Close())
+	    assert.Assert(t, is.Error(err, "the exact error message"))
+	    assert.Assert(t, is.ErrorContains(err, "includes this"))
 
 	    // complex types
-	    assert.Assert(t, cmp.Len(items, 3))
+	    assert.Assert(t, is.Len(items, 3))
 	    assert.Assert(t, len(sequence) != 0) // NotEmpty
-	    assert.Assert(t, cmp.Contains(mapping, "key"))
-	    assert.Assert(t, cmp.Compare(result, myStruct{name: "title"}))
+	    assert.Assert(t, is.Contains(mapping, "key"))
+	    assert.Assert(t, is.Compare(result, myStruct{Name: "title"}))
 
 	    // pointers and interface
-	    assert.Assert(t, cmp.Nil(ref))
+	    assert.Assert(t, is.Nil(ref))
 	    assert.Assert(t, ref != nil) // NotNil
 	}
 
@@ -74,7 +74,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// BoolOrComparison can be a bool, or Comparison, other types will panic
+// BoolOrComparison can be a bool, or Comparison, other types will panic.
 type BoolOrComparison interface{}
 
 // Comparison is a function which compares values and returns true if the actual
@@ -82,7 +82,7 @@ type BoolOrComparison interface{}
 // with details about why it failed.
 //
 // https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp
-// provides many commonly used Comparisons.
+// provides many general purpose Comparisons.
 type Comparison func() (success bool, message string)
 
 // TestingT is the subset of testing.T used by the assert package
@@ -108,7 +108,7 @@ const stackIndex = 2
 
 const failureMessage = "assertion failed: "
 
-// New returns a new Tester for asserting and checking values
+// New returns a new Tester for asserting and checking values.
 func New(t TestingT) Tester {
 	return Tester{t: t, stackIndex: stackIndex, argPos: 0}
 }
@@ -182,7 +182,8 @@ func (t Tester) NoError(args ...interface{}) {
 	t.assert(t.t.FailNow, cmp.NoError(args...))
 }
 
-// Equal uses the == operator to assert two values are the equal.
+// Equal uses the == operator to assert two values are equal and fails the test
+// if they are not equal.
 // This is equivalent to Assert(cmp.Equal(x, y))
 func (t Tester) Equal(x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.t.(helperT); ok {
@@ -191,7 +192,8 @@ func (t Tester) Equal(x, y interface{}, msgAndArgs ...interface{}) {
 	t.assert(t.t.FailNow, cmp.Equal(x, y), msgAndArgs...)
 }
 
-// Assert fails the test immediate if comparison is not a success
+// Assert performs a comparison and fails the test immediate if the comparison
+// is not a success.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -208,7 +210,7 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 	return newPackageScopeTester(t).Check(comparison, msgAndArgs...)
 }
 
-// NoError fails the test immediately if the last arg is a non-nil error
+// NoError fails the test immediately if the last arg is a non-nil error.
 func NoError(t TestingT, args ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -216,7 +218,8 @@ func NoError(t TestingT, args ...interface{}) {
 	newPackageScopeTester(t).NoError(args...)
 }
 
-// Equal uses the == operator to assert two values are the equal
+// Equal uses the == operator to assert two values are equal, and fails the test
+// if they are not equal.
 func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()

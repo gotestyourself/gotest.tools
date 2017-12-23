@@ -143,7 +143,12 @@ func TestContains(t *testing.T) {
 		{
 			seq:         "abcdef",
 			item:        "foo",
-			expectedMsg: "abcdef does not contain foo",
+			expectedMsg: `string "abcdef" does not contain "foo"`,
+		},
+		{
+			seq:         "abcdef",
+			item:        3,
+			expectedMsg: `string may only contain strings`,
 		},
 		{
 			seq:      map[rune]int{'a': 1, 'b': 2},
@@ -154,6 +159,11 @@ func TestContains(t *testing.T) {
 			seq:         map[rune]int{'a': 1},
 			item:        'c',
 			expectedMsg: "map[97:1] does not contain 99",
+		},
+		{
+			seq:         map[int]int{'a': 1, 'b': 2},
+			item:        'b',
+			expectedMsg: "map[int]int can not contain a int32 key",
 		},
 		{
 			seq:      []interface{}{"a", 1, 'a', 1.0, true},
@@ -177,12 +187,15 @@ func TestContains(t *testing.T) {
 		},
 	}
 	for _, testcase := range testcases {
-		success, message := Contains(testcase.seq, testcase.item)()
-		if testcase.expected {
-			assertSuccess(t, success, message)
-		} else {
-			assertFailure(t, success, message, testcase.expectedMsg)
-		}
+		name := fmt.Sprintf("%v in %v", testcase.item, testcase.seq)
+		t.Run(name, func(t *testing.T) {
+			success, message := Contains(testcase.seq, testcase.item)()
+			if testcase.expected {
+				assertSuccess(t, success, message)
+			} else {
+				assertFailure(t, success, message, testcase.expectedMsg)
+			}
+		})
 	}
 }
 
