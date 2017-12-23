@@ -60,6 +60,24 @@ func TestLen(t *testing.T) {
 	}
 }
 
+type stubError struct{}
+
+func (e *stubError) Error() string { return "stub error" }
+
+func TestNoError(t *testing.T) {
+	var s *stubError
+
+	success, message := NoError(s)()
+	assertSuccess(t, success, message)
+
+	success, message = NoError(nil)()
+	assertSuccess(t, success, message)
+
+	var e error
+	success, message = NoError(e)()
+	assertSuccess(t, success, message)
+}
+
 func TestPanics(t *testing.T) {
 	panicker := func() {
 		panic("AHHHHHHHHHHH")

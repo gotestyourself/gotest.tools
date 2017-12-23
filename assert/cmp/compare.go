@@ -16,7 +16,7 @@ func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	return func() (bool, string) {
 		diff := cmp.Diff(x, y, opts...)
 		// TODO: wrap error message?
-		return diff == "", diff
+		return diff == "", "\n" + diff
 	}
 }
 
@@ -48,17 +48,9 @@ func Len(seq interface{}, expected int) func() (bool, string) {
 func NoError(args ...interface{}) func() (bool, string) {
 	return func() (bool, string) {
 		if len(args) == 0 {
-			return true, ""
+			return false, "NoError() requires one or more arguments"
 		}
-		switch lastArg := args[len(args)-1].(type) {
-		case error:
-			return false, fmt.Sprintf("expected no error, got %+v", lastArg)
-		case nil:
-			return true, ""
-		default:
-			return false, fmt.Sprintf(
-				"last argument to NoError() must be an error, got %T", lastArg)
-		}
+		return Nil(args[len(args)-1])()
 	}
 }
 
