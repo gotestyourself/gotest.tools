@@ -45,7 +45,7 @@ ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
 	assert.Check(t, compare(&Summary{Total: 8, Skipped: 1}, summary))
 	assert.Equal(t, source, out.String())
@@ -70,7 +70,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
 	assert.Check(t, cmp.Equal(source, out.String()))
 
@@ -103,7 +103,7 @@ PASS
 `
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
 
 	expected := &Summary{Total: 1}
@@ -130,7 +130,7 @@ exit status 1
 `
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
 
 	expectedOutput := `=== RUN   TestNested/a

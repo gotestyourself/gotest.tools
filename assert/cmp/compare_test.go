@@ -1,6 +1,7 @@
 package cmp
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"reflect"
@@ -64,18 +65,29 @@ type stubError struct{}
 
 func (e *stubError) Error() string { return "stub error" }
 
-func TestNoError(t *testing.T) {
+func TestNilError(t *testing.T) {
 	var s *stubError
-
-	success, message := NoError(s)()
+	success, message := NilError(s)()
 	assertSuccess(t, success, message)
 
-	success, message = NoError(nil)()
+	success, message = NilError(nil)()
 	assertSuccess(t, success, message)
 
 	var e error
-	success, message = NoError(e)()
+	success, message = NilError(e)()
 	assertSuccess(t, success, message)
+
+	buf := new(bytes.Buffer)
+	success, message = NilError(buf.WriteString("ok"))()
+	assertSuccess(t, success, message)
+
+	s = &stubError{}
+	success, message = NilError(s)()
+	assertFailure(t, success, message, "error is not nil: stub error")
+
+	e = &stubError{}
+	success, message = NilError(e)()
+	assertFailure(t, success, message, "error is not nil: stub error")
 }
 
 func TestPanics(t *testing.T) {
@@ -210,7 +222,8 @@ bbbb`
 aaaa
 bbbb`
 
-	expected := `--- left
+	expected := `
+--- left
 +++ right
 @@ -1,4 +1,4 @@
  abcd
@@ -263,14 +276,14 @@ func TestNil(t *testing.T) {
 	assertSuccess(t, success, message)
 
 	success, message = Nil("wrong")()
-	assertFailure(t, success, message, "type string can not be nil")
+	assertFailure(t, success, message, "wrong (type string) can not be nil")
 
 	notnil := "notnil"
 	success, message = Nil(&notnil)()
-	assertFailure(t, success, message, "notnil (*string) is not nil")
+	assertFailure(t, success, message, "notnil (type *string) is not nil")
 
 	success, message = Nil([]string{"a"})()
-	assertFailure(t, success, message, "[a] ([]string) is not nil")
+	assertFailure(t, success, message, "[a] (type []string) is not nil")
 }
 
 type testingT interface {

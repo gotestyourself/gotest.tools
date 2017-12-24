@@ -16,13 +16,13 @@ import (
 func Patch(t assert.TestingT, key, value string) func() {
 	assert := assert.New(t)
 	oldValue, ok := os.LookupEnv(key)
-	assert.NoError(os.Setenv(key, value))
+	assert.NilError(os.Setenv(key, value))
 	return func() {
 		if !ok {
-			assert.NoError(os.Unsetenv(key))
+			assert.NilError(os.Unsetenv(key))
 			return
 		}
-		assert.NoError(os.Setenv(key, oldValue))
+		assert.NilError(os.Setenv(key, oldValue))
 	}
 }
 
@@ -34,12 +34,12 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 	os.Clearenv()
 
 	for key, value := range env {
-		assert.NoError(os.Setenv(key, value))
+		assert.NilError(os.Setenv(key, value))
 	}
 	return func() {
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			assert.NoError(os.Setenv(key, oldVal))
+			assert.NilError(os.Setenv(key, oldVal))
 		}
 	}
 }

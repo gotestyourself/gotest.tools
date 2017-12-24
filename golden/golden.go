@@ -29,7 +29,7 @@ func Get(t assert.TestingT, filename string) []byte {
 		ht.Helper()
 	}
 	expected, err := ioutil.ReadFile(Path(filename))
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	return expected
 }
 
@@ -44,7 +44,7 @@ func Path(filename string) string {
 func update(t assert.TestingT, filename string, actual []byte) {
 	if *flagUpdate {
 		err := ioutil.WriteFile(Path(filename), actual, 0644)
-		assert.NoError(t, err)
+		assert.NilError(t, err)
 	}
 }
 
@@ -70,7 +70,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 		ToFile:   "Actual",
 		Context:  3,
 	})
-	assert.Assert(t, cmp.NoError(err), msgAndArgs...)
+	assert.Assert(t, cmp.NilError(err), msgAndArgs...)
 	t.Log(format.WithCustomMessage(fmt.Sprintf("Not Equal: \n%s", diff), msgAndArgs...))
 	t.Fail()
 	return false

@@ -15,12 +15,11 @@ import (
 func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	return func() (bool, string) {
 		diff := cmp.Diff(x, y, opts...)
-		// TODO: wrap error message?
 		return diff == "", "\n" + diff
 	}
 }
 
-// Equal succeeds if x == y returns true
+// Equal succeeds if x == y
 func Equal(x, y interface{}) func() (success bool, message string) {
 	return func() (bool, string) {
 		return x == y, fmt.Sprintf("%v (%T) != %v (%T)", x, x, y, y)
@@ -44,13 +43,16 @@ func Len(seq interface{}, expected int) func() (bool, string) {
 	}
 }
 
-// NoError succeeds if the last argument is a nil error
-func NoError(args ...interface{}) func() (bool, string) {
+// NilError succeeds if the last argument is a nil error
+func NilError(arg interface{}, args ...interface{}) func() (bool, string) {
 	return func() (bool, string) {
-		if len(args) == 0 {
-			return false, "NoError() requires one or more arguments"
+		msgFunc := func(value reflect.Value) string {
+			return fmt.Sprintf("error is not nil: %s", value.Interface().(error).Error())
 		}
-		return Nil(args[len(args)-1])()
+		if len(args) == 0 {
+			return isNil(arg, msgFunc)()
+		}
+		return isNil(args[len(args)-1], msgFunc)()
 	}
 }
 
@@ -131,7 +133,7 @@ func EqualMultiLine(x, y string) func() (bool, string) {
 		if err != nil {
 			return false, fmt.Sprintf("failed to produce diff: %s", err)
 		}
-		return false, diff
+		return false, "\n" + diff
 	}
 }
 
@@ -167,9 +169,16 @@ func ErrorContains(err error, substring string) func() (bool, string) {
 
 // Nil succeeds if obj is a nil interface, pointer, or function.
 //
-// Use NoError() for comparing errors. Use Len(obj, 0) for comparing slices,
+// Use NilError() for comparing errors. Use Len(obj, 0) for comparing slices,
 // maps, and channels.
 func Nil(obj interface{}) func() (bool, string) {
+	msgFunc := func(value reflect.Value) string {
+		return fmt.Sprintf("%v (type %s) is not nil", reflect.Indirect(value), value.Type())
+	}
+	return isNil(obj, msgFunc)
+}
+
+func isNil(obj interface{}, msgFunc func(reflect.Value) string) func() (bool, string) {
 	return func() (bool, string) {
 		if obj == nil {
 			return true, ""
@@ -180,9 +189,9 @@ func Nil(obj interface{}) func() (bool, string) {
 			if value.IsNil() {
 				return true, ""
 			}
-			return false, fmt.Sprintf("%v (%T) is not nil", reflect.Indirect(value), obj)
+			return false, msgFunc(value)
 		}
 
-		return false, fmt.Sprintf("type %T can not be nil", obj)
+		return false, fmt.Sprintf("%v (type %s) can not be nil", value, value.Type())
 	}
 }

@@ -18,7 +18,7 @@ func ExampleNewDir() {
 	defer dir.Remove()
 
 	files, err := ioutil.ReadDir(dir.Path())
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Assert(t, cmp.Len(files, 0))
 }
 
@@ -28,7 +28,7 @@ func ExampleNewFile() {
 	defer file.Remove()
 
 	content, err := ioutil.ReadFile(file.Path())
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	assert.Equal(t, "content\n", content)
 }
 

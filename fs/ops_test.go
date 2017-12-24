@@ -19,7 +19,7 @@ func TestFromDir(t *testing.T) {
 
 func assertFileWithContent(t *testing.T, path, content string) {
 	actual, err := ioutil.ReadFile(path)
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 
 	assert.Equal(t, content, string(actual), "file %s", path)
 }

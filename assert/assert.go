@@ -173,13 +173,13 @@ func (t Tester) Check(comparison BoolOrComparison, msgAndArgs ...interface{}) bo
 	return t.assert(t.t.Fail, comparison, msgAndArgs...)
 }
 
-// NoError fails the test immediately if the last arg is a non-nil error.
-// This is equivalent to Assert(cmp.NoError(err))
-func (t Tester) NoError(args ...interface{}) {
+// NilError fails the test immediately if the last arg is a non-nil error.
+// This is equivalent to Assert(cmp.NilError(err))
+func (t Tester) NilError(arg interface{}, args ...interface{}) {
 	if ht, ok := t.t.(helperT); ok {
 		ht.Helper()
 	}
-	t.assert(t.t.FailNow, cmp.NoError(args...))
+	t.assert(t.t.FailNow, cmp.NilError(arg, args...))
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test
@@ -210,12 +210,12 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 	return newPackageScopeTester(t).Check(comparison, msgAndArgs...)
 }
 
-// NoError fails the test immediately if the last arg is a non-nil error.
-func NoError(t TestingT, args ...interface{}) {
+// NilError fails the test immediately if the last arg is a non-nil error.
+func NilError(t TestingT, arg interface{}, args ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	newPackageScopeTester(t).NoError(args...)
+	newPackageScopeTester(t).NilError(arg, args...)
 }
 
 // Equal uses the == operator to assert two values are equal, and fails the test

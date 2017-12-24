@@ -115,45 +115,45 @@ func (e *customError) Error() string {
 	return "custom error"
 }
 
-func TestTesterNoErrorSuccess(t *testing.T) {
+func TestTesterNilErrorSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
 	assert := New(fakeT)
 
 	var err error
-	assert.NoError(err)
+	assert.NilError(err)
 	expectSuccess(t, fakeT)
 
-	assert.NoError(nil)
+	assert.NilError(nil)
 	expectSuccess(t, fakeT)
 
 	var customErr *customError
-	assert.NoError(customErr)
+	assert.NilError(customErr)
 }
 
-func TestTesterNoErrorBadArg(t *testing.T) {
+func TestTesterNilErrorBadArg(t *testing.T) {
 	fakeT := &fakeTestingT{}
 	assert := New(fakeT)
 
-	assert.NoError(3, 4, 5)
-	expectFailNowed(t, fakeT, "assertion failed: type int can not be nil")
+	assert.NilError(3, 4, 5)
+	expectFailNowed(t, fakeT, "assertion failed: 5 (type int) can not be nil")
 }
 
-func TestTesterNoErrorFailure(t *testing.T) {
+func TestTesterNilErrorFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 	assert := New(fakeT)
 
-	assert.NoError(fmt.Errorf("this is the error"))
-	expectFailNowed(t, fakeT, "assertion failed: {this is the error} (*errors.errorString) is not nil")
+	assert.NilError(fmt.Errorf("this is the error"))
+	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
 }
 
-func TestTesterNoErrorWithMultiArgFailure(t *testing.T) {
+func TestTesterNilErrorWithMultiArgFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 	assert := New(fakeT)
 
-	assert.NoError(func() (bool, int, error) {
+	assert.NilError(func() (bool, int, error) {
 		return true, 3, fmt.Errorf("this is the error")
 	}())
-	expectFailNowed(t, fakeT, "assertion failed: {this is the error} (*errors.errorString) is not nil")
+	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
 }
 
 func TestTesterCheckFailure(t *testing.T) {

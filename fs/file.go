@@ -25,12 +25,12 @@ type File struct {
 // the filename. The PathOps are applied to the before returning the File.
 func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	tempfile, err := ioutil.TempFile("", prefix+"-")
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	file := &File{path: tempfile.Name()}
-	assert.NoError(t, tempfile.Close())
+	assert.NilError(t, tempfile.Close())
 
 	for _, op := range ops {
-		assert.NoError(t, op(file))
+		assert.NilError(t, op(file))
 	}
 	return file
 }
@@ -55,11 +55,11 @@ type Dir struct {
 // name. The PathOps are applied before returning the Dir.
 func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	path, err := ioutil.TempDir("", prefix+"-")
-	assert.NoError(t, err)
+	assert.NilError(t, err)
 	dir := &Dir{path: path}
 
 	for _, op := range ops {
-		assert.NoError(t, op(dir))
+		assert.NilError(t, op(dir))
 	}
 	return dir
 }
