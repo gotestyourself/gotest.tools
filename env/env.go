@@ -1,5 +1,6 @@
 /*Package env provides functions to test code that read environment variables
- */
+or the current working directory.
+*/
 package env
 
 import (
@@ -55,4 +56,15 @@ func ToMap(env []string) map[string]string {
 		}
 	}
 	return result
+}
+
+// ChangeWorkingDir to the directory, and return a function which restores the
+// previous working directory.
+func ChangeWorkingDir(t require.TestingT, dir string) func() {
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+	require.NoError(t, os.Chdir(dir))
+	return func() {
+		require.NoError(t, os.Chdir(cwd))
+	}
 }
