@@ -9,6 +9,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/gotestyourself/gotestyourself/internal/format"
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
@@ -29,9 +30,7 @@ func If(t skipT, condition BoolOrCheckFunc, msgAndArgs ...interface{}) {
 		ifCondition(t, check, msgAndArgs...)
 	case func() bool:
 		if check() {
-			t.Skip(formatWithCustomMessage(
-				getFunctionName(check),
-				formatMessage(msgAndArgs...)))
+			t.Skip(format.WithCustomMessage(getFunctionName(check), msgAndArgs...))
 		}
 	default:
 		panic(fmt.Sprintf("invalid type for condition arg: %T", check))
@@ -63,28 +62,7 @@ func ifCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
 	source, err := source.GetCondition(stackIndex, argPos)
 	if err != nil {
 		t.Log(err.Error())
-		t.Skip(formatMessage(msgAndArgs...))
+		t.Skip(format.Message(msgAndArgs...))
 	}
-	t.Skip(formatWithCustomMessage(source, formatMessage(msgAndArgs...)))
-}
-
-func formatMessage(msgAndArgs ...interface{}) string {
-	switch len(msgAndArgs) {
-	case 0:
-		return ""
-	case 1:
-		return msgAndArgs[0].(string)
-	default:
-		return fmt.Sprintf(msgAndArgs[0].(string), msgAndArgs[1:]...)
-	}
-}
-
-func formatWithCustomMessage(source, custom string) string {
-	switch {
-	case custom == "":
-		return source
-	case source == "":
-		return custom
-	}
-	return fmt.Sprintf("%s: %s", source, custom)
+	t.Skip(format.WithCustomMessage(source, msgAndArgs...))
 }

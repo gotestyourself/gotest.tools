@@ -5,7 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 type fakeSkipT struct {
@@ -35,7 +36,7 @@ func TestIfCondition(t *testing.T) {
 	If(skipT, apiVersion < version("v1.6"))
 
 	assert.Equal(t, `apiVersion < version("v1.6")`, skipT.reason)
-	assert.Len(t, skipT.logs, 0)
+	assert.Assert(t, cmp.Len(skipT.logs, 0))
 }
 
 func TestIfConditionWithMessage(t *testing.T) {
@@ -44,7 +45,7 @@ func TestIfConditionWithMessage(t *testing.T) {
 	If(skipT, apiVersion < "v1.6", "see notes")
 
 	assert.Equal(t, `apiVersion < "v1.6": see notes`, skipT.reason)
-	assert.Len(t, skipT.logs, 0)
+	assert.Assert(t, cmp.Len(skipT.logs, 0))
 }
 
 func TestIfConditionMultiline(t *testing.T) {
@@ -55,7 +56,7 @@ func TestIfConditionMultiline(t *testing.T) {
 		apiVersion < "v1.6")
 
 	assert.Equal(t, `apiVersion < "v1.6"`, skipT.reason)
-	assert.Len(t, skipT.logs, 0)
+	assert.Assert(t, cmp.Len(skipT.logs, 0))
 }
 
 func TestIfConditionMultilineWithMessage(t *testing.T) {
@@ -67,7 +68,7 @@ func TestIfConditionMultilineWithMessage(t *testing.T) {
 		"see notes")
 
 	assert.Equal(t, `apiVersion < "v1.6": see notes`, skipT.reason)
-	assert.Len(t, skipT.logs, 0)
+	assert.Assert(t, cmp.Len(skipT.logs, 0))
 }
 
 func TestIfConditionNoSkip(t *testing.T) {
@@ -75,7 +76,7 @@ func TestIfConditionNoSkip(t *testing.T) {
 	If(skipT, false)
 
 	assert.Equal(t, "", skipT.reason)
-	assert.Len(t, skipT.logs, 0)
+	assert.Assert(t, cmp.Len(skipT.logs, 0))
 }
 
 func SkipBecauseISaidSo() bool {

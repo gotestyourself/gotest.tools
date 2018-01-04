@@ -1,12 +1,12 @@
 package icmd_test
 
-import "github.com/gotestyourself/gotestyourself/icmd"
+import (
+	"testing"
 
-type fakeTesting struct{}
+	"github.com/gotestyourself/gotestyourself/icmd"
+)
 
-func (t fakeTesting) Fatalf(string, ...interface{}) {}
-
-var t = fakeTesting{}
+var t = &testing.T{}
 
 func ExampleRunCommand() {
 	result := icmd.RunCommand("bash", "-c", "echo all good")

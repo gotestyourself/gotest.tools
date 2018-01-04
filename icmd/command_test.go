@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 func TestRunCommandSuccess(t *testing.T) {
-	// TODO Windows: Port this test
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs porting to Windows")
 	}
@@ -20,7 +20,6 @@ func TestRunCommandSuccess(t *testing.T) {
 }
 
 func TestRunCommandWithCombined(t *testing.T) {
-	// TODO Windows: Port this test
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs porting to Windows")
 	}
@@ -28,12 +27,11 @@ func TestRunCommandWithCombined(t *testing.T) {
 	result := RunCommand("ls", "-a")
 	result.Assert(t, Expected{})
 
-	assert.Contains(t, result.Combined(), "..")
-	assert.Contains(t, result.Stdout(), "..")
+	assert.Assert(t, cmp.Contains(result.Combined(), "\n..\n"))
+	assert.Assert(t, cmp.Contains(result.Stdout(), "\n..\n"))
 }
 
 func TestRunCommandWithTimeoutFinished(t *testing.T) {
-	// TODO Windows: Port this test
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs porting to Windows")
 	}
@@ -46,7 +44,6 @@ func TestRunCommandWithTimeoutFinished(t *testing.T) {
 }
 
 func TestRunCommandWithTimeoutKilled(t *testing.T) {
-	// TODO Windows: Port this test
 	if runtime.GOOS == "windows" {
 		t.Skip("Needs porting to Windows")
 	}
@@ -56,7 +53,7 @@ func TestRunCommandWithTimeoutKilled(t *testing.T) {
 	result.Assert(t, Expected{Timeout: true})
 
 	ones := strings.Split(result.Stdout(), "\n")
-	assert.Len(t, ones, 4)
+	assert.Assert(t, cmp.Len(ones, 4))
 }
 
 func TestRunCommandWithErrors(t *testing.T) {

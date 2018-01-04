@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/pkg/errors"
-	"github.com/stretchr/testify/assert"
 )
 
 type fakeT struct {
@@ -44,9 +45,9 @@ func TestWaitOnWithTimeout(t *testing.T) {
 		return Continue("not done")
 	}
 
-	assert.Panics(t, func() {
+	assert.Assert(t, cmp.Panics(func() {
 		WaitOn(fakeT, check, WithTimeout(time.Millisecond))
-	})
+	}))
 	assert.Equal(t, "timeout hit after 1ms: not done", fakeT.failed)
 }
 
@@ -58,7 +59,7 @@ func TestWaitOnWithCheckTimeout(t *testing.T) {
 		return Continue("not done")
 	}
 
-	assert.Panics(t, func() { WaitOn(fakeT, check, WithTimeout(time.Millisecond)) })
+	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check, WithTimeout(time.Millisecond)) }))
 	assert.Equal(t, "timeout hit after 1ms: first check never completed", fakeT.failed)
 }
 
@@ -69,6 +70,6 @@ func TestWaitOnWithCheckError(t *testing.T) {
 		return Error(errors.New("broke"))
 	}
 
-	assert.Panics(t, func() { WaitOn(fakeT, check) })
+	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check) }))
 	assert.Equal(t, "polling check failed: broke", fakeT.failed)
 }

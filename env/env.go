@@ -7,37 +7,39 @@ import (
 	"os"
 	"strings"
 
-	"github.com/stretchr/testify/require"
+	"github.com/gotestyourself/gotestyourself/assert"
 )
 
 // Patch changes the value of an environment variable, and returns a
 // function which will reset the the value of that variable back to the
 // previous state.
-func Patch(t require.TestingT, key, value string) func() {
+func Patch(t assert.TestingT, key, value string) func() {
+	assert := assert.New(t)
 	oldValue, ok := os.LookupEnv(key)
-	require.NoError(t, os.Setenv(key, value))
+	assert.NilError(os.Setenv(key, value))
 	return func() {
 		if !ok {
-			require.NoError(t, os.Unsetenv(key))
+			assert.NilError(os.Unsetenv(key))
 			return
 		}
-		require.NoError(t, os.Setenv(key, oldValue))
+		assert.NilError(os.Setenv(key, oldValue))
 	}
 }
 
 // PatchAll sets the environment to env, and returns a function which will
 // reset the environment back to the previous state.
-func PatchAll(t require.TestingT, env map[string]string) func() {
+func PatchAll(t assert.TestingT, env map[string]string) func() {
+	assert := assert.New(t)
 	oldEnv := os.Environ()
 	os.Clearenv()
 
 	for key, value := range env {
-		require.NoError(t, os.Setenv(key, value))
+		assert.NilError(os.Setenv(key, value))
 	}
 	return func() {
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			require.NoError(t, os.Setenv(key, oldVal))
+			assert.NilError(os.Setenv(key, oldVal))
 		}
 	}
 }
@@ -60,11 +62,11 @@ func ToMap(env []string) map[string]string {
 
 // ChangeWorkingDir to the directory, and return a function which restores the
 // previous working directory.
-func ChangeWorkingDir(t require.TestingT, dir string) func() {
+func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 	cwd, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(dir))
+	assert.NilError(t, err)
+	assert.NilError(t, os.Chdir(dir))
 	return func() {
-		require.NoError(t, os.Chdir(cwd))
+		assert.NilError(t, os.Chdir(cwd))
 	}
 }

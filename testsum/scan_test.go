@@ -2,16 +2,24 @@ package testsum
 
 import (
 	"bytes"
+	"io/ioutil"
 	"strings"
 	"testing"
-
 	"time"
 
-	"io/ioutil"
-
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	gocmp "github.com/google/go-cmp/cmp"
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
+
+func compare(x, y interface{}) func() (bool, string) {
+	elapsedPath := func(path gocmp.Path) bool {
+		return path.Last().String() == ".Elapsed"
+	}
+	return cmp.Compare(x, y,
+		gocmp.AllowUnexported(Failure{}),
+		gocmp.FilterPath(elapsedPath, gocmp.Ignore()))
+}
 
 func TestScanNoFailures(t *testing.T) {
 	source := `=== RUN   TestRunCommandSuccess
@@ -30,18 +38,18 @@ func TestScanNoFailures(t *testing.T) {
 --- PASS: TestRunCommandWithStdoutStderrError (0.00s)
 === RUN   TestSkippedBecauseSomething
 --- SKIP: TestSkippedBecauseSomething (0.00s)
-        scan_test.go:39: becausde blah
+        scan_test.go:39: because blah
 PASS
 ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 `
 
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
-	require.NoError(t, err)
-	assert.NotZero(t, summary.Elapsed)
-	summary.Elapsed = 0 // ignore elapsed
-	assert.Equal(t, &Summary{Total: 8, Skipped: 1}, summary)
+	assert.NilError(t, err)
+	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, compare(&Summary{Total: 8, Skipped: 1}, summary))
 	assert.Equal(t, source, out.String())
+
 }
 
 func TestScanWithFailure(t *testing.T) {
@@ -62,10 +70,9 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
-	require.NoError(t, err)
-	assert.NotZero(t, summary.Elapsed)
-	summary.Elapsed = 0 // ignore elapsed
-	assert.Equal(t, source, out.String())
+	assert.NilError(t, err)
+	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, cmp.Equal(source, out.String()))
 
 	expected := &Summary{
 		Total: 3,
@@ -77,7 +84,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 			},
 		},
 	}
-	assert.Equal(t, expected, summary)
+	assert.Check(t, compare(expected, summary))
 }
 
 func TestScanWithNested(t *testing.T) {
@@ -96,12 +103,11 @@ PASS
 `
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
-	require.NoError(t, err)
-	assert.NotZero(t, summary.Elapsed)
-	summary.Elapsed = 0 // ignore elapsed
+	assert.NilError(t, err)
+	assert.Check(t, summary.Elapsed != 0)
 
 	expected := &Summary{Total: 1}
-	assert.Equal(t, expected, summary)
+	assert.Check(t, compare(expected, summary))
 }
 
 func TestScanWithNestedFailures(t *testing.T) {
@@ -124,9 +130,8 @@ exit status 1
 `
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
-	require.NoError(t, err)
-	assert.NotZero(t, summary.Elapsed)
-	summary.Elapsed = 0 // ignore elapsed
+	assert.NilError(t, err)
+	assert.Check(t, summary.Elapsed != 0)
 
 	expectedOutput := `=== RUN   TestNested/a
 Output from  a
@@ -149,7 +154,7 @@ Output from  c
 			{name: "TestNested", output: expectedOutput, logs: expectedLogs},
 		},
 	}
-	assert.Equal(t, expected, summary)
+	assert.Check(t, compare(expected, summary))
 }
 
 func TestSummaryFormatLine(t *testing.T) {
