@@ -25,36 +25,31 @@ func (f *fakeTestingT) Log(args ...interface{}) {
 
 func (f *fakeTestingT) Helper() {}
 
-func TestTesterAssertWithBoolFailure(t *testing.T) {
+func TestAssertWithBoolFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Assert(1 > 5)
-	expectFailNowed(t, fakeT, "assertion failed: 1 > 5 is false")
-
+	Assert(fakeT, 1 == 6)
+	expectFailNowed(t, fakeT, "assertion failed: 1 == 6 is false")
 }
 
-func TestTesterAssertWithBoolFailureAndExtraMessage(t *testing.T) {
+func TestAssertWithBoolFailureAndExtraMessage(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Assert(1 > 5, "sometimes things fail")
+	Assert(fakeT, 1 > 5, "sometimes things fail")
 	expectFailNowed(t, fakeT, "assertion failed: 1 > 5 is false: sometimes things fail")
 }
 
-func TestTesterAssertWithBoolSuccess(t *testing.T) {
+func TestAssertWithBoolSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Assert(1 < 5)
+	Assert(fakeT, 1 < 5)
 	expectSuccess(t, fakeT)
 }
 
-func TestTesterAssertWithBoolMultiLineFailure(t *testing.T) {
+func TestAssertWithBoolMultiLineFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Assert(func() bool {
+	Assert(fakeT, func() bool {
 		for range []int{1, 2, 3, 4} {
 		}
 		return false
@@ -75,38 +70,28 @@ func (c exampleComparison) Compare() (bool, string) {
 	return c.success, c.message
 }
 
-func TestTesterAssertWithComparisonSuccess(t *testing.T) {
+func TestAssertWithComparisonSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
 	cmp := exampleComparison{success: true}
-	assert.Assert(cmp.Compare)
+	Assert(fakeT, cmp.Compare)
 	expectSuccess(t, fakeT)
 }
 
-func TestTesterAssertWithComparisonFailure(t *testing.T) {
+func TestAssertWithComparisonFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
 	cmp := exampleComparison{message: "oops, not good"}
-	assert.Assert(cmp.Compare)
+	Assert(fakeT, cmp.Compare)
 	expectFailNowed(t, fakeT, "assertion failed: oops, not good")
 }
 
-func TestTesterAssertWithComparisonAndExtraMessage(t *testing.T) {
+func TestAssertWithComparisonAndExtraMessage(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
 	cmp := exampleComparison{message: "oops, not good"}
-	assert.Assert(cmp.Compare, "extra stuff %v", true)
+	Assert(fakeT, cmp.Compare, "extra stuff %v", true)
 	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
-}
-
-func TestAssertWithBoolFailure(t *testing.T) {
-	fakeT := &fakeTestingT{}
-
-	Assert(fakeT, 1 == 6)
-	expectFailNowed(t, fakeT, "assertion failed: 1 == 6 is false")
 }
 
 type customError struct{}
@@ -115,92 +100,67 @@ func (e *customError) Error() string {
 	return "custom error"
 }
 
-func TestTesterNilErrorSuccess(t *testing.T) {
+func TestNilErrorSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
 	var err error
-	assert.NilError(err)
+	NilError(fakeT, err)
 	expectSuccess(t, fakeT)
 
-	assert.NilError(nil)
+	NilError(fakeT, nil)
 	expectSuccess(t, fakeT)
 
 	var customErr *customError
-	assert.NilError(customErr)
+	NilError(fakeT, customErr)
 }
 
-func TestTesterNilErrorBadArg(t *testing.T) {
+func TestNilErrorFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.NilError(3, 4, 5)
-	expectFailNowed(t, fakeT, "assertion failed: 5 (type int) can not be nil")
-}
-
-func TestTesterNilErrorFailure(t *testing.T) {
-	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
-
-	assert.NilError(fmt.Errorf("this is the error"))
+	NilError(fakeT, fmt.Errorf("this is the error"))
 	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
 }
 
-func TestTesterNilErrorWithMultiArgFailure(t *testing.T) {
+func TestCheckFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.NilError(func() (bool, int, error) {
-		return true, 3, fmt.Errorf("this is the error")
-	}())
-	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
-}
-
-func TestTesterCheckFailure(t *testing.T) {
-	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
-
-	if assert.Check(1 == 2) {
+	if Check(fakeT, 1 == 2) {
 		t.Error("expected check to return false on failure")
 	}
 	expectFailed(t, fakeT, "assertion failed: 1 == 2 is false")
 }
 
-func TestTesterCheckSuccess(t *testing.T) {
+func TestCheckSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	if !assert.Check(1 == 1) {
+	if !Check(fakeT, 1 == 1) {
 		t.Error("expected check to return true on success")
 	}
 	expectSuccess(t, fakeT)
 }
 
-func TestTesterEqualSuccess(t *testing.T) {
+func TestEqualSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Equal(1, 1)
+	Equal(fakeT, 1, 1)
 	expectSuccess(t, fakeT)
 
-	assert.Equal("abcd", "abcd")
+	Equal(fakeT, "abcd", "abcd")
 	expectSuccess(t, fakeT)
 }
 
-func TestTesterEqualFailure(t *testing.T) {
+func TestEqualFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Equal(1, 3)
+	Equal(fakeT, 1, 3)
 	expectFailNowed(t, fakeT, "assertion failed: 1 (int) != 3 (int)")
 }
 
-func TestTesterEqualFailureTypes(t *testing.T) {
+func TestEqualFailureTypes(t *testing.T) {
 	fakeT := &fakeTestingT{}
-	assert := New(fakeT)
 
-	assert.Equal(3, "3")
-	expectFailNowed(t, fakeT, `assertion failed: 3 (int) != 3 (string)`)
+	Equal(fakeT, 3, uint(3))
+	expectFailNowed(t, fakeT, `assertion failed: 3 (int) != 3 (uint)`)
 }
 
 type testingT interface {
