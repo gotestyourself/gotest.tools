@@ -14,32 +14,30 @@ import (
 // function which will reset the the value of that variable back to the
 // previous state.
 func Patch(t assert.TestingT, key, value string) func() {
-	assert := assert.New(t)
 	oldValue, ok := os.LookupEnv(key)
-	assert.NilError(os.Setenv(key, value))
+	assert.NilError(t, os.Setenv(key, value))
 	return func() {
 		if !ok {
-			assert.NilError(os.Unsetenv(key))
+			assert.NilError(t, os.Unsetenv(key))
 			return
 		}
-		assert.NilError(os.Setenv(key, oldValue))
+		assert.NilError(t, os.Setenv(key, oldValue))
 	}
 }
 
 // PatchAll sets the environment to env, and returns a function which will
 // reset the environment back to the previous state.
 func PatchAll(t assert.TestingT, env map[string]string) func() {
-	assert := assert.New(t)
 	oldEnv := os.Environ()
 	os.Clearenv()
 
 	for key, value := range env {
-		assert.NilError(os.Setenv(key, value))
+		assert.NilError(t, os.Setenv(key, value))
 	}
 	return func() {
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			assert.NilError(os.Setenv(key, oldVal))
+			assert.NilError(t, os.Setenv(key, oldVal))
 		}
 	}
 }

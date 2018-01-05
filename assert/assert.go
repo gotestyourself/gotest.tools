@@ -96,34 +96,19 @@ type helperT interface {
 	Helper()
 }
 
-// Tester wraps a TestingT and provides assertions and checks
-type Tester struct {
-	t          TestingT
-	stackIndex int
-	argPos     int
-}
-
 // stackIndex = Assert()/Check(), assert()
 const stackIndex = 2
+const comparisonArgPos = 1
 
 const failureMessage = "assertion failed: "
 
-// New returns a new Tester for asserting and checking values.
-func New(t TestingT) Tester {
-	return Tester{t: t, stackIndex: stackIndex, argPos: 0}
-}
-
-// Assert performs a comparison, marks the test as having failed if the comparison
-// returns false, and stops execution immediately.
-func (t Tester) Assert(comparison BoolOrComparison, msgAndArgs ...interface{}) {
-	if ht, ok := t.t.(helperT); ok {
-		ht.Helper()
-	}
-	t.assert(t.t.FailNow, comparison, msgAndArgs...)
-}
-
-func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
-	if ht, ok := t.t.(helperT); ok {
+func assert(
+	t TestingT,
+	failer func(),
+	comparison BoolOrComparison,
+	msgAndArgs ...interface{},
+) bool {
+	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
 	switch check := comparison.(type) {
@@ -131,21 +116,21 @@ func (t Tester) assert(failer func(), comparison BoolOrComparison, msgAndArgs ..
 		if check {
 			return true
 		}
-		source, err := source.GetCondition(t.stackIndex, t.argPos)
+		source, err := source.GetCondition(stackIndex, comparisonArgPos)
 		if err != nil {
-			t.t.Log(err.Error())
+			t.Log(err.Error())
 		}
 
 		msg := " is false"
-		t.t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
+		t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
 		failer()
 		return false
 
 	case Comparison:
-		return runCompareFunc(failer, t.t, check, msgAndArgs...)
+		return runCompareFunc(failer, t, check, msgAndArgs...)
 
 	case func() (success bool, message string):
-		return runCompareFunc(failer, t.t, check, msgAndArgs...)
+		return runCompareFunc(failer, t, check, msgAndArgs...)
 
 	default:
 		panic(fmt.Sprintf("invalid type for condition arg: %T", comparison))
@@ -164,41 +149,13 @@ func runCompareFunc(failer func(), t TestingT, f Comparison, msgAndArgs ...inter
 	return true
 }
 
-// Check performs a comparison and marks the test as having failed if the comparison
-// returns false. Returns the result of the comparison.
-func (t Tester) Check(comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
-	if ht, ok := t.t.(helperT); ok {
-		ht.Helper()
-	}
-	return t.assert(t.t.Fail, comparison, msgAndArgs...)
-}
-
-// NilError fails the test immediately if the last arg is a non-nil error.
-// This is equivalent to Assert(cmp.NilError(err))
-func (t Tester) NilError(arg interface{}, args ...interface{}) {
-	if ht, ok := t.t.(helperT); ok {
-		ht.Helper()
-	}
-	t.assert(t.t.FailNow, cmp.NilError(arg, args...))
-}
-
-// Equal uses the == operator to assert two values are equal and fails the test
-// if they are not equal.
-// This is equivalent to Assert(cmp.Equal(x, y))
-func (t Tester) Equal(x, y interface{}, msgAndArgs ...interface{}) {
-	if ht, ok := t.t.(helperT); ok {
-		ht.Helper()
-	}
-	t.assert(t.t.FailNow, cmp.Equal(x, y), msgAndArgs...)
-}
-
-// Assert performs a comparison and fails the test immediate if the comparison
-// is not a success.
+// Assert performs a comparison, marks the test as having failed if the comparison
+// returns false, and stops execution immediately.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	newPackageScopeTester(t).Assert(comparison, msgAndArgs...)
+	assert(t, t.FailNow, comparison, msgAndArgs...)
 }
 
 // Check performs a comparison and marks the test as having failed if the comparison
@@ -207,29 +164,23 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	return newPackageScopeTester(t).Check(comparison, msgAndArgs...)
+	return assert(t, t.Fail, comparison, msgAndArgs...)
 }
 
 // NilError fails the test immediately if the last arg is a non-nil error.
-func NilError(t TestingT, arg interface{}, args ...interface{}) {
+// This is equivalent to Assert(cmp.NilError(err)).
+func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	newPackageScopeTester(t).NilError(arg, args...)
+	assert(t, t.FailNow, cmp.NilError(err), msgAndArgs...)
 }
 
-// Equal uses the == operator to assert two values are equal, and fails the test
+// Equal uses the == operator to assert two values are equal and fails the test
 // if they are not equal.
 func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	newPackageScopeTester(t).Equal(x, y, msgAndArgs...)
-}
-
-// newPackageScopeTester returns a Tester appropriate for package level functions.
-// The tester has stackIndex+1 to accommodate the extra function in the stack, and
-// argPos 1 because package level functions accept testing.T as the first argument
-func newPackageScopeTester(t TestingT) Tester {
-	return Tester{t: t, stackIndex: stackIndex + 1, argPos: 1}
+	assert(t, t.FailNow, cmp.Equal(x, y), msgAndArgs...)
 }
