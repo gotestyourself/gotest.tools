@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-check/check"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -36,10 +37,10 @@ func TestSecondThing(t *testing.T) {
 	assert.Error(t, fmt.Errorf("foo"))
 }
 
-func TestMissed(t *testing.T) {
+func TestAssertNew(t *testing.T) {
 	a := assert.New(t)
 
-	a.Equal(t, "a", "b")
+	a.Equal("a", "b")
 }
 
 type unit struct {
@@ -113,4 +114,19 @@ func TestTableTest(t *testing.T) {
 		assert.Equal(t, testcase.actual, testcase.expected)
 		assert.Equal(t, testcase.opts, testcase.expectedOpts)
 	}
+}
+
+func TestWithChecker(c *check.C) {
+	var err error
+	assert.NoError(c, err)
+}
+
+func HelperWithAssertTestingT(t assert.TestingT) {
+	var err error
+	assert.NoError(t, err, "with assert.TestingT")
+}
+
+func BenchmarkSomething(b *testing.B) {
+	var err error
+	assert.NoError(b, err)
 }

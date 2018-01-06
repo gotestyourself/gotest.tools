@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/build"
 	"go/format"
@@ -83,6 +84,7 @@ func run(opts options) error {
 	if err != nil {
 		return errors.Wrapf(err, "failed to load program")
 	}
+
 	pkgs := program.InitialPackages()
 	debugf("package count: %d", len(pkgs))
 
@@ -124,11 +126,18 @@ func run(opts options) error {
 }
 
 func loadProgram(opts options) (*loader.Program, error) {
+	fakeImporter, err := newFakeImporter()
+	if err != nil {
+		return nil, err
+	}
+	defer fakeImporter.Cleanup()
+
 	conf := loader.Config{
 		Fset:        token.NewFileSet(),
 		ParserMode:  parser.ParseComments,
 		Build:       buildContext(opts),
 		AllowErrors: true,
+		FindPackage: fakeImporter.Import,
 	}
 	for _, pkg := range opts.pkgs {
 		conf.ImportWithTests(pkg)
@@ -136,7 +145,18 @@ func loadProgram(opts options) (*loader.Program, error) {
 	if !opts.showLoaderErrors {
 		conf.TypeChecker.Error = func(e error) {}
 	}
-	return conf.Load()
+	program, err := conf.Load()
+	if opts.showLoaderErrors {
+		for p, pkg := range program.AllPackages {
+			if len(pkg.Errors) > 0 {
+				fmt.Printf("Package %s loaded with some errors:\n", p.Name())
+				for _, err := range pkg.Errors {
+					fmt.Println("    ", err.Error())
+				}
+			}
+		}
+	}
+	return program, err
 }
 
 func buildContext(opts options) *build.Context {
@@ -182,7 +202,7 @@ func (p importNames) funcNameFromTestifyName(name string) string {
 	case p.testifyRequire:
 		return "Assert"
 	default:
-		panic("unknown testify package name: " + name)
+		return ""
 	}
 }
 

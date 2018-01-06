@@ -64,12 +64,17 @@ func newMigrationFromSource(t *testing.T, source string) migration {
 		parser.AllErrors|parser.ParseComments)
 	assert.NilError(t, err)
 
+	fakeImporter, err := newFakeImporter()
+	assert.NilError(t, err)
+	defer fakeImporter.Cleanup()
+
 	opts := options{}
 	conf := loader.Config{
 		Fset:        fileset,
 		ParserMode:  parser.ParseComments,
 		Build:       buildContext(opts),
 		AllowErrors: true,
+		FindPackage: fakeImporter.Import,
 	}
 	conf.TypeChecker.Error = func(e error) {}
 	conf.CreateFromFiles("foo.go", nodes)
@@ -189,6 +194,63 @@ func TestSomething(t *testing.T) {
 	var err error
 	assert.Check(t, cmp.NilError(err))
 	assert.NilError(t, err)
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+}
+
+func TestMigrateFileConvertAssertNew(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+)
+
+func TestSomething(t *testing.T) {
+	is := assert.New(t)
+	is.Equal("one", "two")
+	is.NotEqual("one", "two")
+
+	assert := require.New(t)
+	assert.Equal("one", "two")
+	assert.NotEqual("one", "two")
+}
+
+func TestOtherName(z *testing.T) {
+	is := require.New(z)
+	is.Equal("one", "two")
+}
+
+`
+	migration := newMigrationFromSource(t, source)
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+
+	assert.Check(t, cmp.Equal("one", "two"))
+	assert.Check(t, "one" != "two")
+
+	assert.Assert(t, cmp.Equal("one", "two"))
+	assert.Assert(t, "one" != "two")
+}
+
+func TestOtherName(z *testing.T) {
+
+	assert.Assert(z, cmp.Equal("one", "two"))
 }
 `
 	actual, err := formatFile(migration)

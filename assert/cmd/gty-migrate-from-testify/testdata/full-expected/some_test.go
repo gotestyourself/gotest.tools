@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/go-check/check"
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
@@ -36,10 +37,9 @@ func TestSecondThing(t *testing.T) {
 	assert.Check(t, cmp.ErrorContains(fmt.Errorf("foo"), ""))
 }
 
-func TestMissed(t *testing.T) {
-	a := assert.New(t)
+func TestAssertNew(t *testing.T) {
 
-	a.Equal(t, "a", "b")
+	assert.Check(t, cmp.Equal("a", "b"))
 }
 
 type unit struct {
@@ -113,4 +113,19 @@ func TestTableTest(t *testing.T) {
 		assert.Check(t, cmp.Equal(testcase.actual, testcase.expected))
 		assert.Check(t, cmp.Compare(testcase.opts, testcase.expectedOpts))
 	}
+}
+
+func TestWithChecker(c *check.C) {
+	var err error
+	assert.Check(c, cmp.NilError(err))
+}
+
+func HelperWithAssertTestingT(t assert.TestingT) {
+	var err error
+	assert.Check(t, cmp.NilError(err), "with assert.TestingT")
+}
+
+func BenchmarkSomething(b *testing.B) {
+	var err error
+	assert.Check(b, cmp.NilError(err))
 }

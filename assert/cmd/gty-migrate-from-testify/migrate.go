@@ -1,10 +1,7 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
 	"go/ast"
-	"go/format"
 	"go/token"
 	"go/types"
 	"log"
@@ -23,6 +20,13 @@ const (
 	pkgCmp                 = "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
+var allTestifyPks = []string{
+	pkgTestifyAssert,
+	pkgTestifyRequire,
+	pkgGopkgTestifyAssert,
+	pkgGopkgTestifyRequire,
+}
+
 type migration struct {
 	file        *ast.File
 	fileset     *token.FileSet
@@ -36,12 +40,7 @@ func migrateFile(migration migration) {
 }
 
 func updateImports(migration migration) {
-	for _, remove := range []string{
-		pkgTestifyAssert,
-		pkgTestifyRequire,
-		pkgGopkgTestifyAssert,
-		pkgGopkgTestifyRequire,
-	} {
+	for _, remove := range allTestifyPks {
 		astutil.DeleteImport(migration.fileset, migration.file, remove)
 	}
 
@@ -57,6 +56,18 @@ func updateImports(migration migration) {
 	astutil.AddNamedImport(migration.fileset, migration.file, alias, pkgCmp)
 }
 
+type emptyNode struct{}
+
+func (n emptyNode) Pos() token.Pos {
+	return 0
+}
+
+func (n emptyNode) End() token.Pos {
+	return 0
+}
+
+var removeNode = emptyNode{}
+
 func replaceCalls(migration migration) func(cursor *astutil.Cursor) bool {
 	return func(cursor *astutil.Cursor) bool {
 		var newNode ast.Node
@@ -65,9 +76,15 @@ func replaceCalls(migration migration) func(cursor *astutil.Cursor) bool {
 			newNode = getReplacementTestingT(typed, migration.importNames)
 		case *ast.CallExpr:
 			newNode = getReplacementAssertion(typed, migration)
+		case *ast.AssignStmt:
+			newNode = getReplacementAssignment(typed, migration)
 		}
 
-		if newNode != nil {
+		switch newNode {
+		case nil:
+		case removeNode:
+			cursor.Delete()
+		default:
 			cursor.Replace(newNode)
 		}
 		return true
@@ -89,81 +106,30 @@ func getReplacementTestingT(selector *ast.SelectorExpr, names importNames) ast.N
 }
 
 func getReplacementAssertion(callExpr *ast.CallExpr, migration migration) ast.Node {
-	tcall, ok := newCallFromNode(callExpr, migration)
+	tcall, ok := newTestifyCallFromNode(callExpr, migration)
 	if !ok {
 		return nil
 	}
-	if !migration.importNames.matchesTestify(tcall.xIdent) {
-		return nil
-	}
 	if len(tcall.expr.Args) < 2 {
-		return convertTestifySingleArgCall(tcall, migration)
+		return convertTestifySingleArgCall(tcall)
 	}
 	return convertTestifyAssertion(tcall, migration)
 }
 
-func newCallFromNode(callExpr *ast.CallExpr, migration migration) (call, bool) {
-	c := call{}
-	selector, ok := callExpr.Fun.(*ast.SelectorExpr)
-	if !ok {
-		return c, false
+func getReplacementAssignment(assign *ast.AssignStmt, migration migration) ast.Node {
+	if isAssignmentFromAssertNew(assign, migration) {
+		return removeNode
 	}
-	ident, ok := selector.X.(*ast.Ident)
-	if !ok {
-		return c, false
-	}
-	return call{
-		fileset: migration.fileset,
-		expr:    callExpr,
-		xIdent:  ident,
-		selExpr: selector,
-	}, true
+	return nil
 }
 
-type call struct {
-	fileset *token.FileSet
-	expr    *ast.CallExpr
-	xIdent  *ast.Ident
-	selExpr *ast.SelectorExpr
-}
-
-func (c call) String() string {
-	args := new(bytes.Buffer)
-	format.Node(args, token.NewFileSet(), c.expr)
-	return args.String()
-}
-
-func (c call) StringWithFileInfo() string {
-	if c.fileset.File(c.expr.Pos()) == nil {
-		return fmt.Sprintf("%s at unknown file", c)
-	}
-	return fmt.Sprintf("%s at %s:%d", c,
-		relativePath(c.fileset.File(c.expr.Pos()).Name()),
-		c.fileset.Position(c.expr.Pos()).Line)
-}
-
-func (c call) testingT() ast.Expr {
-	if len(c.expr.Args) == 0 {
-		return nil
-	}
-	return c.expr.Args[0]
-}
-
-func (c call) extraArgs(index int) []ast.Expr {
-	if len(c.expr.Args) <= index {
-		return nil
-	}
-	return c.expr.Args[index:]
-}
-
-func convertTestifySingleArgCall(tcall call, migration migration) ast.Node {
+func convertTestifySingleArgCall(tcall call) ast.Node {
 	switch tcall.selExpr.Sel.Name {
 	case "TestingT":
-		// Already handled as SelectorExpr
+		// handled as SelectorExpr
 		return nil
 	case "New":
-		// TODO: assert.New() - astutil.Apply() -> get selector.X from lhs of assignment
-		log.Printf("%s: not yet implemented", tcall.StringWithFileInfo())
+		// handled by getReplacementAssignment
 		return nil
 	default:
 		log.Printf("%s: skipping unknown selector", tcall.StringWithFileInfo())
@@ -201,7 +167,7 @@ func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 	case "NotNil", "NotNilf":
 		return convertNegativeComparison(tcall, imports, &ast.Ident{Name: "nil"}, 2)
 	case "NotEqual", "NotEqualf":
-		return convertNegativeComparison(tcall, imports, tcall.expr.Args[2], 3)
+		return convertNegativeComparison(tcall, imports, tcall.arg(2), 3)
 	case "Fail", "Failf":
 		return convertFail(tcall, "Error")
 	case "FailNow", "FailNowf":
@@ -234,7 +200,7 @@ func newCallExprWithPosition(tcall call, imports importNames, args []ast.Expr) *
 				Name:    imports.assert,
 				NamePos: tcall.xIdent.NamePos,
 			},
-			Sel: &ast.Ident{Name: imports.funcNameFromTestifyName(tcall.xIdent.Name)},
+			Sel: &ast.Ident{Name: tcall.assert},
 		},
 		Args: args,
 	}
@@ -261,7 +227,7 @@ func convertOneArgComparison(tcall call, imports importNames, cmpName string) as
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			newCallExpr(imports.cmp, cmpName, []ast.Expr{tcall.expr.Args[1]}),
+			newCallExpr(imports.cmp, cmpName, []ast.Expr{tcall.arg(1)}),
 			tcall.extraArgs(2)...))
 }
 
@@ -273,7 +239,7 @@ func convertFalse(tcall call, imports importNames) ast.Node {
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			&ast.UnaryExpr{Op: token.NOT, X: tcall.expr.Args[1]},
+			&ast.UnaryExpr{Op: token.NOT, X: tcall.arg(1)},
 			tcall.extraArgs(2)...))
 }
 
@@ -283,9 +249,9 @@ func convertEqual(tcall call, migration migration) ast.Node {
 	cmpEquals := convertTwoArgComparison(tcall, imports, "Equal")
 	cmpCompare := convertTwoArgComparison(tcall, imports, "Compare")
 
-	gotype := walkForType(migration.pkgInfo, tcall.expr.Args[1])
+	gotype := walkForType(migration.pkgInfo, tcall.arg(1))
 	if isUnknownType(gotype) {
-		gotype = walkForType(migration.pkgInfo, tcall.expr.Args[2])
+		gotype = walkForType(migration.pkgInfo, tcall.arg(2))
 	}
 	if isUnknownType(gotype) {
 		return cmpCompare
@@ -303,7 +269,7 @@ func convertTwoArgComparison(tcall call, imports importNames, cmpName string) as
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			newCallExpr(imports.cmp, cmpName, tcall.expr.Args[1:3]),
+			newCallExpr(imports.cmp, cmpName, tcall.args(1, 3)),
 			tcall.extraArgs(3)...))
 }
 
@@ -314,7 +280,7 @@ func convertError(tcall call, imports importNames) ast.Node {
 			newCallExpr(
 				imports.cmp,
 				"ErrorContains",
-				append(tcall.expr.Args[1:2], &ast.BasicLit{Kind: token.STRING, Value: `""`})),
+				append(tcall.args(1, 2), &ast.BasicLit{Kind: token.STRING, Value: `""`})),
 			tcall.extraArgs(2)...))
 }
 
@@ -325,12 +291,12 @@ func convertEmpty(tcall call, imports importNames) ast.Node {
 			newCallExpr(
 				imports.cmp,
 				"Len",
-				append(tcall.expr.Args[1:2], &ast.BasicLit{Kind: token.INT, Value: "0"})),
+				append(tcall.args(1, 2), &ast.BasicLit{Kind: token.INT, Value: "0"})),
 			tcall.extraArgs(2)...))
 }
 
 func convertNil(tcall call, migration migration) ast.Node {
-	gotype := walkForType(migration.pkgInfo, tcall.expr.Args[1])
+	gotype := walkForType(migration.pkgInfo, tcall.arg(1))
 	if gotype != nil && gotype.String() == "error" {
 		return convertNoError(tcall, migration.importNames)
 	}
@@ -346,7 +312,7 @@ func convertNegativeComparison(
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			&ast.BinaryExpr{X: tcall.expr.Args[1], Op: token.NEQ, Y: right},
+			&ast.BinaryExpr{X: tcall.arg(1), Op: token.NEQ, Y: right},
 			tcall.extraArgs(extra)...))
 }
 
@@ -368,7 +334,7 @@ func convertFail(tcall call, selector string) ast.Node {
 func convertNotEmpty(tcall call, imports importNames) ast.Node {
 	lenExpr := &ast.CallExpr{
 		Fun:  &ast.Ident{Name: "len"},
-		Args: tcall.expr.Args[1:2],
+		Args: tcall.args(1, 2),
 	}
 	zeroExpr := &ast.BasicLit{Kind: token.INT, Value: "0"}
 	return newCallExprWithPosition(tcall, imports,
