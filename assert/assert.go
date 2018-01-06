@@ -74,7 +74,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// BoolOrComparison can be a bool, or Comparison, other types will panic.
+// BoolOrComparison can be a bool, or Comparison. Other types will panic.
 type BoolOrComparison interface{}
 
 // Comparison is a function which compares values and returns true if the actual
@@ -85,7 +85,7 @@ type BoolOrComparison interface{}
 // provides many general purpose Comparisons.
 type Comparison func() (success bool, message string)
 
-// TestingT is the subset of testing.T used by the assert package
+// TestingT is the subset of testing.T used by the assert package.
 type TestingT interface {
 	FailNow()
 	Fail()
@@ -133,7 +133,7 @@ func assert(
 		return runCompareFunc(failer, t, check, msgAndArgs...)
 
 	default:
-		panic(fmt.Sprintf("invalid type for condition arg: %T", comparison))
+		panic(fmt.Sprintf("comparison arg must be bool or Comparison, not %T", comparison))
 	}
 }
 
@@ -168,7 +168,7 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 }
 
 // NilError fails the test immediately if the last arg is a non-nil error.
-// This is equivalent to Assert(cmp.NilError(err)).
+// This is equivalent to Assert(t, cmp.NilError(err)).
 func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -177,7 +177,7 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test
-// if they are not equal.
+// if they are not equal. This is equivalent to Assert(t, cmp.Equal(x, y)).
 func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()

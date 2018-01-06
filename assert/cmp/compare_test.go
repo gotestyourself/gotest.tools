@@ -25,7 +25,7 @@ func TestLen(t *testing.T) {
 		{
 			seq:             []string{"A", "b", "c"},
 			length:          2,
-			expectedMessage: "expected [A b c] to have length 2",
+			expectedMessage: "expected [A b c] (length 3) to have length 2",
 		},
 		{
 			seq:             map[string]int{"a": 1, "b": 2},
@@ -45,7 +45,7 @@ func TestLen(t *testing.T) {
 		{
 			seq:             "abcd",
 			length:          3,
-			expectedMessage: "expected abcd to have length 3",
+			expectedMessage: "expected abcd (length 4) to have length 3",
 		},
 	}
 
