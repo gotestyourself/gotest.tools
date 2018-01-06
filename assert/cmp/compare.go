@@ -12,6 +12,8 @@ import (
 
 // Compare two complex values using https://godoc.org/github.com/google/go-cmp/cmp
 // and succeeds if the values are equal.
+//
+// The comparison can be customized using comparison Options.
 func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	return func() (bool, string) {
 		diff := cmp.Diff(x, y, opts...)
@@ -19,14 +21,14 @@ func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	}
 }
 
-// Equal succeeds if x == y
+// Equal succeeds if x == y.
 func Equal(x, y interface{}) func() (success bool, message string) {
 	return func() (bool, string) {
 		return x == y, fmt.Sprintf("%v (%T) != %v (%T)", x, x, y, y)
 	}
 }
 
-// Len succeeds if the sequence has the expected length
+// Len succeeds if the sequence has the expected length.
 func Len(seq interface{}, expected int) func() (bool, string) {
 	return func() (success bool, message string) {
 		defer func() {
@@ -36,14 +38,16 @@ func Len(seq interface{}, expected int) func() (bool, string) {
 			}
 		}()
 		value := reflect.ValueOf(seq)
-		if value.Len() == expected {
+		length := value.Len()
+		if length == expected {
 			return true, ""
 		}
-		return false, fmt.Sprintf("expected %s to have length %d", seq, expected)
+		msg := fmt.Sprintf("expected %s (length %d) to have length %d", seq, length, expected)
+		return false, msg
 	}
 }
 
-// NilError succeeds if the last argument is a nil error
+// NilError succeeds if the last argument is a nil error.
 func NilError(arg interface{}, args ...interface{}) func() (bool, string) {
 	return func() (bool, string) {
 		msgFunc := func(value reflect.Value) string {
@@ -102,7 +106,7 @@ func Contains(collection interface{}, item interface{}) func() (bool, string) {
 	}
 }
 
-// Panics succeeds if f() panics
+// Panics succeeds if f() panics.
 func Panics(f func()) func() (bool, string) {
 	return func() (success bool, message string) {
 		defer func() {
