@@ -14,7 +14,13 @@ import (
 // Path objects return their filesystem path. Both File and Dir implement Path.
 type Path interface {
 	Path() string
+	Remove()
 }
+
+var (
+	_ Path = &Dir{}
+	_ Path = &File{}
+)
 
 // File is a temporary file on the filesystem
 type File struct {
