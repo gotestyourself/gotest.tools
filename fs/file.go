@@ -27,9 +27,16 @@ type File struct {
 	path string
 }
 
+type helperT interface {
+	Helper()
+}
+
 // NewFile creates a new file in a temporary directory using prefix as part of
 // the filename. The PathOps are applied to the before returning the File.
 func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	tempfile, err := ioutil.TempFile("", prefix+"-")
 	assert.NilError(t, err)
 	file := &File{path: tempfile.Name()}
@@ -60,6 +67,9 @@ type Dir struct {
 // NewDir returns a new temporary directory using prefix as part of the directory
 // name. The PathOps are applied before returning the Dir.
 func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	path, err := ioutil.TempDir("", prefix+"-")
 	assert.NilError(t, err)
 	dir := &Dir{path: path}

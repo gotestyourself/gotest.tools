@@ -18,6 +18,10 @@ type skipT interface {
 	Log(args ...interface{})
 }
 
+type helperT interface {
+	Helper()
+}
+
 // BoolOrCheckFunc can be a bool or func() bool, other types will panic
 type BoolOrCheckFunc interface{}
 
@@ -25,6 +29,9 @@ type BoolOrCheckFunc interface{}
 // contain the name of the check function. Extra message text can be passed as a
 // format string with args
 func If(t skipT, condition BoolOrCheckFunc, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	switch check := condition.(type) {
 	case bool:
 		ifCondition(t, check, msgAndArgs...)
@@ -48,10 +55,16 @@ func getFunctionName(function func() bool) string {
 //
 // Deprecated: Use If() which now accepts bool arguments
 func IfCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	ifCondition(t, condition, msgAndArgs...)
 }
 
 func ifCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	if !condition {
 		return
 	}
