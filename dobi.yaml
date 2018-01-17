@@ -13,6 +13,8 @@ image=builder:
   image: gotestyourself-dev
   context: dobifiles/
   dockerfile: Dockerfile
+  args:
+    GOLANG_VERSION: '{env.GOLANG_VERSION:}' 
 
 image=linter:
   image: gotestyourself-lint
