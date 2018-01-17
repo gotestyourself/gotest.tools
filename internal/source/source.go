@@ -7,6 +7,8 @@ import (
 	"go/parser"
 	"go/token"
 	"runtime"
+	"strconv"
+	"strings"
 
 	"github.com/pkg/errors"
 )
@@ -38,7 +40,7 @@ func getNodeAtLine(filename string, lineNum int) (ast.Node, error) {
 
 	node := scanToLine(fileset, astFile, lineNum)
 	if node == nil {
-		return nil, errors.Wrapf(err,
+		return nil, errors.Errorf(
 			"failed to find an expression on line %d in %s", lineNum, filename)
 	}
 	return node, nil
@@ -60,27 +62,40 @@ func (v *scanToLineVisitor) Visit(node ast.Node) ast.Visitor {
 	if node == nil || v.matchedNode != nil {
 		return nil
 	}
-
-	var position token.Position
-	switch {
-	case runtime.Version() < "go1.9":
-		position = v.fileset.Position(node.End())
-	default:
-		position = v.fileset.Position(node.Pos())
-	}
-
-	if position.Line == v.lineNum {
+	if v.nodePosition(node).Line == v.lineNum {
 		v.matchedNode = node
 		return nil
 	}
 	return v
 }
 
+func (v *scanToLineVisitor) nodePosition(node ast.Node) token.Position {
+	if isGOVersionBefore19() {
+		return v.fileset.Position(node.End())
+	}
+	return v.fileset.Position(node.Pos())
+}
+
+func isGOVersionBefore19() bool {
+	version := runtime.Version()
+	// not a release version
+	if !strings.HasPrefix(version, "go") {
+		return false
+	}
+	version = strings.TrimPrefix(version, "go")
+	parts := strings.Split(version, ".")
+	if len(parts) < 2 {
+		return false
+	}
+	minor, err := strconv.ParseInt(parts[1], 10, 32)
+	return err == nil && parts[0] == "1" && minor < 9
+}
+
 func getArgSourceFromAST(node ast.Node, argPos int) (string, error) {
 	visitor := &callExprVisitor{}
 	ast.Walk(visitor, node)
 	if visitor.expr == nil {
-		return "", errors.Errorf("unexpected ast")
+		return "", errors.New("unexpected ast")
 	}
 
 	buf := new(bytes.Buffer)
@@ -93,17 +108,14 @@ type callExprVisitor struct {
 }
 
 func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
-	switch typed := node.(type) {
-	case nil:
+	if v.expr != nil || node == nil {
 		return nil
-	case *ast.IfStmt:
-		ast.Walk(v, typed.Cond)
+	}
+	switch typed := node.(type) {
 	case *ast.CallExpr:
 		v.expr = typed
-	}
-
-	if v.expr != nil {
 		return nil
+	default:
+		return v
 	}
-	return v
 }
