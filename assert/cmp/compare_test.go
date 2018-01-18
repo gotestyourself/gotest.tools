@@ -10,6 +10,28 @@ import (
 	"github.com/pkg/errors"
 )
 
+func TestCompare(t *testing.T) {
+	success, msg := Compare([]string{"a", "b"}, []string{"b", "a"})()
+	assertFailure(t, success, msg, `
+{[]string}:
+	-: []string{"a", "b"}
+	+: []string{"b", "a"}
+`)
+
+	success, msg = Compare([]string{"a"}, []string{"a"})()
+	assertSuccess(t, success, msg)
+}
+
+type Stub struct {
+	unx int
+}
+
+func TestCompareWithUnexported(t *testing.T) {
+	success, msg := Compare(Stub{}, Stub{unx: 1})()
+	assertFailure(t, success, msg, `cannot handle unexported field: {cmp.Stub}.unx
+consider using AllowUnexported or cmpopts.IgnoreUnexported`)
+}
+
 func TestLen(t *testing.T) {
 	var testcases = []struct {
 		seq             interface{}

@@ -15,10 +15,30 @@ import (
 //
 // The comparison can be customized using comparison Options.
 func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
-	return func() (bool, string) {
+	return func() (success bool, msg string) {
+		defer func() {
+			if panicmsg, handled := handleCmpPanic(recover()); handled {
+				msg = panicmsg
+			}
+		}()
 		diff := cmp.Diff(x, y, opts...)
 		return diff == "", "\n" + diff
 	}
+}
+
+func handleCmpPanic(r interface{}) (string, bool) {
+	if r == nil {
+		return "", false
+	}
+	panicmsg, ok := r.(string)
+	if !ok {
+		panic(r)
+	}
+	switch {
+	case strings.HasPrefix(panicmsg, "cannot handle unexported field"):
+		return panicmsg, true
+	}
+	panic(r)
 }
 
 // Equal succeeds if x == y.
