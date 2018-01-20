@@ -20,10 +20,11 @@ func TestFirstThing(t *testing.T) {
 	assert.Equal(t, 1, 2)
 	assert.True(t, false)
 	assert.False(t, true)
-	require.NoError(t, nil)
+	require.NoError(rt, nil)
 
 	assert.Equal(t, map[string]bool{"a": true}, nil)
 	assert.Equal(t, []int{1}, nil)
+	require.Equal(rt, "a", "B")
 }
 
 func TestSecondThing(t *testing.T) {
@@ -33,6 +34,7 @@ func TestSecondThing(t *testing.T) {
 	require.Equal(t, mystruct{}, mystruct{})
 
 	assert.NoError(t, nil, "foo %d", 3)
+	require.NoError(t, nil, "foo %d", 3)
 
 	assert.Error(t, fmt.Errorf("foo"))
 }

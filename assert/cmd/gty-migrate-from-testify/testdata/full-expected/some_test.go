@@ -20,19 +20,21 @@ func TestFirstThing(t *testing.T) {
 	assert.Check(t, cmp.Equal(1, 2))
 	assert.Check(t, false)
 	assert.Check(t, !true)
-	assert.NilError(t, nil)
+	assert.NilError(rt, nil)
 
-	assert.Check(t, cmp.Compare(map[string]bool{"a": true}, nil))
-	assert.Check(t, cmp.Compare([]int{1}, nil))
+	assert.Check(t, cmp.DeepEqual(map[string]bool{"a": true}, nil))
+	assert.Check(t, cmp.DeepEqual([]int{1}, nil))
+	assert.Equal(rt, "a", "B")
 }
 
 func TestSecondThing(t *testing.T) {
 	var foo mystruct
-	assert.Assert(t, cmp.Compare(foo, mystruct{}))
+	assert.DeepEqual(t, foo, mystruct{})
 
-	assert.Assert(t, cmp.Compare(mystruct{}, mystruct{}))
+	assert.DeepEqual(t, mystruct{}, mystruct{})
 
-	assert.Check(t, cmp.NilError(nil), "foo %d", 3)
+	assert.Check(t, nil, "foo %d", 3)
+	assert.NilError(t, nil, "foo %d", 3)
 
 	assert.Check(t, cmp.ErrorContains(fmt.Errorf("foo"), ""))
 }
@@ -64,10 +66,10 @@ func TestNotNamedT(c *testing.T) {
 
 func TestEqualsWithComplexTypes(t *testing.T) {
 	expected := []int{1, 2, 3}
-	assert.Check(t, cmp.Compare(expected, nil))
+	assert.Check(t, cmp.DeepEqual(expected, nil))
 
 	expectedM := map[int]bool{}
-	assert.Check(t, cmp.Compare(expectedM, nil))
+	assert.Check(t, cmp.DeepEqual(expectedM, nil))
 
 	expectedI := 123
 	assert.Check(t, cmp.Equal(expectedI, 0))
@@ -111,21 +113,21 @@ func TestTableTest(t *testing.T) {
 
 	for _, testcase := range testcases {
 		assert.Check(t, cmp.Equal(testcase.actual, testcase.expected))
-		assert.Check(t, cmp.Compare(testcase.opts, testcase.expectedOpts))
+		assert.Check(t, cmp.DeepEqual(testcase.opts, testcase.expectedOpts))
 	}
 }
 
 func TestWithChecker(c *check.C) {
 	var err error
-	assert.Check(c, cmp.NilError(err))
+	assert.Check(c, err)
 }
 
 func HelperWithAssertTestingT(t assert.TestingT) {
 	var err error
-	assert.Check(t, cmp.NilError(err), "with assert.TestingT")
+	assert.Check(t, err, "with assert.TestingT")
 }
 
 func BenchmarkSomething(b *testing.B) {
 	var err error
-	assert.Check(b, cmp.NilError(err))
+	assert.Check(b, err)
 }

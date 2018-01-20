@@ -20,6 +20,11 @@ const (
 	pkgCmp                 = "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
+const (
+	funcNameAssert = "Assert"
+	funcNameCheck  = "Check"
+)
+
 var allTestifyPks = []string{
 	pkgTestifyAssert,
 	pkgTestifyRequire,
@@ -207,20 +212,25 @@ func newCallExprWithPosition(tcall call, imports importNames, args []ast.Expr) *
 }
 
 func convertNoError(tcall call, imports importNames) ast.Node {
-	// use assert.NoError() if there are no extra args
-	if len(tcall.expr.Args) == 2 && tcall.xIdent.Name == imports.testifyRequire {
-		return &ast.CallExpr{
-			Fun: &ast.SelectorExpr{
-				X: &ast.Ident{
-					Name:    imports.assert,
-					NamePos: tcall.xIdent.NamePos,
-				},
-				Sel: &ast.Ident{Name: "NilError"},
-			},
-			Args: tcall.expr.Args,
-		}
+	// use assert.NilError() for require.NoError()
+	if tcall.assert == funcNameAssert {
+		return newCallExprWithoutComparison(tcall, imports, "NilError")
 	}
-	return convertOneArgComparison(tcall, imports, "NilError")
+	// use assert.Check() for assert.NoError()
+	return newCallExprWithoutComparison(tcall, imports, "Check")
+}
+
+func newCallExprWithoutComparison(tcall call, imports importNames, name string) ast.Node {
+	return &ast.CallExpr{
+		Fun: &ast.SelectorExpr{
+			X: &ast.Ident{
+				Name:    imports.assert,
+				NamePos: tcall.xIdent.NamePos,
+			},
+			Sel: &ast.Ident{Name: name},
+		},
+		Args: tcall.expr.Args,
+	}
 }
 
 func convertOneArgComparison(tcall call, imports importNames, cmpName string) ast.Node {
@@ -246,22 +256,28 @@ func convertFalse(tcall call, imports importNames) ast.Node {
 func convertEqual(tcall call, migration migration) ast.Node {
 	imports := migration.importNames
 
-	cmpEquals := convertTwoArgComparison(tcall, imports, "Equal")
-	cmpCompare := convertTwoArgComparison(tcall, imports, "Compare")
+	cmpEqual := convertTwoArgComparison(tcall, imports, "Equal")
+	if tcall.assert == funcNameAssert {
+		cmpEqual = newCallExprWithoutComparison(tcall, imports, "Equal")
+	}
+	cmpDeepEqual := convertTwoArgComparison(tcall, imports, "DeepEqual")
+	if tcall.assert == funcNameAssert {
+		cmpDeepEqual = newCallExprWithoutComparison(tcall, imports, "DeepEqual")
+	}
 
 	gotype := walkForType(migration.pkgInfo, tcall.arg(1))
 	if isUnknownType(gotype) {
 		gotype = walkForType(migration.pkgInfo, tcall.arg(2))
 	}
 	if isUnknownType(gotype) {
-		return cmpCompare
+		return cmpDeepEqual
 	}
 
 	switch gotype.Underlying().(type) {
 	case *types.Basic:
-		return cmpEquals
+		return cmpEqual
 	default:
-		return cmpCompare
+		return cmpDeepEqual
 	}
 }
 

@@ -198,11 +198,11 @@ func (p importNames) matchesTestify(ident *ast.Ident) bool {
 func (p importNames) funcNameFromTestifyName(name string) string {
 	switch name {
 	case p.testifyAssert:
-		return "Check"
+		return funcNameCheck
 	case p.testifyRequire:
-		return "Assert"
+		return funcNameAssert
 	default:
-		return ""
+		panic("unexpected testify import name " + name)
 	}
 }
 

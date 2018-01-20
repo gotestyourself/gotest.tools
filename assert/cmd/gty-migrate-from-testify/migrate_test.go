@@ -52,7 +52,7 @@ func do(t assert.TestingT) {}
 `
 	actual, err := formatFile(migration)
 	assert.NilError(t, err)
-	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
 
 func newMigrationFromSource(t *testing.T, source string) migration {
@@ -123,7 +123,7 @@ func TestSomething(t *testing.T) {
 `
 	actual, err := formatFile(migration)
 	assert.NilError(t, err)
-	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
 
 func TestMigrateFileWithCommentsOnAssert(t *testing.T) {
@@ -159,7 +159,7 @@ func TestSomething(t *testing.T) {
 `
 	actual, err := formatFile(migration)
 	assert.NilError(t, err)
-	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
 
 func TestMigrateFileConvertNilToNilError(t *testing.T) {
@@ -187,18 +187,17 @@ import (
 	"testing"
 
 	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
 	var err error
-	assert.Check(t, cmp.NilError(err))
+	assert.Check(t, err)
 	assert.NilError(t, err)
 }
 `
 	actual, err := formatFile(migration)
 	assert.NilError(t, err)
-	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
 
 func TestMigrateFileConvertAssertNew(t *testing.T) {
@@ -244,16 +243,16 @@ func TestSomething(t *testing.T) {
 	assert.Check(t, cmp.Equal("one", "two"))
 	assert.Check(t, "one" != "two")
 
-	assert.Assert(t, cmp.Equal("one", "two"))
+	assert.Equal(t, "one", "two")
 	assert.Assert(t, "one" != "two")
 }
 
 func TestOtherName(z *testing.T) {
 
-	assert.Assert(z, cmp.Equal("one", "two"))
+	assert.Equal(z, "one", "two")
 }
 `
 	actual, err := formatFile(migration)
 	assert.NilError(t, err)
-	assert.Assert(t, cmp.EqualMultiLine(expected, string(actual)))
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
