@@ -71,7 +71,7 @@ func Len(seq interface{}, expected int) func() (bool, string) {
 func NilError(arg interface{}, args ...interface{}) func() (bool, string) {
 	return func() (bool, string) {
 		msgFunc := func(value reflect.Value) string {
-			return fmt.Sprintf("error is not nil: %s", value.Interface().(error).Error())
+			return fmt.Sprintf("error is not nil: %+v", value.Interface().(error))
 		}
 		if len(args) == 0 {
 			return isNil(arg, msgFunc)()
@@ -170,7 +170,7 @@ func Error(err error, message string) func() (bool, string) {
 			return false, "expected an error, got nil"
 		case err.Error() != message:
 			return false, fmt.Sprintf(
-				"expected error message %q, got %q", message, err.Error())
+				"expected error %q, got %+v", message, err)
 		}
 		return true, ""
 	}
@@ -185,7 +185,7 @@ func ErrorContains(err error, substring string) func() (bool, string) {
 			return false, "expected an error, got nil"
 		case !strings.Contains(err.Error(), substring):
 			return false, fmt.Sprintf(
-				"expected error message to contain %q, got %q", substring, err.Error())
+				"expected error to contain %q, got %+v", substring, err)
 		}
 		return true, ""
 	}
