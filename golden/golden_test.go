@@ -52,7 +52,7 @@ func TestGoldenGet(t *testing.T) {
 
 	actual := Get(fakeT, filename)
 	assert.Assert(t, !fakeT.Failed)
-	assert.Assert(t, cmp.Compare(actual, []byte(expected)))
+	assert.Assert(t, cmp.DeepEqual(actual, []byte(expected)))
 }
 
 func TestGoldenAssertInvalidContent(t *testing.T) {

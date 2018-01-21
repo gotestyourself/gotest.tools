@@ -10,11 +10,11 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-// Compare two complex values using https://godoc.org/github.com/google/go-cmp/cmp
+// DeepEqual compares two values using https://godoc.org/github.com/google/go-cmp/cmp
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
-func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
+func DeepEqual(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
 	return func() (success bool, msg string) {
 		defer func() {
 			if panicmsg, handled := handleCmpPanic(recover()); handled {

@@ -87,5 +87,5 @@ func AssertBytes(t assert.TestingT, actual []byte, filename string, msgAndArgs .
 	}
 	update(t, filename, actual)
 	expected := Get(t, filename)
-	return assert.Check(t, cmp.Compare(expected, actual), msgAndArgs...)
+	return assert.Check(t, cmp.DeepEqual(expected, actual), msgAndArgs...)
 }

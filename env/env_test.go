@@ -44,10 +44,10 @@ func TestPatchAll(t *testing.T) {
 
 	actual := os.Environ()
 	sort.Strings(actual)
-	assert.Assert(t, cmp.Compare([]string{"FIRST=STARS", "THEN=MOON"}, actual))
+	assert.Assert(t, cmp.DeepEqual([]string{"FIRST=STARS", "THEN=MOON"}, actual))
 
 	revert()
-	assert.Assert(t, cmp.Compare(sorted(oldEnv), sorted(os.Environ())))
+	assert.Assert(t, cmp.DeepEqual(sorted(oldEnv), sorted(os.Environ())))
 }
 
 func sorted(source []string) []string {
@@ -59,5 +59,5 @@ func TestToMap(t *testing.T) {
 	source := []string{"key=value", "novaluekey"}
 	actual := ToMap(source)
 	expected := map[string]string{"key": "value", "novaluekey": ""}
-	assert.Assert(t, cmp.Compare(expected, actual))
+	assert.Assert(t, cmp.DeepEqual(expected, actual))
 }

@@ -40,7 +40,7 @@ The example below shows assert used with some common types.
 	    assert.Assert(t, is.Len(items, 3))
 	    assert.Assert(t, len(sequence) != 0) // NotEmpty
 	    assert.Assert(t, is.Contains(mapping, "key"))
-	    assert.Assert(t, is.Compare(result, myStruct{Name: "title"}))
+	    assert.Assert(t, is.DeepEqual(result, myStruct{Name: "title"}))
 
 	    // pointers and interface
 	    assert.Assert(t, is.Nil(ref))
