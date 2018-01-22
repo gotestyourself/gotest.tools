@@ -16,7 +16,7 @@ func compare(x, y interface{}) func() (bool, string) {
 	elapsedPath := func(path gocmp.Path) bool {
 		return path.Last().String() == ".Elapsed"
 	}
-	return cmp.Compare(x, y,
+	return cmp.DeepEqual(x, y,
 		gocmp.AllowUnexported(Failure{}),
 		gocmp.FilterPath(elapsedPath, gocmp.Ignore()))
 }

@@ -40,7 +40,7 @@ The example below shows assert used with some common types.
 	    assert.Assert(t, is.Len(items, 3))
 	    assert.Assert(t, len(sequence) != 0) // NotEmpty
 	    assert.Assert(t, is.Contains(mapping, "key"))
-	    assert.Assert(t, is.Compare(result, myStruct{Name: "title"}))
+	    assert.Assert(t, is.DeepEqual(result, myStruct{Name: "title"}))
 
 	    // pointers and interface
 	    assert.Assert(t, is.Nil(ref))
@@ -74,16 +74,8 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// BoolOrComparison can be a bool, or Comparison. Other types will panic.
+// BoolOrComparison can be a bool, or cmp.Comparison. Other types will panic.
 type BoolOrComparison interface{}
-
-// Comparison is a function which compares values and returns true if the actual
-// value matches the expected value. If the values do not match it returns a message
-// with details about why it failed.
-//
-// https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp
-// provides many general purpose Comparisons.
-type Comparison func() (success bool, message string)
 
 // TestingT is the subset of testing.T used by the assert package.
 type TestingT interface {
@@ -126,7 +118,7 @@ func assert(
 		failer()
 		return false
 
-	case Comparison:
+	case cmp.Comparison:
 		return runCompareFunc(failer, t, check, msgAndArgs...)
 
 	case func() (success bool, message string):
@@ -137,7 +129,7 @@ func assert(
 	}
 }
 
-func runCompareFunc(failer func(), t TestingT, f Comparison, msgAndArgs ...interface{}) bool {
+func runCompareFunc(failer func(), t TestingT, f cmp.Comparison, msgAndArgs ...interface{}) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}

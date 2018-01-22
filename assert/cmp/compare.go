@@ -10,11 +10,16 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-// Compare two complex values using https://godoc.org/github.com/google/go-cmp/cmp
+// Comparison is a function which compares values and returns true if the actual
+// value matches the expected value. If the values do not match it returns a message
+// with details about why it failed.
+type Comparison func() (success bool, message string)
+
+// DeepEqual compares two values using https://godoc.org/github.com/google/go-cmp/cmp
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
-func Compare(x, y interface{}, opts ...cmp.Option) func() (bool, string) {
+func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 	return func() (success bool, msg string) {
 		defer func() {
 			if panicmsg, handled := handleCmpPanic(recover()); handled {
@@ -49,7 +54,7 @@ func Equal(x, y interface{}) func() (success bool, message string) {
 }
 
 // Len succeeds if the sequence has the expected length.
-func Len(seq interface{}, expected int) func() (bool, string) {
+func Len(seq interface{}, expected int) Comparison {
 	return func() (success bool, message string) {
 		defer func() {
 			if e := recover(); e != nil {
@@ -68,7 +73,7 @@ func Len(seq interface{}, expected int) func() (bool, string) {
 }
 
 // NilError succeeds if the last argument is a nil error.
-func NilError(arg interface{}, args ...interface{}) func() (bool, string) {
+func NilError(arg interface{}, args ...interface{}) Comparison {
 	return func() (bool, string) {
 		msgFunc := func(value reflect.Value) string {
 			return fmt.Sprintf("error is not nil: %s", value.Interface().(error).Error())
@@ -88,7 +93,7 @@ func NilError(arg interface{}, args ...interface{}) func() (bool, string) {
 // If collection is a Map, contains will succeed if item is a key in the map.
 // If collection is a slice or array, item is compared to each item in the
 // sequence using reflect.DeepEqual().
-func Contains(collection interface{}, item interface{}) func() (bool, string) {
+func Contains(collection interface{}, item interface{}) Comparison {
 	return func() (bool, string) {
 		colValue := reflect.ValueOf(collection)
 		if !colValue.IsValid() {
@@ -127,7 +132,7 @@ func Contains(collection interface{}, item interface{}) func() (bool, string) {
 }
 
 // Panics succeeds if f() panics.
-func Panics(f func()) func() (bool, string) {
+func Panics(f func()) Comparison {
 	return func() (success bool, message string) {
 		defer func() {
 			if err := recover(); err != nil {
@@ -141,7 +146,7 @@ func Panics(f func()) func() (bool, string) {
 
 // EqualMultiLine succeeds if the two strings are equal. If they are not equal
 // the failure message will be the difference between the two strings.
-func EqualMultiLine(x, y string) func() (bool, string) {
+func EqualMultiLine(x, y string) Comparison {
 	return func() (bool, string) {
 		if x == y {
 			return true, ""
@@ -163,7 +168,7 @@ func EqualMultiLine(x, y string) func() (bool, string) {
 
 // Error succeeds if err is a non-nil error, and the error message equals the
 // expected message.
-func Error(err error, message string) func() (bool, string) {
+func Error(err error, message string) Comparison {
 	return func() (bool, string) {
 		switch {
 		case err == nil:
@@ -178,7 +183,7 @@ func Error(err error, message string) func() (bool, string) {
 
 // ErrorContains succeeds if err is a non-nil error, and the error message contains
 // the expected substring.
-func ErrorContains(err error, substring string) func() (bool, string) {
+func ErrorContains(err error, substring string) Comparison {
 	return func() (bool, string) {
 		switch {
 		case err == nil:
@@ -195,14 +200,14 @@ func ErrorContains(err error, substring string) func() (bool, string) {
 //
 // Use NilError() for comparing errors. Use Len(obj, 0) for comparing slices,
 // maps, and channels.
-func Nil(obj interface{}) func() (bool, string) {
+func Nil(obj interface{}) Comparison {
 	msgFunc := func(value reflect.Value) string {
 		return fmt.Sprintf("%v (type %s) is not nil", reflect.Indirect(value), value.Type())
 	}
 	return isNil(obj, msgFunc)
 }
 
-func isNil(obj interface{}, msgFunc func(reflect.Value) string) func() (bool, string) {
+func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 	return func() (bool, string) {
 		if obj == nil {
 			return true, ""

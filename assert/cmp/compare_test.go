@@ -7,18 +7,19 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 )
 
-func TestCompare(t *testing.T) {
-	success, msg := Compare([]string{"a", "b"}, []string{"b", "a"})()
+func TestDeepEqual(t *testing.T) {
+	success, msg := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
 	assertFailure(t, success, msg, `
 {[]string}:
 	-: []string{"a", "b"}
 	+: []string{"b", "a"}
 `)
 
-	success, msg = Compare([]string{"a"}, []string{"a"})()
+	success, msg = DeepEqual([]string{"a"}, []string{"a"})()
 	assertSuccess(t, success, msg)
 }
 
@@ -26,8 +27,8 @@ type Stub struct {
 	unx int
 }
 
-func TestCompareWithUnexported(t *testing.T) {
-	success, msg := Compare(Stub{}, Stub{unx: 1})()
+func TestDeepEqualeWithUnexported(t *testing.T) {
+	success, msg := DeepEqual(Stub{}, Stub{unx: 1})()
 	assertFailure(t, success, msg, `cannot handle unexported field: {cmp.Stub}.unx
 consider using AllowUnexported or cmpopts.IgnoreUnexported`)
 }
@@ -133,29 +134,32 @@ type stub struct {
 	num  int
 }
 
-func TestDeepEqual(t *testing.T) {
+func TestDeepEqualEquivalenceToReflectDeepEqual(t *testing.T) {
 	var testcases = []struct {
-		left     interface{}
-		right    interface{}
-		expected bool
+		left  interface{}
+		right interface{}
 	}{
-		{nil, nil, true},
-		{7, 7, true},
-		{false, false, true},
-		{stub{innerstub{1}, 2}, stub{innerstub{1}, 2}, true},
-		{[]int{1, 2, 3}, []int{1, 2, 3}, true},
-		{[]byte(nil), []byte(nil), true},
-		{nil, []byte(nil), false},
-		{1, uint64(1), false},
-		{7, "7", false},
+		{nil, nil},
+		{7, 7},
+		{false, false},
+		{stub{innerstub{1}, 2}, stub{innerstub{1}, 2}},
+		{[]int{1, 2, 3}, []int{1, 2, 3}},
+		{[]byte(nil), []byte(nil)},
+		{nil, []byte(nil)},
+		{1, uint64(1)},
+		{7, "7"},
 	}
 	for _, testcase := range testcases {
-		if reflect.DeepEqual(testcase.left, testcase.right) != testcase.expected {
-			t.Errorf("deepEqual(%v, %v) did not return %v",
-				testcase.left, testcase.right, testcase.expected)
+		expected := reflect.DeepEqual(testcase.left, testcase.right)
+		success, msg := DeepEqual(testcase.left, testcase.right, cmpStub)()
+		if success != expected {
+			t.Errorf("deepEqual(%v, %v) did not return %v (message %s)",
+				testcase.left, testcase.right, expected, msg)
 		}
 	}
 }
+
+var cmpStub = cmp.AllowUnexported(stub{}, innerstub{})
 
 func TestContains(t *testing.T) {
 	var testcases = []struct {
