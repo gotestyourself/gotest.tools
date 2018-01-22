@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"reflect"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -268,8 +269,8 @@ func TestError(t *testing.T) {
 	assertFailure(t, success, message, "expected an error, got nil")
 
 	success, message = Error(errors.New("other"), "the error message")()
-	assertFailure(t, success, message,
-		`expected error message "the error message", got "other"`)
+	assertFailureHasPrefix(t, success, message,
+		`expected error "the error message", got other`)
 
 	msg := "the message"
 	success, message = Error(errors.New(msg), msg)()
@@ -281,8 +282,8 @@ func TestErrorContains(t *testing.T) {
 	assertFailure(t, success, message, "expected an error, got nil")
 
 	success, message = ErrorContains(errors.New("other"), "the error")()
-	assertFailure(t, success, message,
-		`expected error message to contain "the error", got "other"`)
+	assertFailureHasPrefix(t, success, message,
+		`expected error to contain "the error", got other`)
 
 	msg := "the full message"
 	success, message = ErrorContains(errors.New(msg), "full")()
@@ -338,5 +339,17 @@ func assertFailure(t testingT, success bool, message string, expected string) {
 	}
 	if message != expected {
 		t.Errorf("expected \n%q\ngot\n%q\n", expected, message)
+	}
+}
+
+func assertFailureHasPrefix(t testingT, success bool, message string, prefix string) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	if success {
+		t.Errorf("expected failure")
+	}
+	if !strings.HasPrefix(message, prefix) {
+		t.Errorf("expected \n%v\nto start with\n%v\n", message, prefix)
 	}
 }
