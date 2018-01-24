@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
@@ -38,5 +39,18 @@ func TestGetConditionIfStatement(t *testing.T) {
 }
 
 func shim(_, _, _ string) (string, error) {
-	return source.GetCondition(1, 2)
+	return source.FormattedCallExprArg(1, 2)
+}
+
+func TestGetConditionMultipleCallsOnSameLine(t *testing.T) {
+	msg, err := shimcaller("foo")()
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.EqualMultiLine(`"foo"`, msg))
+
+}
+
+func shimcaller(_ string) func() (string, error) {
+	return func() (string, error) {
+		return source.FormattedCallExprArg(1, 0)
+	}
 }
