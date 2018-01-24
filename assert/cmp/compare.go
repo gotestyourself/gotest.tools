@@ -15,6 +15,9 @@ import (
 // with details about why it failed.
 type Comparison func() (success bool, message string)
 
+// ComparisonWithResult is a Comparison that returns a Result object.
+type ComparisonWithResult func() Result
+
 // DeepEqual compares two values using https://godoc.org/github.com/google/go-cmp/cmp
 // and succeeds if the values are equal.
 //
@@ -47,9 +50,20 @@ func handleCmpPanic(r interface{}) (string, bool) {
 }
 
 // Equal succeeds if x == y.
-func Equal(x, y interface{}) func() (success bool, message string) {
-	return func() (bool, string) {
-		return x == y, fmt.Sprintf("%v (%T) != %v (%T)", x, x, y, y)
+func Equal(x, y interface{}) ComparisonWithResult {
+	return func() Result {
+		if x == y {
+			return ResultSuccess
+		}
+		return TemplatedResultFailure(`
+			{{- .Data.x}} (
+				{{- with index .Args 0 }}{{ formatNode . }} {{end -}}
+				{{- printf "%T" .Data.x -}}
+			) != {{ .Data.y}} (
+				{{- with index .Args 1 }}{{ formatNode . }} {{end -}}
+				{{- printf "%T" .Data.y -}}
+			)`,
+			map[string]interface{}{"x": x, "y": y})
 	}
 }
 

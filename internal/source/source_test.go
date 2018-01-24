@@ -46,7 +46,6 @@ func TestGetConditionMultipleCallsOnSameLine(t *testing.T) {
 	msg, err := shimcaller("foo")()
 	assert.NilError(t, err)
 	assert.Assert(t, cmp.EqualMultiLine(`"foo"`, msg))
-
 }
 
 func shimcaller(_ string) func() (string, error) {
