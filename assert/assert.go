@@ -69,7 +69,6 @@ package assert
 
 import (
 	"fmt"
-	"go/ast"
 
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/internal/format"
@@ -95,7 +94,7 @@ const failureMessage = "assertion failed: "
 func assert(
 	t TestingT,
 	failer func(),
-	argsFilter func([]ast.Expr) []ast.Expr,
+	argsFilter astExprListFilter,
 	comparison BoolOrComparison,
 	msgAndArgs ...interface{},
 ) bool {
@@ -110,17 +109,15 @@ func assert(
 		}
 		logFailureFromBool(t, msgAndArgs...)
 
-	case cmp.Comparison:
-		success = runCompareFunc(t, check, msgAndArgs...)
-
+	// Undocumented legacy comparison without Result type
 	case func() (success bool, message string):
 		success = runCompareFunc(t, check, msgAndArgs...)
 
-	case cmp.ComparisonWithResult:
-		success = runCompareWithResultFunc(t, argsFilter, check, msgAndArgs...)
+	case cmp.Comparison:
+		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
 	case func() cmp.Result:
-		success = runCompareWithResultFunc(t, argsFilter, check, msgAndArgs...)
+		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
 	default:
 		panic(fmt.Sprintf("comparison arg must be bool or Comparison, not %T", comparison))
@@ -133,7 +130,11 @@ func assert(
 	return false
 }
 
-func runCompareFunc(t TestingT, f cmp.Comparison, msgAndArgs ...interface{}) bool {
+func runCompareFunc(
+	t TestingT,
+	f func() (success bool, message string),
+	msgAndArgs ...interface{},
+) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}

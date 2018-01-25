@@ -9,10 +9,10 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-func runCompareWithResultFunc(
+func runComparison(
 	t TestingT,
 	argsFilter astExprListFilter,
-	f cmp.ComparisonWithResult,
+	f cmp.Comparison,
 	msgAndArgs ...interface{},
 ) bool {
 	if ht, ok := t.(helperT); ok {
@@ -26,12 +26,14 @@ func runCompareWithResultFunc(
 	var message string
 	switch typed := result.(type) {
 	case resultWithComparisonArgs:
-		const stackIndex = 3 // Assert/Check, assert, runCompareWithResultFunc
+		const stackIndex = 3 // Assert/Check, assert, runComparison
 		args, err := source.CallExprArgs(stackIndex)
 		if err != nil {
 			t.Log(err.Error())
 		}
 		message = typed.FailureMessage(argsFilter(args))
+	case resultBasic:
+		message = typed.FailureMessage()
 	default:
 		message = fmt.Sprintf("comparison returned invalid Result type: %T", result)
 	}
@@ -42,6 +44,10 @@ func runCompareWithResultFunc(
 
 type resultWithComparisonArgs interface {
 	FailureMessage(args []ast.Expr) string
+}
+
+type resultBasic interface {
+	FailureMessage() string
 }
 
 type astExprListFilter func([]ast.Expr) []ast.Expr

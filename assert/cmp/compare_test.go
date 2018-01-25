@@ -13,15 +13,15 @@ import (
 )
 
 func TestDeepEqual(t *testing.T) {
-	success, msg := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
-	assertFailure(t, success, msg, `
+	result := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
+	assertFailure(t, result, `
 {[]string}:
 	-: []string{"a", "b"}
 	+: []string{"b", "a"}
 `)
 
-	success, msg = DeepEqual([]string{"a"}, []string{"a"})()
-	assertSuccess(t, success, msg)
+	result = DeepEqual([]string{"a"}, []string{"a"})()
+	assertSuccess(t, result)
 }
 
 type Stub struct {
@@ -29,8 +29,8 @@ type Stub struct {
 }
 
 func TestDeepEqualeWithUnexported(t *testing.T) {
-	success, msg := DeepEqual(Stub{}, Stub{unx: 1})()
-	assertFailure(t, success, msg, `cannot handle unexported field: {cmp.Stub}.unx
+	result := DeepEqual(Stub{}, Stub{unx: 1})()
+	assertFailure(t, result, `cannot handle unexported field: {cmp.Stub}.unx
 consider using AllowUnexported or cmpopts.IgnoreUnexported`)
 }
 
@@ -75,11 +75,11 @@ func TestLen(t *testing.T) {
 
 	for _, testcase := range testcases {
 		t.Run(fmt.Sprintf("%v len=%d", testcase.seq, testcase.length), func(t *testing.T) {
-			success, message := Len(testcase.seq, testcase.length)()
+			result := Len(testcase.seq, testcase.length)()
 			if testcase.expectedSuccess {
-				assertSuccess(t, success, message)
+				assertSuccess(t, result)
 			} else {
-				assertFailure(t, success, message, testcase.expectedMessage)
+				assertFailure(t, result, testcase.expectedMessage)
 			}
 		})
 	}
@@ -91,27 +91,27 @@ func (e *stubError) Error() string { return "stub error" }
 
 func TestNilError(t *testing.T) {
 	var s *stubError
-	success, message := NilError(s)()
-	assertSuccess(t, success, message)
+	result := NilError(s)()
+	assertSuccess(t, result)
 
-	success, message = NilError(nil)()
-	assertSuccess(t, success, message)
+	result = NilError(nil)()
+	assertSuccess(t, result)
 
 	var e error
-	success, message = NilError(e)()
-	assertSuccess(t, success, message)
+	result = NilError(e)()
+	assertSuccess(t, result)
 
 	buf := new(bytes.Buffer)
-	success, message = NilError(buf.WriteString("ok"))()
-	assertSuccess(t, success, message)
+	result = NilError(buf.WriteString("ok"))()
+	assertSuccess(t, result)
 
 	s = &stubError{}
-	success, message = NilError(s)()
-	assertFailure(t, success, message, "error is not nil: stub error")
+	result = NilError(s)()
+	assertFailure(t, result, "error is not nil: stub error")
 
 	e = &stubError{}
-	success, message = NilError(e)()
-	assertFailure(t, success, message, "error is not nil: stub error")
+	result = NilError(e)()
+	assertFailure(t, result, "error is not nil: stub error")
 }
 
 func TestPanics(t *testing.T) {
@@ -119,11 +119,11 @@ func TestPanics(t *testing.T) {
 		panic("AHHHHHHHHHHH")
 	}
 
-	success, message := Panics(panicker)()
-	assertSuccess(t, success, message)
+	result := Panics(panicker)()
+	assertSuccess(t, result)
 
-	success, message = Panics(func() {})()
-	assertFailure(t, success, message, "did not panic")
+	result = Panics(func() {})()
+	assertFailure(t, result, "did not panic")
 }
 
 type innerstub struct {
@@ -152,8 +152,9 @@ func TestDeepEqualEquivalenceToReflectDeepEqual(t *testing.T) {
 	}
 	for _, testcase := range testcases {
 		expected := reflect.DeepEqual(testcase.left, testcase.right)
-		success, msg := DeepEqual(testcase.left, testcase.right, cmpStub)()
-		if success != expected {
+		res := DeepEqual(testcase.left, testcase.right, cmpStub)()
+		if res.Success() != expected {
+			msg := res.(result).FailureMessage()
 			t.Errorf("deepEqual(%v, %v) did not return %v (message %s)",
 				testcase.left, testcase.right, expected, msg)
 		}
@@ -228,11 +229,11 @@ func TestContains(t *testing.T) {
 	for _, testcase := range testcases {
 		name := fmt.Sprintf("%v in %v", testcase.item, testcase.seq)
 		t.Run(name, func(t *testing.T) {
-			success, message := Contains(testcase.seq, testcase.item)()
+			result := Contains(testcase.seq, testcase.item)()
 			if testcase.expected {
-				assertSuccess(t, success, message)
+				assertSuccess(t, result)
 			} else {
-				assertFailure(t, success, message, testcase.expectedMsg)
+				assertFailure(t, result, testcase.expectedMsg)
 			}
 		})
 	}
@@ -260,57 +261,57 @@ bbbb`
  bbbb
 `
 
-	success, msg := EqualMultiLine(left, right)()
-	assertFailure(t, success, msg, expected)
+	result := EqualMultiLine(left, right)()
+	assertFailure(t, result, expected)
 }
 
 func TestError(t *testing.T) {
-	success, message := Error(nil, "the error message")()
-	assertFailure(t, success, message, "expected an error, got nil")
+	result := Error(nil, "the error message")()
+	assertFailure(t, result, "expected an error, got nil")
 
-	success, message = Error(errors.New("other"), "the error message")()
-	assertFailureHasPrefix(t, success, message,
+	result = Error(errors.New("other"), "the error message")()
+	assertFailureHasPrefix(t, result,
 		`expected error "the error message", got other`)
 
 	msg := "the message"
-	success, message = Error(errors.New(msg), msg)()
-	assertSuccess(t, success, message)
+	result = Error(errors.New(msg), msg)()
+	assertSuccess(t, result)
 }
 
 func TestErrorContains(t *testing.T) {
-	success, message := ErrorContains(nil, "the error message")()
-	assertFailure(t, success, message, "expected an error, got nil")
+	result := ErrorContains(nil, "the error message")()
+	assertFailure(t, result, "expected an error, got nil")
 
-	success, message = ErrorContains(errors.New("other"), "the error")()
-	assertFailureHasPrefix(t, success, message,
+	result = ErrorContains(errors.New("other"), "the error")()
+	assertFailureHasPrefix(t, result,
 		`expected error to contain "the error", got other`)
 
 	msg := "the full message"
-	success, message = ErrorContains(errors.New(msg), "full")()
-	assertSuccess(t, success, message)
+	result = ErrorContains(errors.New(msg), "full")()
+	assertSuccess(t, result)
 }
 
 func TestNil(t *testing.T) {
-	success, message := Nil(nil)()
-	assertSuccess(t, success, message)
+	result := Nil(nil)()
+	assertSuccess(t, result)
 
 	var s *string
-	success, message = Nil(s)()
-	assertSuccess(t, success, message)
+	result = Nil(s)()
+	assertSuccess(t, result)
 
 	var closer io.Closer
-	success, message = Nil(closer)()
-	assertSuccess(t, success, message)
+	result = Nil(closer)()
+	assertSuccess(t, result)
 
-	success, message = Nil("wrong")()
-	assertFailure(t, success, message, "wrong (type string) can not be nil")
+	result = Nil("wrong")()
+	assertFailure(t, result, "wrong (type string) can not be nil")
 
 	notnil := "notnil"
-	success, message = Nil(&notnil)()
-	assertFailure(t, success, message, "notnil (type *string) is not nil")
+	result = Nil(&notnil)()
+	assertFailure(t, result, "notnil (type *string) is not nil")
 
-	success, message = Nil([]string{"a"})()
-	assertFailure(t, success, message, "[a] (type []string) is not nil")
+	result = Nil([]string{"a"})()
+	assertFailure(t, result, "[a] (type []string) is not nil")
 }
 
 type testingT interface {
@@ -321,34 +322,37 @@ type helperT interface {
 	Helper()
 }
 
-func assertSuccess(t testingT, success bool, message string) {
+func assertSuccess(t testingT, res Result) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	if !success {
-		t.Errorf("expected success, but got failure with message %q", message)
+	if !res.Success() {
+		msg := res.(result).FailureMessage()
+		t.Errorf("expected success, but got failure with message %q", msg)
 	}
 }
 
-func assertFailure(t testingT, success bool, message string, expected string) {
+func assertFailure(t testingT, res Result, expected string) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	if success {
+	if res.Success() {
 		t.Errorf("expected failure")
 	}
+	message := res.(result).FailureMessage()
 	if message != expected {
 		t.Errorf("expected \n%q\ngot\n%q\n", expected, message)
 	}
 }
 
-func assertFailureHasPrefix(t testingT, success bool, message string, prefix string) {
+func assertFailureHasPrefix(t testingT, res Result, prefix string) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	if success {
+	if res.Success() {
 		t.Errorf("expected failure")
 	}
+	message := res.(result).FailureMessage()
 	if !strings.HasPrefix(message, prefix) {
 		t.Errorf("expected \n%v\nto start with\n%v\n", message, prefix)
 	}

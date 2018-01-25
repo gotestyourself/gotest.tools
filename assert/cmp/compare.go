@@ -10,27 +10,24 @@ import (
 	"github.com/pmezard/go-difflib/difflib"
 )
 
-// Comparison is a function which compares values and returns true if the actual
-// value matches the expected value. If the values do not match it returns a message
-// with details about why it failed.
-type Comparison func() (success bool, message string)
-
-// ComparisonWithResult is a Comparison that returns a Result object.
-type ComparisonWithResult func() Result
+// Comparison is a function which compares values and returns ResultSuccess if
+// the actual value matches the expected value. If the values do not match the
+// Result will contain a message about why it failed.
+type Comparison func() Result
 
 // DeepEqual compares two values using https://godoc.org/github.com/google/go-cmp/cmp
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
 func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
-	return func() (success bool, msg string) {
+	return func() (result Result) {
 		defer func() {
 			if panicmsg, handled := handleCmpPanic(recover()); handled {
-				msg = panicmsg
+				result = ResultFailure(panicmsg)
 			}
 		}()
 		diff := cmp.Diff(x, y, opts...)
-		return diff == "", "\n" + diff
+		return toResult(diff == "", "\n"+diff)
 	}
 }
 
@@ -49,13 +46,20 @@ func handleCmpPanic(r interface{}) (string, bool) {
 	panic(r)
 }
 
+func toResult(success bool, msg string) Result {
+	if success {
+		return ResultSuccess
+	}
+	return ResultFailure(msg)
+}
+
 // Equal succeeds if x == y.
-func Equal(x, y interface{}) ComparisonWithResult {
+func Equal(x, y interface{}) Comparison {
 	return func() Result {
 		if x == y {
 			return ResultSuccess
 		}
-		return TemplatedResultFailure(`
+		return ResultFailureTemplate(`
 			{{- .Data.x}} (
 				{{- with index .Args 0 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.x -}}
@@ -69,26 +73,25 @@ func Equal(x, y interface{}) ComparisonWithResult {
 
 // Len succeeds if the sequence has the expected length.
 func Len(seq interface{}, expected int) Comparison {
-	return func() (success bool, message string) {
+	return func() (result Result) {
 		defer func() {
 			if e := recover(); e != nil {
-				success = false
-				message = fmt.Sprintf("type %T does not have a length", seq)
+				result = ResultFailure(fmt.Sprintf("type %T does not have a length", seq))
 			}
 		}()
 		value := reflect.ValueOf(seq)
 		length := value.Len()
 		if length == expected {
-			return true, ""
+			return ResultSuccess
 		}
 		msg := fmt.Sprintf("expected %s (length %d) to have length %d", seq, length, expected)
-		return false, msg
+		return ResultFailure(msg)
 	}
 }
 
 // NilError succeeds if the last argument is a nil error.
 func NilError(arg interface{}, args ...interface{}) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		msgFunc := func(value reflect.Value) string {
 			return fmt.Sprintf("error is not nil: %+v", value.Interface().(error))
 		}
@@ -108,10 +111,10 @@ func NilError(arg interface{}, args ...interface{}) Comparison {
 // If collection is a slice or array, item is compared to each item in the
 // sequence using reflect.DeepEqual().
 func Contains(collection interface{}, item interface{}) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		colValue := reflect.ValueOf(collection)
 		if !colValue.IsValid() {
-			return false, fmt.Sprintf("nil does not contain items")
+			return ResultFailure(fmt.Sprintf("nil does not contain items"))
 		}
 		msg := fmt.Sprintf("%v does not contain %v", collection, item)
 
@@ -119,51 +122,51 @@ func Contains(collection interface{}, item interface{}) Comparison {
 		switch colValue.Type().Kind() {
 		case reflect.String:
 			if itemValue.Type().Kind() != reflect.String {
-				return false, "string may only contain strings"
+				return ResultFailure("string may only contain strings")
 			}
-			success := strings.Contains(colValue.String(), itemValue.String())
-			return success, fmt.Sprintf("string %q does not contain %q", collection, item)
+			return toResult(
+				strings.Contains(colValue.String(), itemValue.String()),
+				fmt.Sprintf("string %q does not contain %q", collection, item))
 
 		case reflect.Map:
 			if itemValue.Type() != colValue.Type().Key() {
-				return false, fmt.Sprintf(
-					"%v can not contain a %v key", colValue.Type(), itemValue.Type())
+				return ResultFailure(fmt.Sprintf(
+					"%v can not contain a %v key", colValue.Type(), itemValue.Type()))
 			}
-			index := colValue.MapIndex(itemValue)
-			return index.IsValid(), msg
+			return toResult(colValue.MapIndex(itemValue).IsValid(), msg)
 
 		case reflect.Slice, reflect.Array:
 			for i := 0; i < colValue.Len(); i++ {
 				if reflect.DeepEqual(colValue.Index(i).Interface(), item) {
-					return true, ""
+					return ResultSuccess
 				}
 			}
-			return false, msg
+			return ResultFailure(msg)
 		default:
-			return false, fmt.Sprintf("type %T does not contain items", collection)
+			return ResultFailure(fmt.Sprintf("type %T does not contain items", collection))
 		}
 	}
 }
 
 // Panics succeeds if f() panics.
 func Panics(f func()) Comparison {
-	return func() (success bool, message string) {
+	return func() (result Result) {
 		defer func() {
 			if err := recover(); err != nil {
-				success = true
+				result = ResultSuccess
 			}
 		}()
 		f()
-		return false, "did not panic"
+		return ResultFailure("did not panic")
 	}
 }
 
 // EqualMultiLine succeeds if the two strings are equal. If they are not equal
 // the failure message will be the difference between the two strings.
 func EqualMultiLine(x, y string) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		if x == y {
-			return true, ""
+			return ResultSuccess
 		}
 
 		diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
@@ -174,39 +177,39 @@ func EqualMultiLine(x, y string) Comparison {
 			Context:  3,
 		})
 		if err != nil {
-			return false, fmt.Sprintf("failed to produce diff: %s", err)
+			return ResultFailure(fmt.Sprintf("failed to produce diff: %s", err))
 		}
-		return false, "\n" + diff
+		return ResultFailure("\n" + diff)
 	}
 }
 
 // Error succeeds if err is a non-nil error, and the error message equals the
 // expected message.
 func Error(err error, message string) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		switch {
 		case err == nil:
-			return false, "expected an error, got nil"
+			return ResultFailure("expected an error, got nil")
 		case err.Error() != message:
-			return false, fmt.Sprintf(
-				"expected error %q, got %+v", message, err)
+			return ResultFailure(fmt.Sprintf(
+				"expected error %q, got %+v", message, err))
 		}
-		return true, ""
+		return ResultSuccess
 	}
 }
 
 // ErrorContains succeeds if err is a non-nil error, and the error message contains
 // the expected substring.
 func ErrorContains(err error, substring string) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		switch {
 		case err == nil:
-			return false, "expected an error, got nil"
+			return ResultFailure("expected an error, got nil")
 		case !strings.Contains(err.Error(), substring):
-			return false, fmt.Sprintf(
-				"expected error to contain %q, got %+v", substring, err)
+			return ResultFailure(fmt.Sprintf(
+				"expected error to contain %q, got %+v", substring, err))
 		}
-		return true, ""
+		return ResultSuccess
 	}
 }
 
@@ -222,19 +225,19 @@ func Nil(obj interface{}) Comparison {
 }
 
 func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
-	return func() (bool, string) {
+	return func() Result {
 		if obj == nil {
-			return true, ""
+			return ResultSuccess
 		}
 		value := reflect.ValueOf(obj)
 		kind := value.Type().Kind()
 		if kind >= reflect.Chan && kind <= reflect.Slice {
 			if value.IsNil() {
-				return true, ""
+				return ResultSuccess
 			}
-			return false, msgFunc(value)
+			return ResultFailure(msgFunc(value))
 		}
 
-		return false, fmt.Sprintf("%v (type %s) can not be nil", value, value.Type())
+		return ResultFailure(fmt.Sprintf("%v (type %s) can not be nil", value, value.Type()))
 	}
 }

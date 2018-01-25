@@ -9,12 +9,31 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// TODO: deprecate old (string, bool) result in favor of another interface?
-
 // Result of a Comparison.
 type Result interface {
-	// Success returns true if the comparison was successful.
 	Success() bool
+}
+
+type result struct {
+	success bool
+	message string
+}
+
+func (r result) Success() bool {
+	return r.success
+}
+
+func (r result) FailureMessage() string {
+	return r.message
+}
+
+// ResultSuccess is a constant which is returned by a ComparisonWithResult to
+// indicate success.
+var ResultSuccess = result{success: true}
+
+// ResultFailure returns a failed Result with a failure message.
+func ResultFailure(message string) Result {
+	return result{message: message}
 }
 
 type templatedResult struct {
@@ -35,13 +54,11 @@ func (r templatedResult) FailureMessage(args []ast.Expr) string {
 	return msg
 }
 
-// ResultSuccess is a constant which is returned by a ComparisonWithResult to
-// indicate success.
-var ResultSuccess = templatedResult{success: true}
-
-// TemplatedResultFailure returns a Result with a template string and data which will be
-// used to format a failure message.
-func TemplatedResultFailure(template string, data map[string]interface{}) Result {
+// ResultFailureTemplate returns a Result with a template string and data which will be
+// used to format a failure message. The template may access data from .Data,
+// the comparison args as .Args ([]ast.Expr), and the formatNode function for
+// formatting the args.
+func ResultFailureTemplate(template string, data map[string]interface{}) Result {
 	return templatedResult{template: template, data: data}
 }
 
