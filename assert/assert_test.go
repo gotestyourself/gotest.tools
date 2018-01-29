@@ -187,6 +187,15 @@ func TestEqualFailureWithSelectorArgument(t *testing.T) {
 		"assertion failed: ok (string) != foo (testcase.expected string)")
 }
 
+func TestEqualFailureWithIndexExpr(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	expected := map[string]string{"foo": "bar"}
+	Equal(fakeT, "ok", expected["foo"])
+	expectFailNowed(t, fakeT,
+		`assertion failed: ok (string) != bar (expected["foo"] string)`)
+}
+
 func TestEqualFailureWithCallExprArgument(t *testing.T) {
 	fakeT := &fakeTestingT{}
 	ce := customError{}

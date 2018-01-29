@@ -11,7 +11,7 @@ import (
 
 func runComparison(
 	t TestingT,
-	argsFilter astExprListFilter,
+	exprFilter astExprListFilter,
 	f cmp.Comparison,
 	msgAndArgs ...interface{},
 ) bool {
@@ -31,7 +31,7 @@ func runComparison(
 		if err != nil {
 			t.Log(err.Error())
 		}
-		message = typed.FailureMessage(argsFilter(args))
+		message = typed.FailureMessage(filterPrintableExpr(exprFilter(args)))
 	case resultBasic:
 		message = typed.FailureMessage()
 	default:
@@ -52,19 +52,19 @@ type resultBasic interface {
 
 type astExprListFilter func([]ast.Expr) []ast.Expr
 
-// filterArgs filters the ast.Expr slice to only include nodes that are easy to
-// read when printed and contain relevant information to an assertion.
+// filterPrintableExpr filters the ast.Expr slice to only include nodes that are
+// easy to read when printed and contain relevant information to an assertion.
 //
 // Ident and SelectorExpr are included because they print nicely and the variable
 // names may provide additional context to their values.
 // BasicLit and CompositeLit are excluded because their source is equivalent to
 // their value, which is already available.
 // Other types are ignored for now, but could be added if they are relevant.
-func filterArgs(args []ast.Expr) []ast.Expr {
+func filterPrintableExpr(args []ast.Expr) []ast.Expr {
 	result := make([]ast.Expr, len(args))
 	for i, arg := range args {
 		switch arg.(type) {
-		case *ast.Ident, *ast.SelectorExpr:
+		case *ast.Ident, *ast.SelectorExpr, *ast.IndexExpr, *ast.SliceExpr:
 			result[i] = arg
 		default:
 			result[i] = nil
@@ -74,7 +74,7 @@ func filterArgs(args []ast.Expr) []ast.Expr {
 }
 
 func filterExprExcludeFirst(args []ast.Expr) []ast.Expr {
-	return filterArgs(args[1:])
+	return args[1:]
 }
 
 func filterExprArgsFromComparison(args []ast.Expr) []ast.Expr {
@@ -82,7 +82,7 @@ func filterExprArgsFromComparison(args []ast.Expr) []ast.Expr {
 		return nil
 	}
 	if callExpr, ok := args[1].(*ast.CallExpr); ok {
-		return filterArgs(callExpr.Args)
+		return callExpr.Args
 	}
 	return nil
 }
