@@ -36,6 +36,15 @@ func ResultFailure(message string) Result {
 	return result{message: message}
 }
 
+// ResultFromError returns ResultSuccess if err is nil. Otherwise ResultFailure
+// is returned with the error message as the failure message.
+func ResultFromError(err error) Result {
+	if err == nil {
+		return ResultSuccess
+	}
+	return ResultFailure(err.Error())
+}
+
 type templatedResult struct {
 	success  bool
 	template string

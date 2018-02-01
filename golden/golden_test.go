@@ -119,3 +119,33 @@ func setupGoldenFile(t *testing.T, content string) (string, func()) {
 		assert.NilError(t, os.Remove(f.Name()))
 	}
 }
+
+func TestStringFailure(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "this is\nthe text")
+	defer clean()
+
+	result := String("this is\nnot the text", filename)()
+	assert.Assert(t, !result.Success())
+	assert.Equal(t, result.(failure).FailureMessage(), `
+--- expected
++++ actual
+@@ -1,2 +1,2 @@
+ this is
+-the text
++not the text
+`)
+}
+
+type failure interface {
+	FailureMessage() string
+}
+
+func TestBytesFailure(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "5556")
+	defer clean()
+
+	result := Bytes([]byte("5555"), filename)()
+	assert.Assert(t, !result.Success())
+	assert.Equal(t, result.(failure).FailureMessage(),
+		`[53 53 53 53] (actual) != [53 53 53 54] (expected)`)
+}

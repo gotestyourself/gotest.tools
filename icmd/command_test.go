@@ -8,21 +8,18 @@ import (
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	"github.com/gotestyourself/gotestyourself/skip"
 )
 
 func TestRunCommandSuccess(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Needs porting to Windows")
-	}
+	skip.If(t, runtime.GOOS == "windows", "ls not available")
 
 	result := RunCommand("ls")
 	result.Assert(t, Success)
 }
 
 func TestRunCommandWithCombined(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Needs porting to Windows")
-	}
+	skip.If(t, runtime.GOOS == "windows", "ls not available")
 
 	result := RunCommand("ls", "-a")
 	result.Assert(t, Expected{})
@@ -32,9 +29,7 @@ func TestRunCommandWithCombined(t *testing.T) {
 }
 
 func TestRunCommandWithTimeoutFinished(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Needs porting to Windows")
-	}
+	skip.If(t, runtime.GOOS == "windows", "ls not available")
 
 	result := RunCmd(Cmd{
 		Command: []string{"ls", "-a"},
@@ -44,9 +39,7 @@ func TestRunCommandWithTimeoutFinished(t *testing.T) {
 }
 
 func TestRunCommandWithTimeoutKilled(t *testing.T) {
-	if runtime.GOOS == "windows" {
-		t.Skip("Needs porting to Windows")
-	}
+	skip.If(t, runtime.GOOS == "windows", "sh not available")
 
 	command := []string{"sh", "-c", "while true ; do echo 1 ; sleep .5 ; done"}
 	result := RunCmd(Cmd{Command: command, Timeout: 1250 * time.Millisecond})
