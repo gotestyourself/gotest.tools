@@ -102,24 +102,24 @@ func (e *customError) Error() string {
 	return "custom error"
 }
 
-func TestNilErrorSuccess(t *testing.T) {
+func TestAssertWithNilSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
 	var err error
-	NilError(fakeT, err)
+	Assert(fakeT, err)
 	expectSuccess(t, fakeT)
 
-	NilError(fakeT, nil)
+	Assert(fakeT, nil)
 	expectSuccess(t, fakeT)
 
 	var customErr *customError
-	NilError(fakeT, customErr)
+	Assert(fakeT, customErr)
 }
 
-func TestNilErrorFailure(t *testing.T) {
+func TestAssertWithErrorFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
-	NilError(fakeT, fmt.Errorf("this is the error"))
+	Assert(fakeT, fmt.Errorf("this is the error"))
 	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
 }
 

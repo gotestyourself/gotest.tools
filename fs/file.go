@@ -38,12 +38,12 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 		ht.Helper()
 	}
 	tempfile, err := ioutil.TempFile("", prefix+"-")
-	assert.NilError(t, err)
+	assert.Assert(t, err)
 	file := &File{path: tempfile.Name()}
-	assert.NilError(t, tempfile.Close())
+	assert.Assert(t, tempfile.Close())
 
 	for _, op := range ops {
-		assert.NilError(t, op(file))
+		assert.Assert(t, op(file))
 	}
 	return file
 }
@@ -71,11 +71,11 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 		ht.Helper()
 	}
 	path, err := ioutil.TempDir("", prefix+"-")
-	assert.NilError(t, err)
+	assert.Assert(t, err)
 	dir := &Dir{path: path}
 
 	for _, op := range ops {
-		assert.NilError(t, op(dir))
+		assert.Assert(t, op(dir))
 	}
 	return dir
 }
