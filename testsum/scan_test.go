@@ -9,16 +9,16 @@ import (
 
 	gocmp "github.com/google/go-cmp/cmp"
 	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	is "github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
-func compare(x, y interface{}) func() (bool, string) {
-	elapsedPath := func(path gocmp.Path) bool {
-		return path.Last().String() == ".Elapsed"
-	}
-	return cmp.DeepEqual(x, y,
-		gocmp.AllowUnexported(Failure{}),
-		gocmp.FilterPath(elapsedPath, gocmp.Ignore()))
+var cmpSummary = gocmp.Options{
+	gocmp.AllowUnexported(Failure{}),
+	gocmp.FilterPath(
+		func(path gocmp.Path) bool {
+			return path.Last().String() == ".Elapsed"
+		},
+		gocmp.Ignore()),
 }
 
 func TestScanNoFailures(t *testing.T) {
@@ -47,7 +47,7 @@ ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
-	assert.Check(t, compare(&Summary{Total: 8, Skipped: 1}, summary))
+	assert.Check(t, is.DeepEqual(&Summary{Total: 8, Skipped: 1}, summary, cmpSummary))
 	assert.Equal(t, source, out.String())
 
 }
@@ -72,7 +72,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
 	assert.Check(t, summary.Elapsed != 0)
-	assert.Check(t, cmp.Equal(source, out.String()))
+	assert.Check(t, is.Equal(source, out.String()))
 
 	expected := &Summary{
 		Total: 3,
@@ -84,7 +84,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 			},
 		},
 	}
-	assert.Check(t, compare(expected, summary))
+	assert.Check(t, is.DeepEqual(expected, summary, cmpSummary))
 }
 
 func TestScanWithNested(t *testing.T) {
@@ -107,7 +107,7 @@ PASS
 	assert.Check(t, summary.Elapsed != 0)
 
 	expected := &Summary{Total: 1}
-	assert.Check(t, compare(expected, summary))
+	assert.Check(t, is.DeepEqual(expected, summary, cmpSummary))
 }
 
 func TestScanWithNestedFailures(t *testing.T) {
@@ -154,7 +154,7 @@ Output from  c
 			{name: "TestNested", output: expectedOutput, logs: expectedLogs},
 		},
 	}
-	assert.Check(t, compare(expected, summary))
+	assert.Check(t, is.DeepEqual(expected, summary, cmpSummary))
 }
 
 func TestSummaryFormatLine(t *testing.T) {

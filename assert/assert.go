@@ -89,57 +89,72 @@ type helperT interface {
 	Helper()
 }
 
-// stackIndex = Assert()/Check(), assert()
-const stackIndex = 2
-const comparisonArgPos = 1
-
 const failureMessage = "assertion failed: "
 
 func assert(
 	t TestingT,
 	failer func(),
+	argsFilter astExprListFilter,
 	comparison BoolOrComparison,
 	msgAndArgs ...interface{},
 ) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
+	var success bool
 	switch check := comparison.(type) {
 	case bool:
 		if check {
 			return true
 		}
-		source, err := source.GetCondition(stackIndex, comparisonArgPos)
-		if err != nil {
-			t.Log(err.Error())
-		}
+		logFailureFromBool(t, msgAndArgs...)
 
-		msg := " is false"
-		t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
-		failer()
-		return false
+	// Undocumented legacy comparison without Result type
+	case func() (success bool, message string):
+		success = runCompareFunc(t, check, msgAndArgs...)
 
 	case cmp.Comparison:
-		return runCompareFunc(failer, t, check, msgAndArgs...)
+		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
-	case func() (success bool, message string):
-		return runCompareFunc(failer, t, check, msgAndArgs...)
+	case func() cmp.Result:
+		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
 	default:
 		panic(fmt.Sprintf("comparison arg must be bool or Comparison, not %T", comparison))
 	}
+
+	if success {
+		return true
+	}
+	failer()
+	return false
 }
 
-func runCompareFunc(failer func(), t TestingT, f cmp.Comparison, msgAndArgs ...interface{}) bool {
+func runCompareFunc(
+	t TestingT,
+	f func() (success bool, message string),
+	msgAndArgs ...interface{},
+) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
 	if success, message := f(); !success {
 		t.Log(format.WithCustomMessage(failureMessage+message, msgAndArgs...))
-		failer()
 		return false
 	}
 	return true
+}
+
+func logFailureFromBool(t TestingT, msgAndArgs ...interface{}) {
+	const stackIndex = 3 // Assert()/Check(), assert(), formatFailureFromBool()
+	const comparisonArgPos = 1
+	source, err := source.FormattedCallExprArg(stackIndex, comparisonArgPos)
+	if err != nil {
+		t.Log(err.Error())
+	}
+
+	msg := " is false"
+	t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
 }
 
 // Assert performs a comparison, marks the test as having failed if the comparison
@@ -148,7 +163,7 @@ func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) 
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, comparison, msgAndArgs...)
+	assert(t, t.FailNow, filterExprArgsFromComparison, comparison, msgAndArgs...)
 }
 
 // Check performs a comparison and marks the test as having failed if the comparison
@@ -157,7 +172,7 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	return assert(t, t.Fail, comparison, msgAndArgs...)
+	return assert(t, t.Fail, filterExprArgsFromComparison, comparison, msgAndArgs...)
 }
 
 // NilError fails the test immediately if the last arg is a non-nil error.
@@ -166,7 +181,7 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, cmp.NilError(err), msgAndArgs...)
+	assert(t, t.FailNow, filterExprExcludeFirst, cmp.NilError(err), msgAndArgs...)
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test
@@ -175,5 +190,5 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, cmp.Equal(x, y), msgAndArgs...)
+	assert(t, t.FailNow, filterExprExcludeFirst, cmp.Equal(x, y), msgAndArgs...)
 }

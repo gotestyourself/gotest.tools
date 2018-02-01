@@ -3,6 +3,8 @@ package assert
 import (
 	"fmt"
 	"testing"
+
+	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
 type fakeTestingT struct {
@@ -139,6 +141,14 @@ func TestCheckSuccess(t *testing.T) {
 	expectSuccess(t, fakeT)
 }
 
+func TestCheckEqualFailure(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	actual, expected := 5, 9
+	Check(fakeT, cmp.Equal(actual, expected))
+	expectFailed(t, fakeT, "assertion failed: 5 (actual int) != 9 (expected int)")
+}
+
 func TestEqualSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
@@ -152,8 +162,9 @@ func TestEqualSuccess(t *testing.T) {
 func TestEqualFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
-	Equal(fakeT, 1, 3)
-	expectFailNowed(t, fakeT, "assertion failed: 1 (int) != 3 (int)")
+	actual, expected := 1, 3
+	Equal(fakeT, actual, expected)
+	expectFailNowed(t, fakeT, "assertion failed: 1 (actual int) != 3 (expected int)")
 }
 
 func TestEqualFailureTypes(t *testing.T) {
@@ -161,6 +172,36 @@ func TestEqualFailureTypes(t *testing.T) {
 
 	Equal(fakeT, 3, uint(3))
 	expectFailNowed(t, fakeT, `assertion failed: 3 (int) != 3 (uint)`)
+}
+
+func TestEqualFailureWithSelectorArgument(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	type tc struct {
+		expected string
+	}
+	var testcase = tc{expected: "foo"}
+
+	Equal(fakeT, "ok", testcase.expected)
+	expectFailNowed(t, fakeT,
+		"assertion failed: ok (string) != foo (testcase.expected string)")
+}
+
+func TestEqualFailureWithIndexExpr(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	expected := map[string]string{"foo": "bar"}
+	Equal(fakeT, "ok", expected["foo"])
+	expectFailNowed(t, fakeT,
+		`assertion failed: ok (string) != bar (expected["foo"] string)`)
+}
+
+func TestEqualFailureWithCallExprArgument(t *testing.T) {
+	fakeT := &fakeTestingT{}
+	ce := customError{}
+	Equal(fakeT, "", ce.Error())
+	expectFailNowed(t, fakeT,
+		"assertion failed:  (string) != custom error (string)")
 }
 
 type testingT interface {
