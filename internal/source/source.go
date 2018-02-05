@@ -2,10 +2,12 @@ package source
 
 import (
 	"bytes"
+	"fmt"
 	"go/ast"
 	"go/format"
 	"go/parser"
 	"go/token"
+	"os"
 	"runtime"
 	"strconv"
 	"strings"
@@ -104,14 +106,11 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 	if v.expr != nil || node == nil {
 		return nil
 	}
+	debug("visit (%T): %s", node, debugFormatNode{node})
 
-	switch typed := node.(type) {
-	case *ast.CallExpr:
-		switch typed.Fun.(type) {
-		case *ast.Ident:
-			v.expr = typed
-			return nil
-		}
+	if callExpr, ok := node.(*ast.CallExpr); ok {
+		v.expr = callExpr
+		return nil
 	}
 	return v
 }
@@ -130,11 +129,33 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	if !ok {
 		return nil, errors.New("failed to get call stack")
 	}
+	debug("call stack position: %s:%d", filename, lineNum)
 
 	node, err := getNodeAtLine(filename, lineNum)
 	if err != nil {
 		return nil, err
 	}
+	debug("found node (%T): %s", node, debugFormatNode{node})
 
 	return getCallExprArgs(node)
+}
+
+var debugEnabled = os.Getenv("GOTESTYOURSELF_DEBUG") != ""
+
+func debug(format string, args ...interface{}) {
+	if debugEnabled {
+		fmt.Fprintf(os.Stderr, "DEBUG: "+format+"\n", args...)
+	}
+}
+
+type debugFormatNode struct {
+	ast.Node
+}
+
+func (n debugFormatNode) String() string {
+	out, err := FormatNode(n.Node)
+	if err != nil {
+		return fmt.Sprintf("failed to format %s: %s", n.Node, err)
+	}
+	return out
 }
