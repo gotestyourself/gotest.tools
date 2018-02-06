@@ -30,7 +30,6 @@ func runComparison(
 		args, err := source.CallExprArgs(stackIndex)
 		if err != nil {
 			t.Log(err.Error())
-			// TODO: probably need to not call FailureMessage in this case
 		}
 		message = typed.FailureMessage(filterPrintableExpr(exprFilter(args)))
 	case resultBasic:
@@ -75,6 +74,9 @@ func filterPrintableExpr(args []ast.Expr) []ast.Expr {
 }
 
 func filterExprExcludeFirst(args []ast.Expr) []ast.Expr {
+	if len(args) < 1 {
+		return nil
+	}
 	return args[1:]
 }
 

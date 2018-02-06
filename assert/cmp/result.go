@@ -54,27 +54,32 @@ func (r templatedResult) FailureMessage(args []ast.Expr) string {
 	return msg
 }
 
-// ResultFailureTemplate returns a Result with a template string and data which will be
-// used to format a failure message. The template may access data from .Data,
-// the comparison args as .Args ([]ast.Expr), and the formatNode function for
-// formatting the args.
+// ResultFailureTemplate returns a Result with a template string and data which
+// can be used to format a failure message. The template may access data from .Data,
+// the comparison args with the callArg function, and the formatNode function may
+// be used to format the call args.
 func ResultFailureTemplate(template string, data map[string]interface{}) Result {
 	return templatedResult{template: template, data: data}
 }
 
 func renderMessage(result templatedResult, args []ast.Expr) (string, error) {
-	tmpl, err := template.New("failure").Funcs(tmplFuncs).Parse(result.template)
+	tmpl := template.New("failure").Funcs(template.FuncMap{
+		"formatNode": source.FormatNode,
+		"callArg": func(index int) ast.Expr {
+			if index >= len(args) {
+				return nil
+			}
+			return args[index]
+		},
+	})
+	var err error
+	tmpl, err = tmpl.Parse(result.template)
 	if err != nil {
 		return "", err
 	}
 	buf := new(bytes.Buffer)
 	err = tmpl.Execute(buf, map[string]interface{}{
 		"Data": result.data,
-		"Args": args,
 	})
 	return buf.String(), err
-}
-
-var tmplFuncs = template.FuncMap{
-	"formatNode": source.FormatNode,
 }

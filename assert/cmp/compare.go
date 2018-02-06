@@ -64,10 +64,10 @@ func Equal(x, y interface{}) Comparison {
 		}
 		return ResultFailureTemplate(`
 			{{- .Data.x}} (
-				{{- with index .Args 0 }}{{ formatNode . }} {{end -}}
+				{{- with callArg 0 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.x -}}
 			) != {{ .Data.y}} (
-				{{- with index .Args 1 }}{{ formatNode . }} {{end -}}
+				{{- with callArg 1 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.y -}}
 			)`,
 			map[string]interface{}{"x": x, "y": y})
@@ -96,8 +96,8 @@ func multiLineStringDiffResult(x, y string) Result {
 		return ResultFailure(fmt.Sprintf("failed to diff: %s", err))
 	}
 	return ResultFailureTemplate(`
---- {{ with index .Args 0 }}{{ formatNode . }}{{else}}←{{end}}
-+++ {{ with index .Args 1 }}{{ formatNode . }}{{else}}→{{end}}
+--- {{ with callArg 0 }}{{ formatNode . }}{{else}}←{{end}}
++++ {{ with callArg 1 }}{{ formatNode . }}{{else}}→{{end}}
 {{ .Data.diff }}`,
 		map[string]interface{}{"diff": diff})
 }

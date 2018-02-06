@@ -204,6 +204,17 @@ func TestEqualFailureWithCallExprArgument(t *testing.T) {
 		"assertion failed:  (string) != custom error (string)")
 }
 
+func TestAssertFailureWithOfflineComparison(t *testing.T) {
+	fakeT := &fakeTestingT{}
+	a := 1
+	b := 2
+	// store comparison in a variable, so ast lookup can't find it
+	comparison := cmp.Equal(a, b)
+	Assert(fakeT, comparison)
+	// expected value wont have variable names
+	expectFailNowed(t, fakeT, "assertion failed: 1 (int) != 2 (int)")
+}
+
 type testingT interface {
 	Errorf(msg string, args ...interface{})
 	Fatalf(msg string, args ...interface{})
