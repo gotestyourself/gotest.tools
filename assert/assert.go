@@ -92,6 +92,7 @@ type helperT interface {
 
 const failureMessage = "assertion failed: "
 
+// nolint: gocyclo
 func assert(
 	t TestingT,
 	failer func(),
@@ -114,6 +115,13 @@ func assert(
 	case func() (success bool, message string):
 		success = runCompareFunc(t, check, msgAndArgs...)
 
+	case nil:
+		return true
+
+	case error:
+		msg := "error is not nil: "
+		t.Log(format.WithCustomMessage(failureMessage+msg+check.Error(), msgAndArgs...))
+
 	case cmp.Comparison:
 		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
@@ -121,7 +129,7 @@ func assert(
 		success = runComparison(t, argsFilter, check, msgAndArgs...)
 
 	default:
-		panic(fmt.Sprintf("comparison arg must be bool or Comparison, not %T", comparison))
+		t.Log(fmt.Sprintf("invalid Comparison: %v (%T)", check, check))
 	}
 
 	if success {
