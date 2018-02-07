@@ -3,6 +3,7 @@ package cmp
 import (
 	"bytes"
 	"fmt"
+	"go/ast"
 	"io"
 	"reflect"
 	"strings"
@@ -240,19 +241,19 @@ func TestContains(t *testing.T) {
 }
 
 func TestEqualMultiLine(t *testing.T) {
-	left := `abcd
+	result := `abcd
 1234
 aaaa
 bbbb`
 
-	right := `abcd
+	exp := `abcd
 1111
 aaaa
 bbbb`
 
 	expected := `
---- left
-+++ right
+--- result
++++ exp
 @@ -1,4 +1,4 @@
  abcd
 -1234
@@ -261,8 +262,9 @@ bbbb`
  bbbb
 `
 
-	result := EqualMultiLine(left, right)()
-	assertFailure(t, result, expected)
+	args := []ast.Expr{&ast.Ident{Name: "result"}, &ast.Ident{Name: "exp"}}
+	res := Equal(result, exp)()
+	assertFailureTemplate(t, res, args, expected)
 }
 
 func TestError(t *testing.T) {
@@ -355,5 +357,19 @@ func assertFailureHasPrefix(t testingT, res Result, prefix string) {
 	message := res.(result).FailureMessage()
 	if !strings.HasPrefix(message, prefix) {
 		t.Errorf("expected \n%v\nto start with\n%v\n", message, prefix)
+	}
+}
+
+// nolint: unparam
+func assertFailureTemplate(t testingT, res Result, args []ast.Expr, expected string) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	if res.Success() {
+		t.Errorf("expected failure")
+	}
+	message := res.(templatedResult).FailureMessage(args)
+	if message != expected {
+		t.Errorf("expected \n%q\ngot\n%q\n", expected, message)
 	}
 }

@@ -56,19 +56,50 @@ func toResult(success bool, msg string) Result {
 // Equal succeeds if x == y.
 func Equal(x, y interface{}) Comparison {
 	return func() Result {
-		if x == y {
+		switch {
+		case x == y:
 			return ResultSuccess
+		case isMultiLineStringCompare(x, y):
+			return multiLineStringDiffResult(x.(string), y.(string))
 		}
 		return ResultFailureTemplate(`
 			{{- .Data.x}} (
-				{{- with index .Args 0 }}{{ formatNode . }} {{end -}}
+				{{- with callArg 0 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.x -}}
 			) != {{ .Data.y}} (
-				{{- with index .Args 1 }}{{ formatNode . }} {{end -}}
+				{{- with callArg 1 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.y -}}
 			)`,
 			map[string]interface{}{"x": x, "y": y})
 	}
+}
+
+func isMultiLineStringCompare(x, y interface{}) bool {
+	strX, ok := x.(string)
+	if !ok {
+		return false
+	}
+	strY, ok := y.(string)
+	if !ok {
+		return false
+	}
+	return strings.Contains(strX, "\n") || strings.Contains(strY, "\n")
+}
+
+func multiLineStringDiffResult(x, y string) Result {
+	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
+		A:       difflib.SplitLines(x),
+		B:       difflib.SplitLines(y),
+		Context: 3,
+	})
+	if err != nil {
+		return ResultFailure(fmt.Sprintf("failed to diff: %s", err))
+	}
+	return ResultFailureTemplate(`
+--- {{ with callArg 0 }}{{ formatNode . }}{{else}}←{{end}}
++++ {{ with callArg 1 }}{{ formatNode . }}{{else}}→{{end}}
+{{ .Data.diff }}`,
+		map[string]interface{}{"diff": diff})
 }
 
 // Len succeeds if the sequence has the expected length.
@@ -158,28 +189,6 @@ func Panics(f func()) Comparison {
 		}()
 		f()
 		return ResultFailure("did not panic")
-	}
-}
-
-// EqualMultiLine succeeds if the two strings are equal. If they are not equal
-// the failure message will be the difference between the two strings.
-func EqualMultiLine(x, y string) Comparison {
-	return func() Result {
-		if x == y {
-			return ResultSuccess
-		}
-
-		diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:        difflib.SplitLines(x),
-			B:        difflib.SplitLines(y),
-			FromFile: "left",
-			ToFile:   "right",
-			Context:  3,
-		})
-		if err != nil {
-			return ResultFailure(fmt.Sprintf("failed to produce diff: %s", err))
-		}
-		return ResultFailure("\n" + diff)
 	}
 }
 
