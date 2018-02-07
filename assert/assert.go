@@ -1,6 +1,5 @@
-/*Package assert provides assertions and checks for comparing expected values to
-actual values. When an assertion or check fails a helpful error message is
-printed.
+/*Package assert provides assertions for comparing expected values to actual
+values. When an assertion fails a helpful error message is printed.
 
 Assert and Check
 
@@ -157,8 +156,14 @@ func logFailureFromBool(t TestingT, msgAndArgs ...interface{}) {
 	t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
 }
 
-// Assert performs a comparison, marks the test as having failed if the comparison
-// returns false, and stops execution immediately.
+// Assert performs a comparison. If the comparison fails the test is marked as
+// failed, a failure message is logged, and execution is stopped immediately.
+//
+// The comparison argument may be one of two types: bool or cmp.Comparison.
+// When called with a bool the failure message will contain the literal source
+// code of the expression.
+// When called with a cmp.Comparison the comparison is responsible for producing
+// a helpful failure message.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -166,8 +171,11 @@ func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) 
 	assert(t, t.FailNow, filterExprArgsFromComparison, comparison, msgAndArgs...)
 }
 
-// Check performs a comparison and marks the test as having failed if the comparison
-// returns false. Returns the result of the comparison.
+// Check performs a comparison. If the comparison fails the test is marked as
+// failed, a failure message is logged, and Check returns false. Otherwise returns
+// true.
+//
+// See Assert for details about the comparison arg and failure messages.
 func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
