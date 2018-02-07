@@ -69,6 +69,8 @@ package assert
 
 import (
 	"fmt"
+	"go/ast"
+	"go/token"
 
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/internal/format"
@@ -148,13 +150,47 @@ func runCompareFunc(
 func logFailureFromBool(t TestingT, msgAndArgs ...interface{}) {
 	const stackIndex = 3 // Assert()/Check(), assert(), formatFailureFromBool()
 	const comparisonArgPos = 1
-	source, err := source.FormattedCallExprArg(stackIndex, comparisonArgPos)
+	args, err := source.CallExprArgs(stackIndex)
 	if err != nil {
 		t.Log(err.Error())
+		return
 	}
 
-	msg := " is false"
-	t.Log(format.WithCustomMessage(failureMessage+source+msg, msgAndArgs...))
+	msg, err := boolFailureMessage(args[comparisonArgPos])
+	if err != nil {
+		t.Log(err.Error())
+		msg = "expression is false"
+	}
+
+	t.Log(format.WithCustomMessage(failureMessage+msg, msgAndArgs...))
+}
+
+func boolFailureMessage(expr ast.Expr) (string, error) {
+	if binaryExpr, ok := expr.(*ast.BinaryExpr); ok && binaryExpr.Op == token.NEQ {
+		x, err := source.FormatNode(binaryExpr.X)
+		if err != nil {
+			return "", err
+		}
+		y, err := source.FormatNode(binaryExpr.Y)
+		if err != nil {
+			return "", err
+		}
+		return x + " is " + y, nil
+	}
+
+	if unaryExpr, ok := expr.(*ast.UnaryExpr); ok && unaryExpr.Op == token.NOT {
+		x, err := source.FormatNode(unaryExpr.X)
+		if err != nil {
+			return "", err
+		}
+		return x + " is true", nil
+	}
+
+	formatted, err := source.FormatNode(expr)
+	if err != nil {
+		return "", err
+	}
+	return "expression is false: " + formatted, nil
 }
 
 // Assert performs a comparison, marks the test as having failed if the comparison

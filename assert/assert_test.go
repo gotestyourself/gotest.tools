@@ -31,14 +31,31 @@ func TestAssertWithBoolFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
 	Assert(fakeT, 1 == 6)
-	expectFailNowed(t, fakeT, "assertion failed: 1 == 6 is false")
+	expectFailNowed(t, fakeT, "assertion failed: expression is false: 1 == 6")
+}
+
+func TestAssertWithBoolFailureNotEqual(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	var err error
+	Assert(fakeT, err != nil)
+	expectFailNowed(t, fakeT, "assertion failed: err is nil")
+}
+
+func TestAssertWithBoolFailureNotTrue(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	badNews := true
+	Assert(fakeT, !badNews)
+	expectFailNowed(t, fakeT, "assertion failed: badNews is true")
 }
 
 func TestAssertWithBoolFailureAndExtraMessage(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
 	Assert(fakeT, 1 > 5, "sometimes things fail")
-	expectFailNowed(t, fakeT, "assertion failed: 1 > 5 is false: sometimes things fail")
+	expectFailNowed(t, fakeT,
+		"assertion failed: expression is false: 1 > 5: sometimes things fail")
 }
 
 func TestAssertWithBoolSuccess(t *testing.T) {
@@ -56,11 +73,11 @@ func TestAssertWithBoolMultiLineFailure(t *testing.T) {
 		}
 		return false
 	}())
-	expectFailNowed(t, fakeT, `assertion failed: func() bool {
+	expectFailNowed(t, fakeT, `assertion failed: expression is false: func() bool {
 	for range []int{1, 2, 3, 4} {
 	}
 	return false
-}() is false`)
+}()`)
 }
 
 type exampleComparison struct {
@@ -129,7 +146,7 @@ func TestCheckFailure(t *testing.T) {
 	if Check(fakeT, 1 == 2) {
 		t.Error("expected check to return false on failure")
 	}
-	expectFailed(t, fakeT, "assertion failed: 1 == 2 is false")
+	expectFailed(t, fakeT, "assertion failed: expression is false: 1 == 2")
 }
 
 func TestCheckSuccess(t *testing.T) {
