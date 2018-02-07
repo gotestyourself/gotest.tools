@@ -120,19 +120,6 @@ func Len(seq interface{}, expected int) Comparison {
 	}
 }
 
-// NilError succeeds if the last argument is a nil error.
-func NilError(arg interface{}, args ...interface{}) Comparison {
-	return func() Result {
-		msgFunc := func(value reflect.Value) string {
-			return fmt.Sprintf("error is not nil: %+v", value.Interface().(error))
-		}
-		if len(args) == 0 {
-			return isNil(arg, msgFunc)()
-		}
-		return isNil(args[len(args)-1], msgFunc)()
-	}
-}
-
 // Contains succeeds if item is in collection. Collection may be a string, map,
 // slice, or array.
 //
@@ -224,16 +211,9 @@ func ErrorContains(err error, substring string) Comparison {
 
 // Nil succeeds if obj is a nil interface, pointer, or function.
 //
-// Use NilError() for comparing errors. Use Len(obj, 0) for comparing slices,
+// Use assert.Assert() for comparing errors. Use Len(obj, 0) for comparing slices,
 // maps, and channels.
 func Nil(obj interface{}) Comparison {
-	msgFunc := func(value reflect.Value) string {
-		return fmt.Sprintf("%v (type %s) is not nil", reflect.Indirect(value), value.Type())
-	}
-	return isNil(obj, msgFunc)
-}
-
-func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 	return func() Result {
 		if obj == nil {
 			return ResultSuccess
@@ -244,7 +224,11 @@ func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 			if value.IsNil() {
 				return ResultSuccess
 			}
-			return ResultFailure(msgFunc(value))
+
+			return ResultFailure(fmt.Sprintf(
+				"%v (type %s) is not nil",
+				reflect.Indirect(value),
+				value.Type()))
 		}
 
 		return ResultFailure(fmt.Sprintf("%v (type %s) can not be nil", value, value.Type()))

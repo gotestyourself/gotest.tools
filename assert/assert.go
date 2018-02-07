@@ -31,7 +31,7 @@ The example below shows assert used with some common types.
 	    assert.Assert(t, total != 10) // NotEqual
 
 	    // errors
-	    assert.NilError(t, closer.Close())
+	    assert.Assert(t, closer.Close()) // No error
 	    assert.Assert(t, is.Error(err, "the exact error message"))
 	    assert.Assert(t, is.ErrorContains(err, "includes this"))
 	    assert.Assert(t, os.IsNotExist(err), "got %+v", err)
@@ -92,6 +92,7 @@ type helperT interface {
 
 const failureMessage = "assertion failed: "
 
+// nolint: gocyclo
 func assert(
 	t TestingT,
 	failer func(),
@@ -113,6 +114,13 @@ func assert(
 	// Undocumented legacy comparison without Result type
 	case func() (success bool, message string):
 		success = runCompareFunc(t, check, msgAndArgs...)
+
+	case nil:
+		return true
+
+	case error:
+		msg := "error is not nil: "
+		t.Log(format.WithCustomMessage(failureMessage+msg+check.Error(), msgAndArgs...))
 
 	case cmp.Comparison:
 		success = runComparison(t, argsFilter, check, msgAndArgs...)
@@ -217,15 +225,6 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 		ht.Helper()
 	}
 	return assert(t, t.Fail, filterExprArgsFromComparison, comparison, msgAndArgs...)
-}
-
-// NilError fails the test immediately if the last arg is a non-nil error.
-// This is equivalent to Assert(t, cmp.NilError(err)).
-func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	assert(t, t.FailNow, filterExprExcludeFirst, cmp.NilError(err), msgAndArgs...)
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test

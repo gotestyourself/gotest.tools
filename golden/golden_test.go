@@ -110,12 +110,12 @@ func setUpdateFlag() func() {
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
 	_ = os.Mkdir("testdata", 0755)
 	f, err := ioutil.TempFile("testdata", "")
-	assert.Assert(t, cmp.NilError(err), "fail to setup test golden file")
+	assert.Assert(t, err, "fail to setup test golden file")
 	err = ioutil.WriteFile(f.Name(), []byte(content), 0660)
-	assert.Assert(t, cmp.NilError(err), "fail to write test golden file with %q", content)
+	assert.Assert(t, err, "fail to write test golden file with %q", content)
 	_, name := filepath.Split(f.Name())
 	t.Log(f.Name(), name)
 	return name, func() {
-		assert.NilError(t, os.Remove(f.Name()))
+		assert.Assert(t, os.Remove(f.Name()))
 	}
 }

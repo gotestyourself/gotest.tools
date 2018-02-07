@@ -12,7 +12,7 @@ import (
 
 func TestGetConditionSingleLine(t *testing.T) {
 	msg, err := shim("not", "this", "this text")
-	assert.NilError(t, err)
+	assert.Assert(t, err)
 	assert.Equal(t, `"this text"`, msg)
 }
 
@@ -22,7 +22,7 @@ func TestGetConditionMultiLine(t *testing.T) {
 		"second",
 		"this text",
 	)
-	assert.NilError(t, err)
+	assert.Assert(t, err)
 	assert.Equal(t, `"this text"`, msg)
 }
 
@@ -32,7 +32,7 @@ func TestGetConditionIfStatement(t *testing.T) {
 		"second",
 		"this text",
 	); true {
-		assert.NilError(t, err)
+		assert.Assert(t, err)
 		assert.Equal(t, `"this text"`, msg)
 	}
 }

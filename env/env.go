@@ -22,16 +22,16 @@ func Patch(t assert.TestingT, key, value string) func() {
 		ht.Helper()
 	}
 	oldValue, ok := os.LookupEnv(key)
-	assert.NilError(t, os.Setenv(key, value))
+	assert.Assert(t, os.Setenv(key, value))
 	return func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
 		if !ok {
-			assert.NilError(t, os.Unsetenv(key))
+			assert.Assert(t, os.Unsetenv(key))
 			return
 		}
-		assert.NilError(t, os.Setenv(key, oldValue))
+		assert.Assert(t, os.Setenv(key, oldValue))
 	}
 }
 
@@ -45,7 +45,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 	os.Clearenv()
 
 	for key, value := range env {
-		assert.NilError(t, os.Setenv(key, value))
+		assert.Assert(t, os.Setenv(key, value))
 	}
 	return func() {
 		if ht, ok := t.(helperT); ok {
@@ -53,7 +53,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 		}
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			assert.NilError(t, os.Setenv(key, oldVal))
+			assert.Assert(t, os.Setenv(key, oldVal))
 		}
 	}
 }
@@ -81,12 +81,12 @@ func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 		ht.Helper()
 	}
 	cwd, err := os.Getwd()
-	assert.NilError(t, err)
-	assert.NilError(t, os.Chdir(dir))
+	assert.Assert(t, err)
+	assert.Assert(t, os.Chdir(dir))
 	return func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
-		assert.NilError(t, os.Chdir(cwd))
+		assert.Assert(t, os.Chdir(cwd))
 	}
 }
