@@ -76,7 +76,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/internal/source"
 )
 
-// BoolOrComparison can be a bool, or cmp.Comparison. Other types will panic.
+// BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.
 type BoolOrComparison interface{}
 
 // TestingT is the subset of testing.T used by the assert package.
@@ -203,11 +203,14 @@ func boolFailureMessage(expr ast.Expr) (string, error) {
 // Assert performs a comparison. If the comparison fails the test is marked as
 // failed, a failure message is logged, and execution is stopped immediately.
 //
-// The comparison argument may be one of two types: bool or cmp.Comparison.
+// The comparison argument may be one of three types: bool, cmp.Comparison or
+// error.
 // When called with a bool the failure message will contain the literal source
 // code of the expression.
 // When called with a cmp.Comparison the comparison is responsible for producing
 // a helpful failure message.
+// When called with an error a nil value is considered success. A non-nil error
+// is a failure, and Error() is used as the failure message.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -227,13 +230,13 @@ func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) b
 	return assert(t, t.Fail, filterExprArgsFromComparison, comparison, msgAndArgs...)
 }
 
-// NilError fails the test immediately if the last arg is a non-nil error.
-// This is equivalent to Assert(t, cmp.NilError(err)).
+// NilError fails the test immediately if err is not nil.
+// This is equivalent to Assert(t, err)
 func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, filterExprExcludeFirst, cmp.NilError(err), msgAndArgs...)
+	assert(t, t.FailNow, filterExprExcludeFirst, err, msgAndArgs...)
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test

@@ -1,7 +1,6 @@
 package cmp
 
 import (
-	"bytes"
 	"fmt"
 	"go/ast"
 	"io"
@@ -84,35 +83,6 @@ func TestLen(t *testing.T) {
 			}
 		})
 	}
-}
-
-type stubError struct{}
-
-func (e *stubError) Error() string { return "stub error" }
-
-func TestNilError(t *testing.T) {
-	var s *stubError
-	result := NilError(s)()
-	assertSuccess(t, result)
-
-	result = NilError(nil)()
-	assertSuccess(t, result)
-
-	var e error
-	result = NilError(e)()
-	assertSuccess(t, result)
-
-	buf := new(bytes.Buffer)
-	result = NilError(buf.WriteString("ok"))()
-	assertSuccess(t, result)
-
-	s = &stubError{}
-	result = NilError(s)()
-	assertFailure(t, result, "error is not nil: stub error")
-
-	e = &stubError{}
-	result = NilError(e)()
-	assertFailure(t, result, "error is not nil: stub error")
 }
 
 func TestPanics(t *testing.T) {
