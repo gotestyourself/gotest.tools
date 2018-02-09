@@ -70,7 +70,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 		ToFile:   "Actual",
 		Context:  3,
 	})
-	assert.Assert(t, cmp.NilError(err), msgAndArgs...)
+	assert.NilError(t, err, msgAndArgs...)
 	t.Log(format.WithCustomMessage(fmt.Sprintf("Not Equal: \n%s", diff), msgAndArgs...))
 	t.Fail()
 	return false

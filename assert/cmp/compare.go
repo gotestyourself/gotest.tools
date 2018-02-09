@@ -120,19 +120,6 @@ func Len(seq interface{}, expected int) Comparison {
 	}
 }
 
-// NilError succeeds if the last argument is a nil error.
-func NilError(arg interface{}, args ...interface{}) Comparison {
-	return func() Result {
-		msgFunc := func(value reflect.Value) string {
-			return fmt.Sprintf("error is not nil: %+v", value.Interface().(error))
-		}
-		if len(args) == 0 {
-			return isNil(arg, msgFunc)()
-		}
-		return isNil(args[len(args)-1], msgFunc)()
-	}
-}
-
 // Contains succeeds if item is in collection. Collection may be a string, map,
 // slice, or array.
 //
