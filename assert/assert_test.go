@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	gocmp "github.com/google/go-cmp/cmp"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 )
 
@@ -278,4 +279,31 @@ func expectSuccess(t testingT, fakeT *fakeTestingT) {
 	if fakeT.failed {
 		t.Errorf("should not have failed, got messages %s", fakeT.msgs)
 	}
+}
+
+type stub struct {
+	a string
+	b int
+}
+
+func TestDeepEqualSuccess(t *testing.T) {
+	actual := stub{"ok", 1}
+	expected := stub{"ok", 1}
+
+	fakeT := &fakeTestingT{}
+	DeepEqual(fakeT, actual, expected, gocmp.AllowUnexported(stub{}))
+	expectSuccess(t, fakeT)
+}
+
+func TestDeepEqualFailure(t *testing.T) {
+	actual := stub{"ok", 1}
+	expected := stub{"ok", 2}
+
+	fakeT := &fakeTestingT{}
+	DeepEqual(fakeT, actual, expected, gocmp.AllowUnexported(stub{}))
+	expectFailNowed(t, fakeT, "assertion failed: "+`
+{assert.stub}.b:
+	-: 1
+	+: 2
+`)
 }
