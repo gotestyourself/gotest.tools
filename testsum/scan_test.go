@@ -11,25 +11,26 @@ import (
 	gocmp "github.com/google/go-cmp/cmp"
 	"github.com/gotestyourself/gotestyourself/assert"
 	is "github.com/gotestyourself/gotestyourself/assert/cmp"
+	"github.com/gotestyourself/gotestyourself/assert/opt"
 )
 
 var cmpSummary = gocmp.Options{
 	gocmp.AllowUnexported(Failure{}),
-	gocmp.FilterPath(
-		func(path gocmp.Path) bool {
-			return path.Last().String() == ".Elapsed"
-		},
-		gocmp.Ignore()),
+	gocmp.FilterPath(fieldpath("Elapsed"), cmpElapsed()),
 }
 
-func cmpElapsed(elapsed time.Duration) is.Comparison {
-	return func() is.Result {
-		// appveyor reports 0 seconds elapsed.
-		if elapsed != 0 || runtime.GOOS == "windows" {
-			return is.ResultSuccess
-		}
-		return is.ResultFailure("expected non-zero duration")
+func fieldpath(spec string) func(gocmp.Path) bool {
+	return func(path gocmp.Path) bool {
+		return path.String() == spec
 	}
+}
+
+func cmpElapsed() gocmp.Option {
+	// appveyor reports 0 seconds elapsed.
+	if runtime.GOOS == "windows" {
+		return gocmp.Ignore()
+	}
+	return opt.DurationWithThreshold(time.Millisecond)
 }
 
 func TestScanNoFailures(t *testing.T) {
@@ -57,10 +58,10 @@ ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
-	assert.Check(t, cmpElapsed(summary.Elapsed))
-	assert.Check(t, is.DeepEqual(&Summary{Total: 8, Skipped: 1}, summary, cmpSummary))
-	assert.Equal(t, source, out.String())
 
+	expected := &Summary{Total: 8, Skipped: 1, Elapsed: 10 * time.Microsecond}
+	assert.Check(t, is.DeepEqual(summary, expected, cmpSummary))
+	assert.Equal(t, source, out.String())
 }
 
 func TestScanWithFailure(t *testing.T) {
@@ -82,11 +83,11 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
-	assert.Check(t, cmpElapsed(summary.Elapsed))
 	assert.Check(t, is.Equal(source, out.String()))
 
 	expected := &Summary{
-		Total: 3,
+		Total:   3,
+		Elapsed: 10 * time.Microsecond,
 		Failures: []Failure{
 			{
 				name:   "TestThisShouldFail",
@@ -115,9 +116,8 @@ PASS
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NilError(t, err)
-	assert.Check(t, cmpElapsed(summary.Elapsed))
 
-	expected := &Summary{Total: 1}
+	expected := &Summary{Total: 1, Elapsed: 10 * time.Microsecond}
 	assert.Check(t, is.DeepEqual(expected, summary, cmpSummary))
 }
 
@@ -142,7 +142,6 @@ exit status 1
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NilError(t, err)
-	assert.Check(t, cmpElapsed(summary.Elapsed))
 
 	expectedOutput := `=== RUN   TestNested/a
 Output from  a
@@ -160,7 +159,8 @@ Output from  c
 `
 
 	expected := &Summary{
-		Total: 1,
+		Total:   1,
+		Elapsed: 10 * time.Microsecond,
 		Failures: []Failure{
 			{name: "TestNested", output: expectedOutput, logs: expectedLogs},
 		},
