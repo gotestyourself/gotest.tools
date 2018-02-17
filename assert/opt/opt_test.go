@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/assert"
 )
 
@@ -138,4 +139,100 @@ func TestTimeWithThreshold(t *testing.T) {
 			assert.Equal(t, actual, testcase.expected)
 		})
 	}
+}
+
+type node struct {
+	Value    nodeValue
+	Labels   map[string]node
+	Children []node
+	Ref      *node
+}
+
+type nodeValue struct {
+	Value int
+}
+
+type pathRecorder struct {
+	filter  func(p gocmp.Path) bool
+	matches []string
+}
+
+func (p *pathRecorder) record(path gocmp.Path) bool {
+	if p.filter(path) {
+		p.matches = append(p.matches, path.GoString())
+	}
+	return false
+}
+
+func matchPaths(fixture interface{}, filter func(gocmp.Path) bool) []string {
+	rec := &pathRecorder{filter: filter}
+	gocmp.Equal(fixture, fixture, gocmp.FilterPath(rec.record, gocmp.Ignore()))
+	return rec.matches
+}
+
+func TestPathStringFromStruct(t *testing.T) {
+	fixture := node{
+		Ref: &node{
+			Children: []node{
+				{},
+				{
+					Labels: map[string]node{
+						"first": {Value: nodeValue{Value: 3}},
+					},
+				},
+			},
+		},
+	}
+
+	spec := "Ref.Children.Labels.Value"
+	matches := matchPaths(fixture, PathString(spec))
+	expected := []string{`{opt.node}.Ref.Children[1].Labels["first"].Value`}
+	assert.DeepEqual(t, matches, expected)
+}
+
+func TestPathStringFromSlice(t *testing.T) {
+	fixture := []node{
+		{
+			Ref: &node{
+				Children: []node{
+					{},
+					{
+						Labels: map[string]node{
+							"first": {},
+							"second": {
+								Ref: &node{Value: nodeValue{Value: 3}},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	spec := "Ref.Children.Labels.Ref.Value"
+	matches := matchPaths(fixture, PathString(spec))
+	expected := []string{`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`}
+	assert.DeepEqual(t, matches, expected)
+}
+
+func TestPathField(t *testing.T) {
+	fixture := node{
+		Value: nodeValue{Value: 3},
+		Children: []node{
+			{},
+			{Value: nodeValue{Value: 2}},
+			{Ref: &node{Value: nodeValue{Value: 9}}},
+		},
+	}
+
+	filter := PathField(nodeValue{}, "Value")
+	matches := matchPaths(fixture, filter)
+	expected := []string{
+		"{opt.node}.Value.Value",
+		"{opt.node}.Children[0].Value.Value",
+		"{opt.node}.Children[1].Value.Value",
+		"{opt.node}.Children[2].Value.Value",
+		"{opt.node}.Children[2].Ref.Value.Value",
+	}
+	assert.DeepEqual(t, matches, expected)
 }

@@ -6,4 +6,4 @@ exec filewatcher \
     -x 'scripts' \
     -x '**/*___jb_tmp___' \
     -x '**/*___jb_old___' \
-    scripts/test-unit './${dir}'
+    gotestsum --format=short-verbose -- './${dir}'

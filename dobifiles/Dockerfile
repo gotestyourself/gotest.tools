@@ -17,6 +17,13 @@ RUN     go get -d github.com/golang/dep/cmd/dep && \
         go build -v -o /usr/bin/dep ./cmd/dep && \
         rm -rf /go/src/* /go/pkg/* /go/bin/*
 
+ARG     GOTESTSUM=v0.2
+RUN     go get -d gotest.tools/gotestsum && \
+        cd /go/src/gotest.tools/gotestsum && \
+        git checkout -q "$GOTESTSUM" && \
+        go build -v -o /usr/bin/gotestsum . && \
+        rm -rf /go/src/* /go/pkg/* /go/bin/*
+
 ENV     PS1="# "
 WORKDIR /go/src/gotest.tools
 ENV     CGO_ENABLED=0
