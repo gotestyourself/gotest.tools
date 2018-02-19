@@ -13,15 +13,20 @@ import (
 )
 
 func TestDeepEqual(t *testing.T) {
-	result := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
-	assertFailure(t, result, `
-{[]string}:
-	-: []string{"a", "b"}
-	+: []string{"b", "a"}
-`)
 
-	result = DeepEqual([]string{"a"}, []string{"a"})()
-	assertSuccess(t, result)
+	actual := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
+	expected := `
+{[]string}[0]:
+	-: "a"
+	+: "b"
+{[]string}[1]:
+	-: "b"
+	+: "a"
+`
+	assertFailure(t, actual, expected)
+
+	actual = DeepEqual([]string{"a"}, []string{"a"})()
+	assertSuccess(t, actual)
 }
 
 type Stub struct {
