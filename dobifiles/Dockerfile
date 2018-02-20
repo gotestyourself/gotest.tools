@@ -1,5 +1,5 @@
 ARG     GOLANG_VERSION
-FROM    golang:${GOLANG_VERSION:-1.9.2-alpine}
+FROM    golang:${GOLANG_VERSION:-1.10-alpine}
 
 RUN     apk add -U curl git bash
 
