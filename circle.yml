@@ -38,7 +38,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: "Unit Test GO 1.9"
-          command: scripts/ci/test
+          command: scripts/ci/test 1.9-alpine
 
   test-golang-1.8:
     working_directory: /work
@@ -48,7 +48,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: "Unit Test GO 1.8"
-          command: scripts/ci/test 1.8.3-alpine
+          command: scripts/ci/test 1.8-alpine
 
   test-golang-1.10:
     working_directory: /work
@@ -58,7 +58,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: "Unit Test GO 1.10"
-          command: scripts/ci/test 1.10rc2-alpine
+          command: scripts/ci/test 1.10-alpine
 
 workflows:
   version: 2
