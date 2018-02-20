@@ -348,3 +348,146 @@ func assertFailureTemplate(t testingT, res Result, args []ast.Expr, expected str
 		t.Errorf("expected \n%q\ngot\n%q\n", expected, message)
 	}
 }
+
+type stubError struct{}
+
+func (s stubError) Error() string {
+	return "stub error"
+}
+
+func isErrorOfTypeStub(err error) bool {
+	return reflect.TypeOf(err) == reflect.TypeOf(stubError{})
+}
+
+type notStubError struct{}
+
+func (s notStubError) Error() string {
+	return "not stub error"
+}
+
+func isErrorOfTypeNotStub(err error) bool {
+	return reflect.TypeOf(err) == reflect.TypeOf(notStubError{})
+}
+
+type specialStubIface interface {
+	Special()
+}
+
+func TestErrorTypeWithNil(t *testing.T) {
+	var testcases = []struct {
+		name     string
+		expType  interface{}
+		expected string
+	}{
+		{
+			name:     "with struct",
+			expType:  stubError{},
+			expected: "error is nil, not cmp.stubError",
+		},
+		{
+			name:     "with interface",
+			expType:  (*specialStubIface)(nil),
+			expected: "error is nil, not cmp.specialStubIface",
+		},
+		{
+			name:     "with reflect.Type",
+			expType:  reflect.TypeOf(stubError{}),
+			expected: "error is nil, not cmp.stubError",
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			result := ErrorType(nil, testcase.expType)()
+			assertFailure(t, result, testcase.expected)
+		})
+	}
+}
+
+func TestErrorTypeSuccess(t *testing.T) {
+	var testcases = []struct {
+		name    string
+		expType interface{}
+	}{
+		{
+			name:    "with function",
+			expType: isErrorOfTypeStub,
+		},
+		{
+			name:    "with struct",
+			expType: stubError{},
+		},
+		{
+			name:    "with interface",
+			expType: (*error)(nil),
+		},
+		{
+			name:    "with reflect.Type struct",
+			expType: reflect.TypeOf(stubError{}),
+		},
+		{
+			name:    "with reflect.Type interface",
+			expType: reflect.TypeOf((*error)(nil)).Elem(),
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			result := ErrorType(stubError{}, testcase.expType)()
+			assertSuccess(t, result)
+		})
+	}
+}
+
+func TestErrorTypeFailure(t *testing.T) {
+	var testcases = []struct {
+		name     string
+		expType  interface{}
+		expected string
+	}{
+		{
+			name:     "with struct",
+			expType:  notStubError{},
+			expected: "error is stub error (cmp.stubError), not cmp.notStubError",
+		},
+		{
+			name:     "with interface",
+			expType:  (*specialStubIface)(nil),
+			expected: "error is stub error (cmp.stubError), not cmp.specialStubIface",
+		},
+		{
+			name:     "with reflect.Type struct",
+			expType:  reflect.TypeOf(notStubError{}),
+			expected: "error is stub error (cmp.stubError), not cmp.notStubError",
+		},
+		{
+			name:     "with reflect.Type interface",
+			expType:  reflect.TypeOf((*specialStubIface)(nil)).Elem(),
+			expected: "error is stub error (cmp.stubError), not cmp.specialStubIface",
+		},
+	}
+	for _, testcase := range testcases {
+		t.Run(testcase.name, func(t *testing.T) {
+			result := ErrorType(stubError{}, testcase.expType)()
+			assertFailure(t, result, testcase.expected)
+		})
+	}
+}
+
+func TestErrorTypeInvalid(t *testing.T) {
+	result := ErrorType(stubError{}, nil)()
+	assertFailure(t, result, "invalid type for expected: nil")
+
+	result = ErrorType(stubError{}, "my type!")()
+	assertFailure(t, result, "invalid type for expected: string")
+}
+
+func TestErrorTypeWithFunc(t *testing.T) {
+	result := ErrorType(nil, isErrorOfTypeStub)()
+	assertFailureTemplate(t, result,
+		[]ast.Expr{nil, &ast.Ident{Name: "isErrorOfTypeStub"}},
+		"error is nil, not isErrorOfTypeStub")
+
+	result = ErrorType(stubError{}, isErrorOfTypeNotStub)()
+	assertFailureTemplate(t, result,
+		[]ast.Expr{nil, &ast.Ident{Name: "isErrorOfTypeNotStub"}},
+		"error is stub error (cmp.stubError), not isErrorOfTypeNotStub")
+}

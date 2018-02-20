@@ -34,7 +34,7 @@ The example below shows assert used with some common types.
 	    assert.NilError(t, closer.Close())
 	    assert.Assert(t, is.Error(err, "the exact error message"))
 	    assert.Assert(t, is.ErrorContains(err, "includes this"))
-	    assert.Assert(t, os.IsNotExist(err), "got %+v", err)
+	    assert.Assert(t, is.ErrorType(err, os.IsNotExist))
 
 	    // complex types
 	    assert.DeepEqual(t, result, myStruct{Name: "title"})
