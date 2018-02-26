@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/x/subtest"
 )
 
 type helperT interface {
@@ -23,7 +24,7 @@ func Patch(t assert.TestingT, key, value string) func() {
 	}
 	oldValue, ok := os.LookupEnv(key)
 	assert.NilError(t, os.Setenv(key, value))
-	return func() {
+	cleanup := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
@@ -33,6 +34,10 @@ func Patch(t assert.TestingT, key, value string) func() {
 		}
 		assert.NilError(t, os.Setenv(key, oldValue))
 	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(cleanup)
+	}
+	return cleanup
 }
 
 // PatchAll sets the environment to env, and returns a function which will
@@ -47,7 +52,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 	for key, value := range env {
 		assert.NilError(t, os.Setenv(key, value), "setenv %s=%s", key, value)
 	}
-	return func() {
+	cleanup := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
@@ -56,6 +61,10 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 			assert.NilError(t, os.Setenv(key, oldVal), "setenv %s=%s", key, oldVal)
 		}
 	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(cleanup)
+	}
+	return cleanup
 }
 
 // ToMap takes a list of strings in the format returned by os.Environ() and
@@ -89,10 +98,14 @@ func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir(dir))
-	return func() {
+	cleanup := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
 		assert.NilError(t, os.Chdir(cwd))
 	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(cleanup)
+	}
+	return cleanup
 }

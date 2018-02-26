@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 
 	"github.com/gotestyourself/gotestyourself/assert"
+	"github.com/gotestyourself/gotestyourself/x/subtest"
 )
 
 // Path objects return their filesystem path. Both File and Dir implement Path.
@@ -45,6 +46,9 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	for _, op := range ops {
 		assert.NilError(t, op(file))
 	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(file.Remove)
+	}
 	return file
 }
 
@@ -76,6 +80,9 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 
 	for _, op := range ops {
 		assert.NilError(t, op(dir))
+	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(dir.Remove)
 	}
 	return dir
 }
