@@ -1,73 +1,93 @@
 package icmd
 
 import (
-	"runtime"
-	"strings"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
 	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/skip"
+	"github.com/gotestyourself/gotestyourself/fs"
+	"github.com/gotestyourself/gotestyourself/internal/maint"
 )
 
-func TestRunCommandSuccess(t *testing.T) {
-	skip.If(t, runtime.GOOS == "windows", "ls not available")
+var (
+	bindir   = fs.NewDir(maint.T, "icmd-dir")
+	binname  = bindir.Join("bin-stub")
+	stubpath = filepath.FromSlash("./internal/stub")
+)
 
-	result := RunCommand("ls")
+func TestMain(m *testing.M) {
+	exitcode := m.Run()
+	bindir.Remove()
+	os.Exit(exitcode)
+}
+
+func buildStub(t assert.TestingT) {
+	if _, err := os.Stat(binname); err == nil {
+		return
+	}
+	result := RunCommand("go", "build", "-o", binname, stubpath)
+	result.Assert(t, Success)
+}
+
+func TestRunCommandSuccess(t *testing.T) {
+	buildStub(t)
+
+	result := RunCommand(binname)
 	result.Assert(t, Success)
 }
 
 func TestRunCommandWithCombined(t *testing.T) {
-	skip.If(t, runtime.GOOS == "windows", "ls not available")
+	buildStub(t)
 
-	result := RunCommand("ls", "-a")
+	result := RunCommand(binname, "-warn")
 	result.Assert(t, Expected{})
 
-	assert.Assert(t, cmp.Contains(result.Combined(), "\n..\n"))
-	assert.Assert(t, cmp.Contains(result.Stdout(), "\n..\n"))
+	assert.Equal(t, result.Combined(), "this is stdout\nthis is stderr\n")
+	assert.Equal(t, result.Stdout(), "this is stdout\n")
+	assert.Equal(t, result.Stderr(), "this is stderr\n")
 }
 
 func TestRunCommandWithTimeoutFinished(t *testing.T) {
-	skip.If(t, runtime.GOOS == "windows", "ls not available")
+	buildStub(t)
 
 	result := RunCmd(Cmd{
-		Command: []string{"ls", "-a"},
+		Command: []string{binname, "-sleep=1ms"},
 		Timeout: 50 * time.Millisecond,
 	})
-	result.Assert(t, Expected{Out: ".."})
+	result.Assert(t, Expected{Out: "this is stdout"})
 }
 
 func TestRunCommandWithTimeoutKilled(t *testing.T) {
-	skip.If(t, runtime.GOOS == "windows", "sh not available")
+	buildStub(t)
 
-	command := []string{"sh", "-c", "while true ; do echo 1 ; sleep .5 ; done"}
-	result := RunCmd(Cmd{Command: command, Timeout: 1250 * time.Millisecond})
-	result.Assert(t, Expected{Timeout: true})
-
-	ones := strings.Split(result.Stdout(), "\n")
-	assert.Assert(t, cmp.Len(ones, 4))
+	command := []string{binname, "-sleep=200ms"}
+	result := RunCmd(Cmd{Command: command, Timeout: 30 * time.Millisecond})
+	result.Assert(t, Expected{Timeout: true, Out: None, Err: None})
 }
 
 func TestRunCommandWithErrors(t *testing.T) {
+	buildStub(t)
+
 	result := RunCommand("doesnotexists")
 	expected := `exec: "doesnotexists": executable file not found`
 	result.Assert(t, Expected{Out: None, Err: None, ExitCode: 127, Error: expected})
 }
 
-func TestRunCommandWithStdoutStderr(t *testing.T) {
-	result := RunCommand("echo", "hello", "world")
-	result.Assert(t, Expected{Out: "hello world\n", Err: None})
+func TestRunCommandWithStdoutNoStderr(t *testing.T) {
+	buildStub(t)
+
+	result := RunCommand(binname)
+	result.Assert(t, Expected{Out: "this is stdout\n", Err: None})
 }
 
-func TestRunCommandWithStdoutStderrError(t *testing.T) {
-	expected := "ls: unrecognized option"
+func TestRunCommandWithExitCode(t *testing.T) {
+	buildStub(t)
 
-	result := RunCommand("ls", "-z")
+	result := RunCommand(binname, "-fail=99")
 	result.Assert(t, Expected{
-		Out:      None,
-		Err:      expected,
-		ExitCode: 1,
-		Error:    "exit status 1",
+		ExitCode: 99,
+		Error:    "exit status 99",
 	})
 }
