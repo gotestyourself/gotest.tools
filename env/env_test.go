@@ -2,12 +2,11 @@ package env
 
 import (
 	"os"
+	"runtime"
+	"sort"
 	"testing"
 
-	"sort"
-
 	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/skip"
 )
 
@@ -34,6 +33,7 @@ func TestPatch(t *testing.T) {
 }
 
 func TestPatchAll(t *testing.T) {
+	skip.If(t, runtime.GOOS == "windows", "appveyor env has unsettable env vars")
 	oldEnv := os.Environ()
 	newEnv := map[string]string{
 		"FIRST": "STARS",
@@ -44,10 +44,10 @@ func TestPatchAll(t *testing.T) {
 
 	actual := os.Environ()
 	sort.Strings(actual)
-	assert.Assert(t, cmp.DeepEqual([]string{"FIRST=STARS", "THEN=MOON"}, actual))
+	assert.DeepEqual(t, []string{"FIRST=STARS", "THEN=MOON"}, actual)
 
 	revert()
-	assert.Assert(t, cmp.DeepEqual(sorted(oldEnv), sorted(os.Environ())))
+	assert.DeepEqual(t, sorted(oldEnv), sorted(os.Environ()))
 }
 
 func sorted(source []string) []string {
@@ -59,5 +59,5 @@ func TestToMap(t *testing.T) {
 	source := []string{"key=value", "novaluekey"}
 	actual := ToMap(source)
 	expected := map[string]string{"key": "value", "novaluekey": ""}
-	assert.Assert(t, cmp.DeepEqual(expected, actual))
+	assert.DeepEqual(t, expected, actual)
 }

@@ -146,6 +146,9 @@ func runCompareFunc(
 }
 
 func logFailureFromBool(t TestingT, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
 	const stackIndex = 3 // Assert()/Check(), assert(), formatFailureFromBool()
 	const comparisonArgPos = 1
 	args, err := source.CallExprArgs(stackIndex)

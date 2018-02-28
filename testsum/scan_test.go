@@ -3,6 +3,7 @@ package testsum
 import (
 	"bytes"
 	"io/ioutil"
+	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,16 @@ var cmpSummary = gocmp.Options{
 			return path.Last().String() == ".Elapsed"
 		},
 		gocmp.Ignore()),
+}
+
+func cmpElapsed(elapsed time.Duration) is.Comparison {
+	return func() is.Result {
+		// appveyor reports 0 seconds elapsed.
+		if elapsed != 0 || runtime.GOOS == "windows" {
+			return is.ResultSuccess
+		}
+		return is.ResultFailure("expected non-zero duration")
+	}
 }
 
 func TestScanNoFailures(t *testing.T) {
@@ -46,7 +57,7 @@ ok      github.com/gotestyourself/gotestyourself/icmd   1.256s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
-	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, cmpElapsed(summary.Elapsed))
 	assert.Check(t, is.DeepEqual(&Summary{Total: 8, Skipped: 1}, summary, cmpSummary))
 	assert.Equal(t, source, out.String())
 
@@ -71,7 +82,7 @@ FAIL    github.com/gotestyourself/gotestyourself/testsum        0.002s
 	out := new(bytes.Buffer)
 	summary, err := Scan(strings.NewReader(source), out)
 	assert.NilError(t, err)
-	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, cmpElapsed(summary.Elapsed))
 	assert.Check(t, is.Equal(source, out.String()))
 
 	expected := &Summary{
@@ -104,7 +115,7 @@ PASS
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NilError(t, err)
-	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, cmpElapsed(summary.Elapsed))
 
 	expected := &Summary{Total: 1}
 	assert.Check(t, is.DeepEqual(expected, summary, cmpSummary))
@@ -131,7 +142,7 @@ exit status 1
 
 	summary, err := Scan(strings.NewReader(source), ioutil.Discard)
 	assert.NilError(t, err)
-	assert.Check(t, summary.Elapsed != 0)
+	assert.Check(t, cmpElapsed(summary.Elapsed))
 
 	expectedOutput := `=== RUN   TestNested/a
 Output from  a
