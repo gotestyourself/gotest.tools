@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
@@ -40,8 +41,11 @@ func Path(filename string) string {
 	return filepath.Join("testdata", filename)
 }
 
-func update(filename string, actual []byte) error {
+func update(filename string, actual []byte, clean bool) error {
 	if *flagUpdate {
+		if clean {
+			actual = bytes.Replace(actual, []byte("\r\n"), []byte("\n"), -1)
+		}
 		return ioutil.WriteFile(Path(filename), actual, 0644)
 	}
 	return nil
@@ -61,6 +65,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
+	actual = strings.Replace(actual, "\r\n", "\n", -1)
 	return assert.Check(t, String(actual, filename), msgAndArgs...)
 }
 
@@ -68,7 +73,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 // if the strings are equal.
 func String(actual string, filename string) cmp.Comparison {
 	return func() cmp.Result {
-		result, expected := compare([]byte(actual), filename)
+		result, expected := compare([]byte(actual), filename, true)
 		if result != nil {
 			return result
 		}
@@ -112,7 +117,7 @@ func AssertBytes(
 // if the bytes are equal.
 func Bytes(actual []byte, filename string) cmp.Comparison {
 	return func() cmp.Result {
-		result, expected := compare(actual, filename)
+		result, expected := compare(actual, filename, false)
 		if result != nil {
 			return result
 		}
@@ -121,8 +126,8 @@ func Bytes(actual []byte, filename string) cmp.Comparison {
 	}
 }
 
-func compare(actual []byte, filename string) (cmp.Result, []byte) {
-	if err := update(filename, actual); err != nil {
+func compare(actual []byte, filename string, clean bool) (cmp.Result, []byte) {
+	if err := update(filename, actual, clean); err != nil {
 		return cmp.ResultFromError(err), nil
 	}
 	expected, err := ioutil.ReadFile(Path(filename))

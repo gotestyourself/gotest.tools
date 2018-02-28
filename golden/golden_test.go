@@ -90,6 +90,17 @@ func TestGoldenAssert(t *testing.T) {
 	assert.Assert(t, success)
 }
 
+func TestGoldenAssertWindows(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "foo\nbar\n")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	success := Assert(fakeT, "foo\r\nbar\r\n", filename)
+	assert.Assert(t, !fakeT.Failed)
+	assert.Assert(t, success)
+}
+
 func TestGoldenAssertBytes(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "foo")
 	defer clean()
