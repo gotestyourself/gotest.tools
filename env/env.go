@@ -45,7 +45,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 	os.Clearenv()
 
 	for key, value := range env {
-		assert.NilError(t, os.Setenv(key, value))
+		assert.NilError(t, os.Setenv(key, value), "setenv %s=%s", key, value)
 	}
 	return func() {
 		if ht, ok := t.(helperT); ok {
@@ -53,7 +53,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 		}
 		os.Clearenv()
 		for key, oldVal := range ToMap(oldEnv) {
-			assert.NilError(t, os.Setenv(key, oldVal))
+			assert.NilError(t, os.Setenv(key, oldVal), "setenv %s=%s", key, oldVal)
 		}
 	}
 }

@@ -3,6 +3,7 @@ package icmd
 import (
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 	"time"
 
@@ -13,9 +14,16 @@ import (
 
 var (
 	bindir   = fs.NewDir(maint.T, "icmd-dir")
-	binname  = bindir.Join("bin-stub")
+	binname  = bindir.Join("bin-stub") + pathext()
 	stubpath = filepath.FromSlash("./internal/stub")
 )
+
+func pathext() string {
+	if runtime.GOOS == "windows" {
+		return ".exe"
+	}
+	return ""
+}
 
 func TestMain(m *testing.M) {
 	exitcode := m.Run()
