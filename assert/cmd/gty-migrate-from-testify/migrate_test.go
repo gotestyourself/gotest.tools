@@ -256,3 +256,42 @@ func TestOtherName(z *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
+
+func TestMigrateFileWithComment(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Error(t, err, "this is a comment")
+	assert.Empty(t, nil, "more comment")
+}
+`
+	migration := newMigrationFromSource(t, source)
+	migration.importNames.cmp = "is"
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	"github.com/gotestyourself/gotestyourself/assert"
+	is "github.com/gotestyourself/gotestyourself/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Check(t, is.ErrorContains(err, ""), "this is a comment")
+	assert.Check(t, is.Len(nil, 0), "more comment")
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
+}

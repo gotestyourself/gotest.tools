@@ -162,7 +162,7 @@ func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 	case "Panics", "Panicsf":
 		return convertOneArgComparison(tcall, imports, "Panics")
 	case "EqualError", "EqualErrorf":
-		return convertTwoArgComparison(tcall, imports, "Error")
+		return convertEqualError(tcall, imports)
 	case "Error", "Errorf":
 		return convertError(tcall, imports)
 	case "Empty", "Emptyf":
@@ -218,6 +218,13 @@ func convertNoError(tcall call, imports importNames) ast.Node {
 	}
 	// use assert.Check() for assert.NoError()
 	return newCallExprWithoutComparison(tcall, imports, "Check")
+}
+
+func convertEqualError(tcall call, imports importNames) ast.Node {
+	if tcall.assert == funcNameAssert {
+		return newCallExprWithoutComparison(tcall, imports, "Error")
+	}
+	return convertTwoArgComparison(tcall, imports, "Error")
 }
 
 func newCallExprWithoutComparison(tcall call, imports importNames, name string) ast.Node {
@@ -290,24 +297,26 @@ func convertTwoArgComparison(tcall call, imports importNames, cmpName string) as
 }
 
 func convertError(tcall call, imports importNames) ast.Node {
+	cmpArgs := []ast.Expr{
+		tcall.arg(1),
+		&ast.BasicLit{Kind: token.STRING, Value: `""`}}
+
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			newCallExpr(
-				imports.cmp,
-				"ErrorContains",
-				append(tcall.args(1, 2), &ast.BasicLit{Kind: token.STRING, Value: `""`})),
+			newCallExpr(imports.cmp, "ErrorContains", cmpArgs),
 			tcall.extraArgs(2)...))
 }
 
 func convertEmpty(tcall call, imports importNames) ast.Node {
+	cmpArgs := []ast.Expr{
+		tcall.arg(1),
+		&ast.BasicLit{Kind: token.INT, Value: "0"},
+	}
 	return newCallExprWithPosition(tcall, imports,
 		newCallExprArgs(
 			tcall.testingT(),
-			newCallExpr(
-				imports.cmp,
-				"Len",
-				append(tcall.args(1, 2), &ast.BasicLit{Kind: token.INT, Value: "0"})),
+			newCallExpr(imports.cmp, "Len", cmpArgs),
 			tcall.extraArgs(2)...))
 }
 
