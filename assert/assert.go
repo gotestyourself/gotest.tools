@@ -32,9 +32,9 @@ The example below shows assert used with some common types.
 
 	    // errors
 	    assert.NilError(t, closer.Close())
-	    assert.Assert(t, is.Error(err, "the exact error message"))
-	    assert.Assert(t, is.ErrorContains(err, "includes this"))
-	    assert.Assert(t, is.ErrorType(err, os.IsNotExist))
+	    assert.Error(t, err, "the exact error message")
+	    assert.ErrorContains(t, err, "includes this")
+	    assert.ErrorType(t, err, os.IsNotExist)
 
 	    // complex types
 	    assert.DeepEqual(t, result, myStruct{Name: "title"})
@@ -250,4 +250,40 @@ func DeepEqual(t TestingT, x, y interface{}, opts ...gocmp.Option) {
 		ht.Helper()
 	}
 	assert(t, t.FailNow, filterExprExcludeFirst, cmp.DeepEqual(x, y, opts...))
+}
+
+// Error fails the test if err is nil, or the error message is not the expected
+// message.
+// Equivalent to Assert(t, cmp.Error(err, message)).
+func Error(t TestingT, err error, message string, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	assert(t, t.FailNow, filterExprExcludeFirst, cmp.Error(err, message), msgAndArgs...)
+}
+
+// ErrorContains fails the test if err is nil, or the error message does not
+// contain the expected substring.
+// Equivalent to Assert(t, cmp.ErrorContains(err, substring)).
+func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	assert(t, t.FailNow, filterExprExcludeFirst, cmp.ErrorContains(err, substring), msgAndArgs...)
+}
+
+// ErrorType fails the test if err is nil, or err is not the expected type.
+//
+// Expected can be one of:
+// a func(error) bool which returns true if the error is the expected type,
+// an instance of a struct of the expected type,
+// a pointer to an interface the error is expected to implement,
+// a reflect.Type of the expected struct or interface.
+//
+// Equivalent to Assert(t, cmp.ErrorType(err, expected)).
+func ErrorType(t TestingT, err error, expected interface{}, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	assert(t, t.FailNow, filterExprExcludeFirst, cmp.ErrorType(err, expected), msgAndArgs...)
 }

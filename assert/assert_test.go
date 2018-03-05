@@ -2,6 +2,7 @@ package assert
 
 import (
 	"fmt"
+	"os"
 	"testing"
 
 	gocmp "github.com/google/go-cmp/cmp"
@@ -306,4 +307,58 @@ func TestDeepEqualFailure(t *testing.T) {
 	-: 1
 	+: 2
 `)
+}
+
+func TestErrorFailure(t *testing.T) {
+	t.Run("nil error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		var err error
+		Error(fakeT, err, "this error")
+		expectFailNowed(t, fakeT, "assertion failed: expected an error, got nil")
+	})
+	t.Run("different error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		err := fmt.Errorf("the actual error")
+		Error(fakeT, err, "this error")
+		expected := `assertion failed: expected error "this error", got the actual error`
+		expectFailNowed(t, fakeT, expected)
+	})
+}
+
+func TestErrorContainsFailure(t *testing.T) {
+	t.Run("nil error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		var err error
+		ErrorContains(fakeT, err, "this error")
+		expectFailNowed(t, fakeT, "assertion failed: expected an error, got nil")
+	})
+	t.Run("different error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		err := fmt.Errorf("the actual error")
+		ErrorContains(fakeT, err, "this error")
+		expected := `assertion failed: expected error to contain "this error", got the actual error`
+		expectFailNowed(t, fakeT, expected)
+	})
+}
+
+func TestErrorTypeFailure(t *testing.T) {
+	t.Run("nil error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		var err error
+		ErrorType(fakeT, err, os.IsNotExist)
+		expectFailNowed(t, fakeT, "assertion failed: error is nil, not os.IsNotExist")
+	})
+	t.Run("different error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		err := fmt.Errorf("the actual error")
+		ErrorType(fakeT, err, os.IsNotExist)
+		expected := `assertion failed: error is the actual error (*errors.errorString), not os.IsNotExist`
+		expectFailNowed(t, fakeT, expected)
+	})
 }
