@@ -17,5 +17,6 @@ RUN     go get -d github.com/golang/dep/cmd/dep && \
         go build -v -o /usr/bin/dep ./cmd/dep && \
         rm -rf /go/src/* /go/pkg/* /go/bin/*
 
+ENV     PS1="# "
 WORKDIR /go/src/github.com/gotestyourself/gotestyourself
 ENV     CGO_ENABLED=0
