@@ -373,6 +373,12 @@ type specialStubIface interface {
 	Special()
 }
 
+type stubPtrError struct{}
+
+func (s *stubPtrError) Error() string {
+	return "stub ptr error"
+}
+
 func TestErrorTypeWithNil(t *testing.T) {
 	var testcases = []struct {
 		name     string
@@ -383,6 +389,11 @@ func TestErrorTypeWithNil(t *testing.T) {
 			name:     "with struct",
 			expType:  stubError{},
 			expected: "error is nil, not cmp.stubError",
+		},
+		{
+			name:     "with pointer to struct",
+			expType:  &stubPtrError{},
+			expected: "error is nil, not *cmp.stubPtrError",
 		},
 		{
 			name:     "with interface",
@@ -407,31 +418,42 @@ func TestErrorTypeSuccess(t *testing.T) {
 	var testcases = []struct {
 		name    string
 		expType interface{}
+		err     error
 	}{
 		{
 			name:    "with function",
 			expType: isErrorOfTypeStub,
+			err:     stubError{},
 		},
 		{
 			name:    "with struct",
 			expType: stubError{},
+			err:     stubError{},
+		},
+		{
+			name:    "with pointer to struct",
+			expType: &stubPtrError{},
+			err:     &stubPtrError{},
 		},
 		{
 			name:    "with interface",
 			expType: (*error)(nil),
+			err:     stubError{},
 		},
 		{
 			name:    "with reflect.Type struct",
 			expType: reflect.TypeOf(stubError{}),
+			err:     stubError{},
 		},
 		{
 			name:    "with reflect.Type interface",
 			expType: reflect.TypeOf((*error)(nil)).Elem(),
+			err:     stubError{},
 		},
 	}
 	for _, testcase := range testcases {
 		t.Run(testcase.name, func(t *testing.T) {
-			result := ErrorType(stubError{}, testcase.expType)()
+			result := ErrorType(testcase.err, testcase.expType)()
 			assertSuccess(t, result)
 		})
 	}
@@ -447,6 +469,11 @@ func TestErrorTypeFailure(t *testing.T) {
 			name:     "with struct",
 			expType:  notStubError{},
 			expected: "error is stub error (cmp.stubError), not cmp.notStubError",
+		},
+		{
+			name:     "with pointer to struct",
+			expType:  &stubPtrError{},
+			expected: "error is stub error (cmp.stubError), not *cmp.stubPtrError",
 		},
 		{
 			name:     "with interface",

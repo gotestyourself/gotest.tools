@@ -242,7 +242,7 @@ func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 //
 // Expected can be one of:
 // a func(error) bool which returns true if the error is the expected type,
-// an instance of a struct of the expected type,
+// an instance of (or a pointer to) a struct of the expected type,
 // a pointer to an interface the error is expected to implement,
 // a reflect.Type of the expected struct or interface.
 func ErrorType(err error, expected interface{}) Comparison {
@@ -261,7 +261,7 @@ func ErrorType(err error, expected interface{}) Comparison {
 
 		expectedType := reflect.TypeOf(expected)
 		switch {
-		case expectedType.Kind() == reflect.Struct:
+		case expectedType.Kind() == reflect.Struct, isPtrToStruct(expectedType):
 			return cmpErrorTypeEqualType(err, expectedType)
 		case isPtrToInterface(expectedType):
 			return cmpErrorTypeImplementsType(err, expectedType.Elem())
@@ -307,4 +307,8 @@ func cmpErrorTypeImplementsType(err error, expectedType reflect.Type) Result {
 
 func isPtrToInterface(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Interface
+}
+
+func isPtrToStruct(typ reflect.Type) bool {
+	return typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct
 }

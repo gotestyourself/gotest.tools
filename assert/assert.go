@@ -276,7 +276,7 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 //
 // Expected can be one of:
 // a func(error) bool which returns true if the error is the expected type,
-// an instance of a struct of the expected type,
+// an instance of (or a pointer to) a struct of the expected type,
 // a pointer to an interface the error is expected to implement,
 // a reflect.Type of the expected struct or interface.
 //
