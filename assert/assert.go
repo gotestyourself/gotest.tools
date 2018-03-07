@@ -8,7 +8,7 @@ comparison fails. The one difference is that Assert() will end the test executio
 immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail()),
 return the value of the comparison, then proceed with the rest of the test case.
 
-Example Usage
+Example usage
 
 The example below shows assert used with some common types.
 
@@ -49,9 +49,17 @@ The example below shows assert used with some common types.
 
 Comparisons
 
-https://godoc.org/github.com/gotestyourself/gotestyourself/assert/cmp provides
+Package assert/cmp (http://bit.do/assert-cmp) provides
 many common comparisons. Additional comparisons can be written to compare
 values in other ways. See the example Assert (CustomComparison).
+
+Automated migration from testify
+
+gty-migrate-from-testify is a binary which can update source code which uses
+testify assertions to use the assertions provided by this package.
+
+See http://bit.do/cmd-gty-migrate-from-testify.
+
 
 */
 package assert
