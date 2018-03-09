@@ -55,15 +55,22 @@ func debugf(msg string, args ...interface{}) {
 func setupFlags(name string) (*pflag.FlagSet, *options) {
 	opts := options{}
 	flags := pflag.NewFlagSet(name, pflag.ContinueOnError)
-	flags.BoolVar(&opts.dryRun, "dry-run", false, "don't write to file")
+	flags.BoolVar(&opts.dryRun, "dry-run", false,
+		"don't write changes to file")
 	flags.BoolVar(&opts.debug, "debug", false, "enable debug logging")
-	flags.StringVar(&opts.cmpImportName, "import-cmp-alias", "is",
+	flags.StringVar(&opts.cmpImportName, "cmp-pkg-import-alias", "is",
 		"import alias to use for the assert/cmp package")
 	flags.BoolVar(&opts.showLoaderErrors, "print-loader-errors", false,
 		"print errors from loading source")
 	flags.BoolVar(&opts.useAllFiles, "ignore-build-tags", false,
-		"use files regardless of +build lines, file names")
-	// TODO: set usage func to print more usage
+		"migrate all files ignoring build tags")
+	flags.Usage = func() {
+		fmt.Fprintf(os.Stderr, `Usage: %s [OPTIONS] PACKAGE [PACKAGE...]
+
+Migrate calls from testify/{assert|require} to gotestyourself/assert.
+
+%s`, name, flags.FlagUsages())
+	}
 	return flags, &opts
 }
 

@@ -257,19 +257,21 @@ func TestOtherName(z *testing.T) {
 	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
 
-func TestMigrateFileWithComment(t *testing.T) {
+func TestMigrateFileWithExtraArgs(t *testing.T) {
 	source := `
 package foo
 
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestSomething(t *testing.T) {
 	var err error
 	assert.Error(t, err, "this is a comment")
 	assert.Empty(t, nil, "more comment")
+	require.Equal(t, []string{}, []string{}, "because")
 }
 `
 	migration := newMigrationFromSource(t, source)
@@ -289,6 +291,7 @@ func TestSomething(t *testing.T) {
 	var err error
 	assert.Check(t, is.ErrorContains(err, ""), "this is a comment")
 	assert.Check(t, is.Len(nil, 0), "more comment")
+	assert.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
 }
 `
 	actual, err := formatFile(migration)

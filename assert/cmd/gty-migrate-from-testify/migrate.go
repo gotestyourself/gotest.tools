@@ -263,12 +263,14 @@ func convertFalse(tcall call, imports importNames) ast.Node {
 func convertEqual(tcall call, migration migration) ast.Node {
 	imports := migration.importNames
 
+	hasExtraArgs := len(tcall.extraArgs(3)) > 0
+
 	cmpEqual := convertTwoArgComparison(tcall, imports, "Equal")
 	if tcall.assert == funcNameAssert {
 		cmpEqual = newCallExprWithoutComparison(tcall, imports, "Equal")
 	}
 	cmpDeepEqual := convertTwoArgComparison(tcall, imports, "DeepEqual")
-	if tcall.assert == funcNameAssert {
+	if tcall.assert == funcNameAssert && !hasExtraArgs {
 		cmpDeepEqual = newCallExprWithoutComparison(tcall, imports, "DeepEqual")
 	}
 
