@@ -37,6 +37,8 @@ func TestSecondThing(t *testing.T) {
 	require.NoError(t, nil, "foo %d", 3)
 
 	assert.Error(t, fmt.Errorf("foo"))
+
+	require.NotZero(t, 77)
 }
 
 func TestAssertNew(t *testing.T) {
