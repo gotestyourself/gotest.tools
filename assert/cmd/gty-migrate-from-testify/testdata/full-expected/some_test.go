@@ -37,6 +37,8 @@ func TestSecondThing(t *testing.T) {
 	assert.NilError(t, nil, "foo %d", 3)
 
 	assert.Check(t, cmp.ErrorContains(fmt.Errorf("foo"), ""))
+
+	assert.Assert(t, 77 != 0)
 }
 
 func TestAssertNew(t *testing.T) {

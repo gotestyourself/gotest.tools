@@ -179,6 +179,9 @@ func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 		return convertFail(tcall, "Fatal")
 	case "NotEmpty", "NotEmptyf":
 		return convertNotEmpty(tcall, imports)
+	case "NotZero", "NotZerof":
+		zero := &ast.BasicLit{Kind: token.INT, Value: "0"}
+		return convertNegativeComparison(tcall, imports, zero, 2)
 	}
 	log.Printf("%s: skipping unsupported assertion", tcall.StringWithFileInfo())
 	return nil
