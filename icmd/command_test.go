@@ -62,7 +62,7 @@ func TestRunCommandWithTimeoutFinished(t *testing.T) {
 
 	result := RunCmd(Cmd{
 		Command: []string{binname, "-sleep=1ms"},
-		Timeout: 50 * time.Millisecond,
+		Timeout: 2 * time.Second,
 	})
 	result.Assert(t, Expected{Out: "this is stdout"})
 }
