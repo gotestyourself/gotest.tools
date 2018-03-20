@@ -10,13 +10,12 @@ import (
 
 func TestUnifiedDiff(t *testing.T) {
 	var testcases = []struct {
-		name         string
-		a            string
-		b            string
-		expected     string
-		expectedFile string
-		from         string
-		to           string
+		name     string
+		a        string
+		b        string
+		expected string
+		from     string
+		to       string
 	}{
 		{
 			name: "empty diff",
@@ -26,24 +25,30 @@ func TestUnifiedDiff(t *testing.T) {
 			to:   "to",
 		},
 		{
-			name:         "one diff with header",
-			a:            "a\nxyz\nc",
-			b:            "a\nb\nc",
-			from:         "from",
-			to:           "to",
-			expectedFile: "one-diff-with-header.golden",
+			name:     "one diff with header",
+			a:        "a\nxyz\nc",
+			b:        "a\nb\nc",
+			from:     "from",
+			to:       "to",
+			expected: "one-diff-with-header.golden",
 		},
 		{
-			name:         "many diffs",
-			a:            "a123\nxyz\nc\nbaba\nz\nt\nj2j2\nok\nok\ndone\n",
-			b:            "a123\nxyz\nc\nabab\nz\nt\nj2j2\nok\nok\n",
-			expectedFile: "many-diff.golden",
+			name:     "many diffs",
+			a:        "a123\nxyz\nc\nbaba\nz\nt\nj2j2\nok\nok\ndone\n",
+			b:        "a123\nxyz\nc\nabab\nz\nt\nj2j2\nok\nok\n",
+			expected: "many-diff.golden",
 		},
 		{
-			name:         "no trailing newline",
-			a:            "a123\nxyz\nc\nbaba\nz\nt\nj2j2\nok\nok\ndone\n",
-			b:            "a123\nxyz\nc\nabab\nz\nt\nj2j2\nok\nok",
-			expectedFile: "many-diff-no-trailing-newline.golden",
+			name:     "no trailing newline",
+			a:        "a123\nxyz\nc\nbaba\nz\nt\nj2j2\nok\nok\ndone\n",
+			b:        "a123\nxyz\nc\nabab\nz\nt\nj2j2\nok\nok",
+			expected: "many-diff-no-trailing-newline.golden",
+		},
+		{
+			name:     "whitespace diff",
+			a:        "  something\n      something\n    \v\r\n",
+			b:        "  something\n\tsomething\n  \n",
+			expected: "whitespace-diff.golden",
 		},
 	}
 
@@ -56,11 +61,11 @@ func TestUnifiedDiff(t *testing.T) {
 				To:   testcase.to,
 			})
 
-			if testcase.expectedFile != "" {
-				assert.Assert(t, golden.String(diff, testcase.expectedFile))
+			if testcase.expected != "" {
+				assert.Assert(t, golden.String(diff, testcase.expected))
 				return
 			}
-			assert.Equal(t, diff, testcase.expected)
+			assert.Equal(t, diff, "")
 		})
 	}
 }

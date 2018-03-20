@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"strings"
+	"unicode"
 
 	"github.com/gotestyourself/gotestyourself/internal/difflib"
 )
@@ -20,8 +21,6 @@ type DiffConfig struct {
 	To   string
 }
 
-// TODO: handle diff where prefix or suffix is only whitespace
-
 // UnifiedDiff is a modified version of difflib.WriteUnifiedDiff with better
 // support for showing the whitespace differences.
 func UnifiedDiff(conf DiffConfig) string {
@@ -33,28 +32,93 @@ func UnifiedDiff(conf DiffConfig) string {
 	}
 
 	buf := new(bytes.Buffer)
-	wf := func(format string, args ...interface{}) {
+	writeFormat := func(format string, args ...interface{}) {
 		buf.WriteString(fmt.Sprintf(format, args...))
 	}
-	formatHeader(wf, conf)
-	for _, g := range groups {
-		formatRangeLine(wf, g)
-		for _, c := range g {
-			in, out := a[c.I1:c.I2], b[c.J1:c.J2]
-			switch c.Tag {
+	writeLine := func(prefix string, s string) {
+		buf.WriteString(prefix + s)
+	}
+	if hasWhitespaceDiffLines(groups, a, b) {
+		writeLine = visibleWhitespaceLine(writeLine)
+	}
+	formatHeader(writeFormat, conf)
+	for _, group := range groups {
+		formatRangeLine(writeFormat, group)
+		for _, opCode := range group {
+			in, out := a[opCode.I1:opCode.I2], b[opCode.J1:opCode.J2]
+			switch opCode.Tag {
 			case 'e':
-				formatLines(buf, " ", in)
+				formatLines(writeLine, " ", in)
 			case 'r':
-				formatLines(buf, "-", in)
-				formatLines(buf, "+", out)
+				formatLines(writeLine, "-", in)
+				formatLines(writeLine, "+", out)
 			case 'd':
-				formatLines(buf, "-", in)
+				formatLines(writeLine, "-", in)
 			case 'i':
-				formatLines(buf, "+", out)
+				formatLines(writeLine, "+", out)
 			}
 		}
 	}
 	return buf.String()
+}
+
+// hasWhitespaceDiffLines returns true if any diff groups is only different
+// because of whitespace characters.
+func hasWhitespaceDiffLines(groups [][]difflib.OpCode, a, b []string) bool {
+	for _, group := range groups {
+		in, out := new(bytes.Buffer), new(bytes.Buffer)
+		for _, opCode := range group {
+			if opCode.Tag == 'e' {
+				continue
+			}
+			for _, line := range a[opCode.I1:opCode.I2] {
+				in.WriteString(line)
+			}
+			for _, line := range b[opCode.J1:opCode.J2] {
+				out.WriteString(line)
+			}
+		}
+		if removeWhitespace(in.String()) == removeWhitespace(out.String()) {
+			return true
+		}
+	}
+	return false
+}
+
+func removeWhitespace(s string) string {
+	var result []rune
+	for _, r := range s {
+		if !unicode.IsSpace(r) {
+			result = append(result, r)
+		}
+	}
+	return string(result)
+}
+
+func visibleWhitespaceLine(ws func(string, string)) func(string, string) {
+	mapToVisibleSpace := func(r rune) rune {
+		switch r {
+		case '\n':
+		case ' ':
+			return '·'
+		case '\t':
+			return '▷'
+		case '\v':
+			return '▽'
+		case '\r':
+			return '↵'
+		case '\f':
+			return '↓'
+		default:
+			if unicode.IsSpace(r) {
+				return '�'
+			}
+		}
+		return r
+	}
+	return func(prefix, s string) {
+		ws(prefix, strings.Map(mapToVisibleSpace, s))
+	}
 }
 
 func formatHeader(wf func(string, ...interface{}), conf DiffConfig) {
@@ -85,13 +149,13 @@ func formatRangeUnified(start, stop int) string {
 	return fmt.Sprintf("%d,%d", beginning, length)
 }
 
-func formatLines(buf *bytes.Buffer, prefix string, lines []string) {
+func formatLines(writeLine func(string, string), prefix string, lines []string) {
 	for _, line := range lines {
-		buf.WriteString(prefix + line)
+		writeLine(prefix, line)
 	}
 	// Add a newline if the last line is missing one so that the diff displays
 	// properly.
 	if !strings.HasSuffix(lines[len(lines)-1], "\n") {
-		buf.WriteString("\n")
+		writeLine("", "\n")
 	}
 }
