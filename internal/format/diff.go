@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/pmezard/go-difflib/difflib"
+	"github.com/gotestyourself/gotestyourself/internal/difflib"
 )
 
 const (
