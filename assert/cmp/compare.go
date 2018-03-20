@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pmezard/go-difflib/difflib"
+	"github.com/gotestyourself/gotestyourself/internal/format"
 )
 
 // Comparison is a function which compares values and returns ResultSuccess if
@@ -27,7 +27,10 @@ func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 			}
 		}()
 		diff := cmp.Diff(x, y, opts...)
-		return toResult(diff == "", "\n"+diff)
+		if diff == "" {
+			return ResultSuccess
+		}
+		return multiLineDiffResult(diff)
 	}
 }
 
@@ -60,7 +63,8 @@ func Equal(x, y interface{}) Comparison {
 		case x == y:
 			return ResultSuccess
 		case isMultiLineStringCompare(x, y):
-			return multiLineStringDiffResult(x.(string), y.(string))
+			diff := format.UnifiedDiff(format.DiffConfig{A: x.(string), B: y.(string)})
+			return multiLineDiffResult(diff)
 		}
 		return ResultFailureTemplate(`
 			{{- .Data.x}} (
@@ -86,15 +90,7 @@ func isMultiLineStringCompare(x, y interface{}) bool {
 	return strings.Contains(strX, "\n") || strings.Contains(strY, "\n")
 }
 
-func multiLineStringDiffResult(x, y string) Result {
-	diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-		A:       difflib.SplitLines(x),
-		B:       difflib.SplitLines(y),
-		Context: 3,
-	})
-	if err != nil {
-		return ResultFailure(fmt.Sprintf("failed to diff: %s", err))
-	}
+func multiLineDiffResult(diff string) Result {
 	return ResultFailureTemplate(`
 --- {{ with callArg 0 }}{{ formatNode . }}{{else}}←{{end}}
 +++ {{ with callArg 1 }}{{ formatNode . }}{{else}}→{{end}}

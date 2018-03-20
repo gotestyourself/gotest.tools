@@ -13,9 +13,10 @@ import (
 )
 
 func TestDeepEqual(t *testing.T) {
-
 	actual := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
 	expected := `
+--- result
++++ exp
 {[]string}[0]:
 	-: "a"
 	+: "b"
@@ -23,7 +24,8 @@ func TestDeepEqual(t *testing.T) {
 	-: "b"
 	+: "a"
 `
-	assertFailure(t, actual, expected)
+	args := []ast.Expr{&ast.Ident{Name: "result"}, &ast.Ident{Name: "exp"}}
+	assertFailureTemplate(t, actual, args, expected)
 
 	actual = DeepEqual([]string{"a"}, []string{"a"})()
 	assertSuccess(t, actual)
