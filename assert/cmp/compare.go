@@ -15,10 +15,12 @@ import (
 // Result will contain a message about why it failed.
 type Comparison func() Result
 
-// DeepEqual compares two values using https://godoc.org/github.com/google/go-cmp/cmp
+// DeepEqual compares two values using google/go-cmp (http://bit.do/go-cmp)
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
+// Package assert/opt (http://bit.do/t-assert-opt) provides some additional
+// commonly used Options.
 func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 	return func() (result Result) {
 		defer func() {
