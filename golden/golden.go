@@ -13,7 +13,7 @@ import (
 
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/pmezard/go-difflib/difflib"
+	"github.com/gotestyourself/gotestyourself/internal/format"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
@@ -90,16 +90,12 @@ func String(actual string, filename string) cmp.Comparison {
 		if result != nil {
 			return result
 		}
-		diff, err := difflib.GetUnifiedDiffString(difflib.UnifiedDiff{
-			A:        difflib.SplitLines(string(expected)),
-			B:        difflib.SplitLines(string(actualBytes)),
-			FromFile: "expected",
-			ToFile:   "actual",
-			Context:  3,
+		diff := format.UnifiedDiff(format.DiffConfig{
+			A:    string(expected),
+			B:    string(actualBytes),
+			From: "expected",
+			To:   "actual",
 		})
-		if err != nil {
-			return cmp.ResultFromError(err)
-		}
 		return cmp.ResultFailure("\n" + diff)
 	}
 }
