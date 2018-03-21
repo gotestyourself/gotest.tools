@@ -24,8 +24,6 @@ patterns.
   test asynchronous code by polling until a desired state is reached
 * [skip](http://godoc.org/github.com/gotestyourself/gotestyourself/skip) -
   skip tests based on conditions
-* [testsum](http://godoc.org/github.com/gotestyourself/gotestyourself/testsum) -
-  a program to summarize `go test` output and test failures
 
 ## Related
 
