@@ -250,8 +250,12 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	assert(t, t.FailNow, argsAfterT, cmp.Equal(x, y), msgAndArgs...)
 }
 
-// DeepEqual uses https://github.com/google/go-cmp/cmp to assert two values
-// are equal and fails the test if they are not equal.
+// DeepEqual uses google/go-cmp (http://bit.do/go-cmp) to assert two values are
+// equal and fails the test if they are not equal.
+//
+// Package assert/opt (http://bit.do/t-assert-opt) provides some additional
+// commonly used Options.
+//
 // This is equivalent to Assert(t, cmp.DeepEqual(x, y)).
 func DeepEqual(t TestingT, x, y interface{}, opts ...gocmp.Option) {
 	if ht, ok := t.(helperT); ok {
