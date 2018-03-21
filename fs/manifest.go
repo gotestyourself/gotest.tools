@@ -10,8 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
-// Manifest stores the structure and properties of files and directories in a
-// filesystem.
+// Manifest stores the expected structure and properties of files and directories
+// in a filesystem.
 type Manifest struct {
 	root *directory
 }
@@ -53,7 +53,9 @@ type dirEntry interface {
 	Type() string
 }
 
-// ManifestFromDir creates a Manifest by reading the files at the directory path.
+// ManifestFromDir creates a Manifest by reading the directory at path. The
+// manifest stores the structure and properties of files in the directory.
+// ManifestFromDir can be used with Equal to compare two directories.
 func ManifestFromDir(t assert.TestingT, path string) Manifest {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()

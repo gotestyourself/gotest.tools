@@ -71,7 +71,9 @@ func (p *directoryPath) AddDirectory(path string, ops ...PathOp) error {
 	return applyPathOps(exp, ops)
 }
 
-// Expected returns a Manifest with a directory structured created by ops.
+// Expected returns a Manifest with a directory structured created by ops. The
+// PathOp operations are applied to the manifest as expectations of the
+// filesystem structure and properties.
 func Expected(t assert.TestingT, ops ...PathOp) Manifest {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -116,9 +118,9 @@ func normalizeID(id int) uint32 {
 
 var anyFileContent = ioutil.NopCloser(bytes.NewReader(nil))
 
-// AllowAnyFileContent is a PathOp that sets the file entry in the Manifest to
-// match against any file content.
-func AllowAnyFileContent(path Path) error {
+// MatchAnyFileContent is a PathOp that updates a Manifest so that the file
+// at path may contain any content.
+func MatchAnyFileContent(path Path) error {
 	if m, ok := path.(*filePath); ok {
 		m.SetContent(anyFileContent)
 	}
@@ -127,13 +129,11 @@ func AllowAnyFileContent(path Path) error {
 
 const anyFile = "*"
 
-// AllowExtraFiles is a PathOp that updates the Manifest to allow a directory
+// MatchExtraFiles is a PathOp that updates a Manifest to allow a directory
 // to contain unspecified files.
-func AllowExtraFiles(path Path) error {
+func MatchExtraFiles(path Path) error {
 	if m, ok := path.(*directoryPath); ok {
 		m.AddFile(anyFile)
 	}
 	return nil
 }
-
-// TODO: AllowExtraFilesWith(ops ...PathOp) PathOp {}

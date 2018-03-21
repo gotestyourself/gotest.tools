@@ -15,7 +15,7 @@ patterns.
 * [env](http://godoc.org/github.com/gotestyourself/gotestyourself/env) -
   test code that uses environment variables
 * [fs](http://godoc.org/github.com/gotestyourself/gotestyourself/fs) -
-  create test files and directories
+  create test files and compare directories structures
 * [golden](http://godoc.org/github.com/gotestyourself/gotestyourself/golden) -
   compare large multi-line strings
 * [icmd](http://godoc.org/github.com/gotestyourself/gotestyourself/icmd) -

@@ -52,7 +52,7 @@ func ExampleEqual() {
 			fs.WithBytes(golden.Get(t, "one.golden")),
 			fs.WithMode(0600)),
 		fs.WithDir("data",
-			fs.WithFile("config", "", fs.AllowAnyFileContent)))
+			fs.WithFile("config", "", fs.MatchAnyFileContent)))
 
 	assert.Assert(t, fs.Equal(path, expected))
 }

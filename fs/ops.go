@@ -14,7 +14,10 @@ import (
 
 const defaultFileMode = 0644
 
-// PathOp is a function which accepts a Path to perform some operation
+// PathOp is a function which accepts a Path and performs an operation on that
+// path. When called with real filesystem objects (File or Dir) a PathOp modifies
+// the filesystem at the path. When used with a Manifest object a PathOp updates
+// the manifest to expect a value.
 type PathOp func(path Path) error
 
 type manifestResource interface {

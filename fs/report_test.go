@@ -82,7 +82,7 @@ func TestEqualWithAllowAnyFileContent(t *testing.T) {
 	defer dir.Remove()
 
 	expected := Expected(t,
-		WithFile("data", "different content", AllowAnyFileContent))
+		WithFile("data", "different content", MatchAnyFileContent))
 	assert.Assert(t, Equal(dir.Path(), expected))
 }
 
@@ -115,7 +115,7 @@ func TestEqualDirectoryWithAllowExtraFiles(t *testing.T) {
 		WithFile("extra", "some content"))
 	defer dir.Remove()
 
-	expected := Expected(t, file1, AllowExtraFiles)
+	expected := Expected(t, file1, MatchExtraFiles)
 	assert.Assert(t, Equal(dir.Path(), expected))
 }
 
