@@ -1,4 +1,8 @@
-/*Package testsum provides functions for parsing `go test -v` output and returning
+/*Package testsum is DEPRECATED.
+
+This functionality is now available from `go tool test2json` in the stdlib.
+
+Package testsum provides functions for parsing `go test -v` output and returning
 a summary of the test run.
 
 Build the executable:
