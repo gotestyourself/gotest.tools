@@ -1,5 +1,5 @@
-/*Package fs provides tools for creating and working with temporary files and
-directories.
+/*Package fs provides tools for creating temporary files, and testing the
+contents and structure of a directory.
 */
 package fs
 
@@ -12,7 +12,9 @@ import (
 	"github.com/gotestyourself/gotestyourself/x/subtest"
 )
 
-// Path objects return their filesystem path. Both File and Dir implement Path.
+// Path objects return their filesystem path. Path may be implemented by a
+// real filesystem object (such as File and Dir) or by a type which updates
+// entries in a Manifest.
 type Path interface {
 	Path() string
 	Remove()

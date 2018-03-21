@@ -8,6 +8,7 @@ import (
 	"github.com/gotestyourself/gotestyourself/assert"
 	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"github.com/gotestyourself/gotestyourself/fs"
+	"github.com/gotestyourself/gotestyourself/golden"
 )
 
 var t = &testing.T{}
@@ -40,4 +41,22 @@ func ExampleWithDir() {
 			fs.WithFile("file1", "content\n")),
 	)
 	defer dir.Remove()
+}
+
+// Test that a directory contains the expected files, and all the files have the
+// expected properties.
+func ExampleEqual() {
+	path := operationWhichCreatesFiles()
+	expected := fs.Expected(t,
+		fs.WithFile("one", "",
+			fs.WithBytes(golden.Get(t, "one.golden")),
+			fs.WithMode(0600)),
+		fs.WithDir("data",
+			fs.WithFile("config", "", fs.MatchAnyFileContent)))
+
+	assert.Assert(t, fs.Equal(path, expected))
+}
+
+func operationWhichCreatesFiles() string {
+	return "example-path"
 }
