@@ -3,7 +3,7 @@ FROM    golang:${GOLANG_VERSION:-1.10-alpine}
 
 RUN     apk add -U curl git bash
 
-ARG     FILEWATCHER_SHA=v0.2.0
+ARG     FILEWATCHER_SHA=v0.2.1
 RUN     go get -d github.com/dnephin/filewatcher && \
         cd /go/src/github.com/dnephin/filewatcher && \
         git checkout -q "$FILEWATCHER_SHA" && \
