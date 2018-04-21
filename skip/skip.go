@@ -1,5 +1,6 @@
-/*Package skip provides functions for skipping based on a condition.
- */
+/*Package skip provides functions for skipping a test and printing the source code
+of the condition used to skip the test.
+*/
 package skip
 
 import (
