@@ -1,6 +1,6 @@
 version: "{build}"
 
-clone_folder: c:\gopath\src\github.com\gotestyourself\gotestyourself
+clone_folder: c:\gopath\src\gotest.tools
 
 environment:
   GOPATH: c:\gopath

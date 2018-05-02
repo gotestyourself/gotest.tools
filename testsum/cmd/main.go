@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/gotestyourself/gotestyourself/testsum"
+	"gotest.tools/testsum"
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 )

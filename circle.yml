@@ -20,7 +20,7 @@ jobs:
                 deps-$CIRCLE_BUILD_NUM cli-builder:$CIRCLE_BUILD_NUM \
                 dep ensure
             docker cp \
-                deps-$CIRCLE_BUILD_NUM:/go/src/github.com/gotestyourself/gotestyourself/vendor \
+                deps-$CIRCLE_BUILD_NUM:/go/src/gotest.tools/vendor \
                 vendor
       - run:
           name: "Lint"

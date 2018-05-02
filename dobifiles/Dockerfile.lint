@@ -10,7 +10,7 @@ RUN     go get -d github.com/alecthomas/gometalinter && \
         gometalinter --install && \
         rm -rf /go/src/* /go/pkg/*
 
-WORKDIR /go/src/github.com/gotestyourself/gotestyourself
+WORKDIR /go/src/gotest.tools
 ENV     CGO_ENABLED=0
 ENTRYPOINT ["/usr/local/bin/gometalinter"]
 CMD     ["--config=gometalinter.json", "./..."]
