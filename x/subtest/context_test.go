@@ -3,7 +3,7 @@ package subtest
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
+	"gotest.tools/assert"
 )
 
 func TestRunCallsCleanup(t *testing.T) {

@@ -1,7 +1,7 @@
 /*Package skip provides functions for skipping a test and printing the source code
 of the condition used to skip the test.
 */
-package skip
+package skip // import "gotest.tools/skip"
 
 import (
 	"fmt"
@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gotestyourself/gotestyourself/internal/format"
-	"github.com/gotestyourself/gotestyourself/internal/source"
+	"gotest.tools/internal/format"
+	"gotest.tools/internal/source"
 )
 
 type skipT interface {

@@ -3,9 +3,9 @@ package format_test
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/golden"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/assert"
+	"gotest.tools/golden"
+	"gotest.tools/internal/format"
 )
 
 func TestUnifiedDiff(t *testing.T) {

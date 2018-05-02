@@ -6,8 +6,8 @@ package source_test
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/internal/source"
+	"gotest.tools/assert"
+	"gotest.tools/internal/source"
 )
 
 func TestGetConditionSingleLine(t *testing.T) {

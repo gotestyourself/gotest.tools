@@ -3,7 +3,7 @@ package icmd_test
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/icmd"
+	"gotest.tools/icmd"
 )
 
 var t = &testing.T{}

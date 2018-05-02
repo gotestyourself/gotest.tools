@@ -2,7 +2,7 @@
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
 */
-package golden
+package golden // import "gotest.tools/golden"
 
 import (
 	"bytes"
@@ -11,9 +11,9 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/internal/format"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")

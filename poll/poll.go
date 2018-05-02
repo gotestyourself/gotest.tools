@@ -1,6 +1,6 @@
 /*Package poll provides tools for testing asynchronous code.
  */
-package poll
+package poll // import "gotest.tools/poll"
 
 import (
 	"fmt"

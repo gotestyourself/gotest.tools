@@ -5,10 +5,10 @@ import (
 	"os"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/fs"
-	"github.com/gotestyourself/gotestyourself/golden"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/fs"
+	"gotest.tools/golden"
 )
 
 var t = &testing.T{}

@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/fs"
-	"github.com/gotestyourself/gotestyourself/internal/maint"
+	"gotest.tools/assert"
+	"gotest.tools/fs"
+	"gotest.tools/internal/maint"
 )
 
 var (

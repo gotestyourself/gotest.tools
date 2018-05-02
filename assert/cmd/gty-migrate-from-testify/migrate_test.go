@@ -5,9 +5,9 @@ import (
 	"go/token"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
 	"golang.org/x/tools/go/loader"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 func TestMigrateFileReplacesTestingT(t *testing.T) {

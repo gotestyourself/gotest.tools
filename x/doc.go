@@ -2,4 +2,4 @@
 compatibility requirements. Packages in this namespace may contain backwards
 incompatible changes within the same major version.
 */
-package x
+package x // import "gotest.tools/x"
