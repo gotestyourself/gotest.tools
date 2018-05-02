@@ -13,4 +13,4 @@ docker build \
 docker run \
     -e TESTTIMEOUT=30s \
     --name "test-$CIRCLE_BUILD_NUM" "$image" \
-    bash -ec 'dep ensure; scripts/binary-testsum; scripts/test-unit'
+    bash -ec 'dep ensure; scripts/test-unit'

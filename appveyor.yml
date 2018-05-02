@@ -19,7 +19,6 @@ deploy: false
 build_script:
   - appveyor DownloadFile https://github.com/golang/dep/releases/download/%DEPVERSION%/dep-windows-amd64.exe
   - dep-windows-amd64.exe ensure
-  - bash .\scripts\binary-testsum
 
 test_script:
   - bash .\scripts\test-unit
