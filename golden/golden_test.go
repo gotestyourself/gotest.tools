@@ -61,9 +61,8 @@ func TestGoldenAssertInvalidContent(t *testing.T) {
 
 	fakeT := new(fakeT)
 
-	success := Assert(fakeT, "foo", filename)
+	Assert(fakeT, "foo", filename)
 	assert.Assert(t, fakeT.Failed)
-	assert.Assert(t, !success)
 }
 
 func TestGoldenAssertInvalidContentUpdate(t *testing.T) {
@@ -74,9 +73,8 @@ func TestGoldenAssertInvalidContentUpdate(t *testing.T) {
 
 	fakeT := new(fakeT)
 
-	success := Assert(fakeT, "foo", filename)
+	Assert(fakeT, "foo", filename)
 	assert.Assert(t, !fakeT.Failed)
-	assert.Assert(t, success)
 }
 
 func TestGoldenAssert(t *testing.T) {
@@ -85,9 +83,8 @@ func TestGoldenAssert(t *testing.T) {
 
 	fakeT := new(fakeT)
 
-	success := Assert(fakeT, "foo", filename)
+	Assert(fakeT, "foo", filename)
 	assert.Assert(t, !fakeT.Failed)
-	assert.Assert(t, success)
 }
 
 func TestGoldenAssertWithCarriageReturnInActual(t *testing.T) {
@@ -96,9 +93,8 @@ func TestGoldenAssertWithCarriageReturnInActual(t *testing.T) {
 
 	fakeT := new(fakeT)
 
-	success := Assert(fakeT, "a\rfoo\r\nbar\r\n", filename)
+	Assert(fakeT, "a\rfoo\r\nbar\r\n", filename)
 	assert.Assert(t, !fakeT.Failed)
-	assert.Assert(t, success)
 }
 
 func TestGoldenAssertBytes(t *testing.T) {
@@ -107,9 +103,8 @@ func TestGoldenAssertBytes(t *testing.T) {
 
 	fakeT := new(fakeT)
 
-	success := AssertBytes(fakeT, []byte("foo"), filename)
+	AssertBytes(fakeT, []byte("foo"), filename)
 	assert.Assert(t, !fakeT.Failed)
-	assert.Assert(t, success)
 }
 
 func setUpdateFlag() func() {
