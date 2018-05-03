@@ -1,6 +1,7 @@
-/*Package skip provides functions for skipping based on a condition.
- */
-package skip
+/*Package skip provides functions for skipping a test and printing the source code
+of the condition used to skip the test.
+*/
+package skip // import "gotest.tools/skip"
 
 import (
 	"fmt"
@@ -9,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/gotestyourself/gotestyourself/internal/format"
-	"github.com/gotestyourself/gotestyourself/internal/source"
+	"gotest.tools/internal/format"
+	"gotest.tools/internal/source"
 )
 
 type skipT interface {
@@ -25,9 +26,10 @@ type helperT interface {
 // BoolOrCheckFunc can be a bool or func() bool, other types will panic
 type BoolOrCheckFunc interface{}
 
-// If skips the test if the check function returns true. The skip message will
-// contain the name of the check function. Extra message text can be passed as a
-// format string with args
+// If the condition expression evaluates to true, or the condition function returns
+// true, skip the test.
+// The skip message will contain the source code of the expression.
+// Extra message text can be passed as a format string with args
 func If(t skipT, condition BoolOrCheckFunc, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -47,18 +49,6 @@ func If(t skipT, condition BoolOrCheckFunc, msgAndArgs ...interface{}) {
 func getFunctionName(function func() bool) string {
 	funcPath := runtime.FuncForPC(reflect.ValueOf(function).Pointer()).Name()
 	return strings.SplitN(path.Base(funcPath), ".", 2)[1]
-}
-
-// IfCondition skips the test if the condition is true. The skip message will
-// contain the source of the expression passed as the condition. Extra message
-// text can be passed as a format string with args.
-//
-// Deprecated: Use If() which now accepts bool arguments
-func IfCondition(t skipT, condition bool, msgAndArgs ...interface{}) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	ifCondition(t, condition, msgAndArgs...)
 }
 
 func ifCondition(t skipT, condition bool, msgAndArgs ...interface{}) {

@@ -3,8 +3,8 @@ package fs_test
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/fs"
+	"gotest.tools/assert"
+	"gotest.tools/fs"
 )
 
 func TestFromDir(t *testing.T) {

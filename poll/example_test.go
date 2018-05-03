@@ -3,8 +3,8 @@ package poll_test
 import (
 	"time"
 
-	"github.com/gotestyourself/gotestyourself/poll"
 	"github.com/pkg/errors"
+	"gotest.tools/poll"
 )
 
 var t poll.TestingT

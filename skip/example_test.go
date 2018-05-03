@@ -3,7 +3,7 @@ package skip_test
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/skip"
+	"gotest.tools/skip"
 )
 
 var apiVersion = ""
@@ -28,14 +28,14 @@ func ExampleIf() {
 	skip.If(t, MissingFeature, "coming soon")
 }
 
-func ExampleIfCondition() {
+func ExampleIf_withExpression() {
 	//   --- SKIP: TestName (0.00s)
 	//           skip.go:19: apiVersion < version("v1.24")
-	skip.IfCondition(t, apiVersion < version("v1.24"))
+	skip.If(t, apiVersion < version("v1.24"))
 
 	//   --- SKIP: TestName (0.00s)
 	//           skip.go:19: !textenv.hasFeature("build"): coming soon
-	skip.IfCondition(t, !testEnv.hasFeature("build"), "coming soon")
+	skip.If(t, !testEnv.hasFeature("build"), "coming soon")
 }
 
 func version(v string) string {

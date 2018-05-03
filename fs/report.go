@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/internal/format"
 )
 
 // Equal compares a directory to the expected structured described by a manifest

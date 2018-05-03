@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/x/subtest"
+	"gotest.tools/assert"
+	"gotest.tools/x/subtest"
 )
 
 var t = &testing.T{}

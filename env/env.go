@@ -1,14 +1,14 @@
 /*Package env provides functions to test code that read environment variables
 or the current working directory.
 */
-package env
+package env // import "gotest.tools/env"
 
 import (
 	"os"
 	"strings"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/x/subtest"
+	"gotest.tools/assert"
+	"gotest.tools/x/subtest"
 )
 
 type helperT interface {

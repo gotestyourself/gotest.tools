@@ -6,8 +6,8 @@ import (
 	"sort"
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/skip"
+	"gotest.tools/assert"
+	"gotest.tools/skip"
 )
 
 func TestPatchFromUnset(t *testing.T) {

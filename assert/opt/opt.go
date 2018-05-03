@@ -1,6 +1,6 @@
 /*Package opt provides common go-cmp.Options for use with assert.DeepEqual.
  */
-package opt
+package opt // import "gotest.tools/assert/opt"
 
 import (
 	"time"

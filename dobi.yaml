@@ -3,7 +3,7 @@ meta:
 
 mount=source:
   bind: .
-  path: /go/src/github.com/gotestyourself/gotestyourself
+  path: /go/src/gotest.tools
 
 mount=depsources:
  bind: ./.depsources
@@ -48,11 +48,6 @@ job=deps:
 job=lint:
   use: linter
   mounts: [source]
-
-job=binary-testsum:
-  use: builder
-  mounts: [source]
-  command: scripts/binary-testsum
 
 alias=test:
   tasks: [test-unit]

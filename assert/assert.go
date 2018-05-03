@@ -62,7 +62,7 @@ See http://bit.do/cmd-gty-migrate-from-testify.
 
 
 */
-package assert
+package assert // import "gotest.tools/assert"
 
 import (
 	"fmt"
@@ -70,9 +70,9 @@ import (
 	"go/token"
 
 	gocmp "github.com/google/go-cmp/cmp"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
-	"github.com/gotestyourself/gotestyourself/internal/format"
-	"github.com/gotestyourself/gotestyourself/internal/source"
+	"gotest.tools/assert/cmp"
+	"gotest.tools/internal/format"
+	"gotest.tools/internal/source"
 )
 
 // BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.

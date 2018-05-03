@@ -1,6 +1,6 @@
 /*Package poll provides tools for testing asynchronous code.
  */
-package poll
+package poll // import "gotest.tools/poll"
 
 import (
 	"fmt"
@@ -25,15 +25,15 @@ type helperT interface {
 
 // Settings are used to configure the behaviour of WaitOn
 type Settings struct {
-	// Timeout is the maximum time to wait for the condition. Defaults to 10s
+	// Timeout is the maximum time to wait for the condition. Defaults to 10s.
 	Timeout time.Duration
-	// Delay is the time to sleep between checking the condition. Detaults to
-	// 1ms
+	// Delay is the time to sleep between checking the condition. Defaults to
+	// 100ms.
 	Delay time.Duration
 }
 
 func defaultConfig() *Settings {
-	return &Settings{Timeout: 10 * time.Second, Delay: time.Millisecond}
+	return &Settings{Timeout: 10 * time.Second, Delay: 100 * time.Millisecond}
 }
 
 // SettingOp is a function which accepts and modifies Settings
