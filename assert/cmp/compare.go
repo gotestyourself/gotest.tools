@@ -19,7 +19,7 @@ type Comparison func() Result
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
-// Package assert/opt (http://bit.do/t-assert-opt) provides some additional
+// Package https://godoc.org/gotest.tools/assert/opt provides some additional
 // commonly used Options.
 func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 	return func() (result Result) {
