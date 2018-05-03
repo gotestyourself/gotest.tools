@@ -49,7 +49,7 @@ The example below shows assert used with some common types.
 
 Comparisons
 
-Package assert/cmp (http://bit.do/assert-cmp) provides
+Package https://godoc.org/gotest.tools/assert/cmp provides
 many common comparisons. Additional comparisons can be written to compare
 values in other ways. See the example Assert (CustomComparison).
 
@@ -253,7 +253,7 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 // DeepEqual uses google/go-cmp (http://bit.do/go-cmp) to assert two values are
 // equal and fails the test if they are not equal.
 //
-// Package assert/opt (http://bit.do/t-assert-opt) provides some additional
+// Package https://godoc.org/gotest.tools/assert/opt provides some additional
 // commonly used Options.
 //
 // This is equivalent to Assert(t, cmp.DeepEqual(x, y)).
