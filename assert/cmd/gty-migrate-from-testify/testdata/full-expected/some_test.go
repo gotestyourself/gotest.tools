@@ -5,8 +5,8 @@ import (
 	"testing"
 
 	"github.com/go-check/check"
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 type mystruct struct {
