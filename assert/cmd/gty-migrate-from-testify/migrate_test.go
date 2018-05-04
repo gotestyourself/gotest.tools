@@ -37,7 +37,7 @@ func do(t require.TestingT) {}
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
+	"gotest.tools/assert"
 )
 
 func TestSomething(t *testing.T) {
@@ -113,8 +113,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	is "github.com/gotestyourself/gotestyourself/assert/cmp"
+	"gotest.tools/assert"
+	is "gotest.tools/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -148,8 +148,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -186,7 +186,7 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
+	"gotest.tools/assert"
 )
 
 func TestSomething(t *testing.T) {
@@ -234,8 +234,8 @@ func TestOtherName(z *testing.T) {
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	"github.com/gotestyourself/gotestyourself/assert/cmp"
+	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -283,8 +283,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"github.com/gotestyourself/gotestyourself/assert"
-	is "github.com/gotestyourself/gotestyourself/assert/cmp"
+	"gotest.tools/assert"
+	is "gotest.tools/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {

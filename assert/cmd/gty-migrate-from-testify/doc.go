@@ -1,9 +1,9 @@
 /*
 
 Command gty-migrate-from-testify migrates packages from
-testify/assert and testify/require to gotestyourself/assert.
+testify/assert and testify/require to gotest.tools/assert.
 
-	$ go get github.com/gotestyourself/gotestyourself/assert/cmd/gty-migrate-from-testify
+	$ go get gotest.tools/assert/cmd/gty-migrate-from-testify
 
 Usage:
 
