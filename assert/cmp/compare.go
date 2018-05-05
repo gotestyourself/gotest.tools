@@ -58,7 +58,7 @@ func toResult(success bool, msg string) Result {
 	return ResultFailure(msg)
 }
 
-// Equal succeeds if x == y.
+// Equal succeeds if x == y. See assert.Equal for full documentation.
 func Equal(x, y interface{}) Comparison {
 	return func() Result {
 		switch {
