@@ -31,8 +31,9 @@ job=watch:
   use: builder
   mounts: [source]
   interactive: true
-  command: scripts/watch
-  env: ['TESTFLAGS={env.TESTFLAGS:}']
+  command: |
+      filewatcher -x vendor gotestsum -- -test.timeout 10s
+  env: ['GOTESTSUM_FORMAT=short-verbose']
 
 job=test-unit:
   use: builder
