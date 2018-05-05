@@ -242,7 +242,17 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 }
 
 // Equal uses the == operator to assert two values are equal and fails the test
-// if they are not equal. This is equivalent to Assert(t, cmp.Equal(x, y)).
+// if they are not equal.
+//
+// If the comparison fails Equal will use the variable names for x and y as part
+// of the failure message to identify the actual and expected values.
+//
+// If either x or y are a multi-line string the failure message will include a
+// unified diff of the two values. If the values only differ by whitespace
+// the unified diff will be augmented by replacing whitespace characters with
+// visible characters to identify the whitespace difference.
+//
+// This is equivalent to Assert(t, cmp.Equal(x, y)).
 func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
