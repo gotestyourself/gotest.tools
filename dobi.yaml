@@ -1,5 +1,5 @@
 meta:
-  project: gotestyourself
+  project: gotesttools
 
 mount=source:
   bind: .
@@ -10,14 +10,14 @@ mount=depsources:
  path: /go/pkg/dep/sources
 
 image=builder:
-  image: gotestyourself-dev
+  image: gotesttools-dev
   context: dobifiles/
   dockerfile: Dockerfile
   args:
     GOLANG_VERSION: '{env.GOLANG_VERSION:}' 
 
 image=linter:
-  image: gotestyourself-lint
+  image: gotesttools-lint
   context: dobifiles/
   dockerfile: Dockerfile.lint
 

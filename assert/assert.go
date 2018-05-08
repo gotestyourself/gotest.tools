@@ -16,8 +16,8 @@ The example below shows assert used with some common types.
 	import (
 	    "testing"
 
-	    "github.com/gotestyourself/gotestyourself/assert"
-	    is "github.com/gotestyourself/gotestyourself/assert/cmp"
+	    "gotest.tools/assert"
+	    is "gotest.tools/assert/cmp"
 	)
 
 	func TestEverything(t *testing.T) {
