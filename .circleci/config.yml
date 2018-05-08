@@ -60,6 +60,27 @@ jobs:
           name: "Unit Test GO 1.10"
           command: scripts/ci/test 1.10-alpine
 
+  coverage:
+    docker: [{image: 'circleci/golang:1.10'}]
+    working_directory: /go/src/gotest.tools
+    steps:
+      - checkout
+      - run:
+          name: "Download dependencies"
+          command: |
+            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+            dep ensure
+            go get gotest.tools/gotestsum
+      - run:
+          name: "Coverage"
+          command: |
+            mkdir -p junitxml/unit
+            gotestsum --junitfile=junitxml/unit/junit.xml -- \
+              -coverprofile=coverage.txt ./...
+            bash <(curl -s https://codecov.io/bash)
+      - store_test_results:
+          path: junitxml/
+
 workflows:
   version: 2
   ci:
@@ -68,3 +89,4 @@ workflows:
       - test-golang-1.8
       - test-golang-1.9
       - test-golang-1.10
+      - coverage
