@@ -76,7 +76,7 @@ func fmtExpected(format string, args ...interface{}) string {
 	return filepath.FromSlash(fmt.Sprintf(format, args...))
 }
 
-func TestEqualWithAllowAnyFileContent(t *testing.T) {
+func TestEqualWithMatchAnyFileContent(t *testing.T) {
 	dir := NewDir(t, t.Name(),
 		WithFile("data", "this is some data"))
 	defer dir.Remove()
@@ -108,7 +108,7 @@ func TestEqualWithFileContent(t *testing.T) {
 	assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 }
 
-func TestEqualDirectoryWithAllowExtraFiles(t *testing.T) {
+func TestEqualDirectoryWithMatchExtraFiles(t *testing.T) {
 	file1 := WithFile("file1", "same in both")
 	dir := NewDir(t, t.Name(),
 		file1,
@@ -152,4 +152,15 @@ func TestEqualManyFailures(t *testing.T) {
 
 type cmpFailure interface {
 	FailureMessage() string
+}
+
+func TestMatchAnyFileMode(t *testing.T) {
+	dir := NewDir(t, t.Name(),
+		WithFile("data", "content",
+			WithMode(0777)))
+	defer dir.Remove()
+
+	expected := Expected(t,
+		WithFile("data", "content", MatchAnyFileMode))
+	assert.Assert(t, Equal(dir.Path(), expected))
 }
