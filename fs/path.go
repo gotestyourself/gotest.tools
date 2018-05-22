@@ -137,3 +137,15 @@ func MatchExtraFiles(path Path) error {
 	}
 	return nil
 }
+
+// anyFileMode is represented by uint32_max
+const anyFileMode os.FileMode = 4294967295
+
+// MatchAnyFileMode is a PathOp that updates a Manifest so that the resource at path
+// will match any file mode.
+func MatchAnyFileMode(path Path) error {
+	if m, ok := path.(manifestResource); ok {
+		m.SetMode(anyFileMode)
+	}
+	return nil
+}
