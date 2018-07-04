@@ -172,21 +172,33 @@ func copyDirectory(source, dest string) error {
 	for _, entry := range entries {
 		sourcePath := filepath.Join(source, entry.Name())
 		destPath := filepath.Join(dest, entry.Name())
-		if entry.IsDir() {
+		switch {
+		case entry.IsDir():
 			if err := os.Mkdir(destPath, 0755); err != nil {
 				return err
 			}
 			if err := copyDirectory(sourcePath, destPath); err != nil {
 				return err
 			}
-			continue
-		}
-		// TODO: handle symlinks
-		if err := copyFile(sourcePath, destPath); err != nil {
-			return err
+		case entry.Mode()&os.ModeSymlink != 0:
+			if err := copySymLink(sourcePath, destPath); err != nil {
+				return err
+			}
+		default:
+			if err := copyFile(sourcePath, destPath); err != nil {
+				return err
+			}
 		}
 	}
 	return nil
+}
+
+func copySymLink(source, dest string) error {
+	link, err := os.Readlink(source)
+	if err != nil {
+		return err
+	}
+	return os.Symlink(link, dest)
 }
 
 func copyFile(source, dest string) error {
