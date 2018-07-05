@@ -108,6 +108,18 @@ func TestEqualWithFileContent(t *testing.T) {
 	assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 }
 
+func TestEqualWithMatchContentIgnoreCarriageReturn(t *testing.T) {
+	dir := NewDir(t, t.Name(),
+		WithFile("file1", "line1\r\nline2"))
+	defer dir.Remove()
+
+	manifest := Expected(t,
+		WithFile("file1", "line1\nline2", MatchContentIgnoreCarriageReturn))
+
+	result := Equal(dir.Path(), manifest)()
+	assert.Assert(t, result.Success())
+}
+
 func TestEqualDirectoryWithMatchExtraFiles(t *testing.T) {
 	file1 := WithFile("file1", "same in both")
 	dir := NewDir(t, t.Name(),

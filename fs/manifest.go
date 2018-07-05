@@ -24,7 +24,8 @@ type resource struct {
 
 type file struct {
 	resource
-	content io.ReadCloser
+	content             io.ReadCloser
+	ignoreCariageReturn bool
 }
 
 func (f *file) Type() string {
