@@ -1,10 +1,12 @@
 package fs_test
 
 import (
+	"runtime"
 	"testing"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
+	"gotest.tools/skip"
 )
 
 func TestFromDir(t *testing.T) {
@@ -23,6 +25,7 @@ func TestFromDir(t *testing.T) {
 }
 
 func TestFromDirSymlink(t *testing.T) {
+	skip.If(t, runtime.GOOS == "windows", "See gotest.tools/issues/107")
 	dir := fs.NewDir(t, "test-from-dir", fs.FromDir("testdata/copy-test-with-symlink"))
 	defer dir.Remove()
 
