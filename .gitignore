@@ -2,3 +2,4 @@ vendor/
 .dobi/
 Gopkg.lock
 .depsources
+dist/
