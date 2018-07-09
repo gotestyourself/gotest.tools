@@ -1,12 +1,13 @@
 package fs_test
 
 import (
+	"os"
+	"path/filepath"
 	"runtime"
 	"testing"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
-	"gotest.tools/skip"
 )
 
 func TestFromDir(t *testing.T) {
@@ -25,9 +26,17 @@ func TestFromDir(t *testing.T) {
 }
 
 func TestFromDirSymlink(t *testing.T) {
-	skip.If(t, runtime.GOOS == "windows", "See gotest.tools/issues/107")
 	dir := fs.NewDir(t, "test-from-dir", fs.FromDir("testdata/copy-test-with-symlink"))
 	defer dir.Remove()
+
+	currentdir, err := os.Getwd()
+	assert.NilError(t, err)
+
+	link2 := filepath.FromSlash("../2")
+	link3 := "/some/inexistent/link"
+	if runtime.GOOS == "windows" {
+		link3 = filepath.Join(filepath.VolumeName(currentdir), link3)
+	}
 
 	expected := fs.Expected(t,
 		fs.WithFile("1", "1\n"),
@@ -36,8 +45,8 @@ func TestFromDirSymlink(t *testing.T) {
 			fs.WithFile("2", "2\n"),
 			fs.WithDir("b",
 				fs.WithFile("1", "1\n"),
-				fs.WithSymlink("2", "../2"),
-				fs.WithSymlink("3", "/some/inexistent/link"),
+				fs.WithSymlink("2", link2),
+				fs.WithSymlink("3", link3),
 				fs.WithSymlink("4", "5"),
 			)))
 

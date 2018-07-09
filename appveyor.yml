@@ -1,16 +1,18 @@
 version: "{build}"
+image: Visual Studio 2017
 
 clone_folder: c:\gopath\src\gotest.tools
 
 environment:
+  PATH: c:\go110\bin;%PATH%
+  GOROOT: c:\go110
   GOPATH: c:\gopath
-  GOVERSION: 1.10
   DEPVERSION: v0.4.1
 
+init:
+  - git config --global core.symlinks true
+
 install:
-  - rmdir c:\go /s /q
-  - appveyor DownloadFile https://storage.googleapis.com/golang/go%GOVERSION%.windows-amd64.msi
-  - msiexec /i go%GOVERSION%.windows-amd64.msi /q
   - go version
   - go env
 
