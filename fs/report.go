@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 
@@ -126,7 +127,13 @@ func indent(s, prefix string) string {
 
 func eqSymlink(x, y *symlink) []problem {
 	p := eqResource(x.resource, y.resource)
-	if x.target != y.target {
+	xTarget := x.target
+	yTarget := y.target
+	if runtime.GOOS == "windows" {
+		xTarget = strings.ToLower(xTarget)
+		yTarget = strings.ToLower(yTarget)
+	}
+	if xTarget != yTarget {
 		p = append(p, notEqual("target", x.target, y.target))
 	}
 	return p
