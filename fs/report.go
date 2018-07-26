@@ -68,6 +68,11 @@ func eqResource(x, y resource) []problem {
 	return p
 }
 
+func removeCarriageReturn(in []byte) []byte {
+	return bytes.Replace(in, []byte("\r\n"), []byte("\n"), -1)
+}
+
+// nolint: gocyclo
 func eqFile(x, y *file) []problem {
 	p := eqResource(x.resource, y.resource)
 
@@ -95,6 +100,10 @@ func eqFile(x, y *file) []problem {
 	}
 	if xErr != nil || yErr != nil {
 		return p
+	}
+	if x.ignoreCariageReturn || y.ignoreCariageReturn {
+		xContent = removeCarriageReturn(xContent)
+		yContent = removeCarriageReturn(yContent)
 	}
 
 	if !bytes.Equal(xContent, yContent) {
