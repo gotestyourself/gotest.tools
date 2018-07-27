@@ -186,7 +186,7 @@ func Error(err error, message string) Comparison {
 			return ResultFailure("expected an error, got nil")
 		case err.Error() != message:
 			return ResultFailure(fmt.Sprintf(
-				"expected error %q, got %+v", message, err))
+				"expected error %q, got %s", message, formatErrorMessage(err)))
 		}
 		return ResultSuccess
 	}
@@ -201,10 +201,20 @@ func ErrorContains(err error, substring string) Comparison {
 			return ResultFailure("expected an error, got nil")
 		case !strings.Contains(err.Error(), substring):
 			return ResultFailure(fmt.Sprintf(
-				"expected error to contain %q, got %+v", substring, err))
+				"expected error to contain %q, got %s", substring, formatErrorMessage(err)))
 		}
 		return ResultSuccess
 	}
+}
+
+func formatErrorMessage(err error) string {
+	if _, ok := err.(interface {
+		Cause() error
+	}); ok {
+		return fmt.Sprintf("%q\n%+v", err, err)
+	}
+	// This error was not wrapped with github.com/pkg/errors
+	return fmt.Sprintf("%q", err)
 }
 
 // Nil succeeds if obj is a nil interface, pointer, or function.

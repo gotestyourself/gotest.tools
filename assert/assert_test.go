@@ -324,7 +324,7 @@ func TestErrorFailure(t *testing.T) {
 
 		err := fmt.Errorf("the actual error")
 		Error(fakeT, err, "this error")
-		expected := `assertion failed: expected error "this error", got the actual error`
+		expected := `assertion failed: expected error "this error", got "the actual error"`
 		expectFailNowed(t, fakeT, expected)
 	})
 }
@@ -342,7 +342,7 @@ func TestErrorContainsFailure(t *testing.T) {
 
 		err := fmt.Errorf("the actual error")
 		ErrorContains(fakeT, err, "this error")
-		expected := `assertion failed: expected error to contain "this error", got the actual error`
+		expected := `assertion failed: expected error to contain "this error", got "the actual error"`
 		expectFailNowed(t, fakeT, expected)
 	})
 }

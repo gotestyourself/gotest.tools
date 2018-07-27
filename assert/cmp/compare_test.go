@@ -248,9 +248,12 @@ func TestError(t *testing.T) {
 	result := Error(nil, "the error message")()
 	assertFailure(t, result, "expected an error, got nil")
 
-	result = Error(errors.New("other"), "the error message")()
+	// A Wrapped error also includes the stack
+	result = Error(errors.Wrap(errors.New("other"), "wrapped"), "the error message")()
 	assertFailureHasPrefix(t, result,
-		`expected error "the error message", got other`)
+		`expected error "the error message", got "wrapped: other"
+other
+gotest.tools/assert/cmp.TestError`)
 
 	msg := "the message"
 	result = Error(errors.New(msg), msg)()
@@ -263,7 +266,7 @@ func TestErrorContains(t *testing.T) {
 
 	result = ErrorContains(errors.New("other"), "the error")()
 	assertFailureHasPrefix(t, result,
-		`expected error to contain "the error", got other`)
+		`expected error to contain "the error", got "other"`)
 
 	msg := "the full message"
 	result = ErrorContains(errors.New(msg), "full")()
