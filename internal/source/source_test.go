@@ -45,7 +45,6 @@ func shim(_, _, _ string) (string, error) {
 func TestFormattedCallExprArg_InDefer(t *testing.T) {
 	cap := &capture{}
 	func() {
-		fmt.Println()
 		defer cap.shim("first", "second")
 	}()
 
@@ -72,4 +71,15 @@ func TestFormattedCallExprArg_InAnonymousDefer(t *testing.T) {
 
 	assert.NilError(t, cap.err)
 	assert.Equal(t, cap.value, `"second"`)
+}
+
+func TestFormattedCallExprArg_InDeferMultipleDefers(t *testing.T) {
+	cap := &capture{}
+	func() {
+		fmt.Println()
+		defer fmt.Println()
+		defer cap.shim("first", "second")
+	}()
+
+	assert.ErrorContains(t, cap.err, "ambiguous call expression")
 }

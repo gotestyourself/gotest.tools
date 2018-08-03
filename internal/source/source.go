@@ -43,7 +43,7 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	if err != nil {
 		return nil, err
 	}
-	debug("found node (%T): %s", node, debugFormatNode{node})
+	debug("found node: %s", debugFormatNode{node})
 
 	return getCallExprArgs(node)
 }
@@ -55,21 +55,26 @@ func getNodeAtLine(filename string, lineNum int) (ast.Node, error) {
 		return nil, errors.Wrapf(err, "failed to parse source file: %s", filename)
 	}
 
-	node := scanToLine(fileset, astFile, lineNum)
-	if node == nil {
-		return nil, errors.Errorf(
-			"failed to find an expression on line %d in %s", lineNum, filename)
+	if node := scanToLine(fileset, astFile, lineNum); node != nil {
+		return node, nil
 	}
-	return node, nil
+	if node := scanToDeferLine(fileset, astFile, lineNum); node != nil {
+		node, err := guessDefer(node)
+		if err != nil || node != nil {
+			return node, err
+		}
+	}
+	return nil, errors.Errorf(
+		"failed to find an expression on line %d in %s", lineNum, filename)
 }
 
 func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
 	var matchedNode ast.Node
 	ast.Inspect(node, func(node ast.Node) bool {
-		if node == nil || matchedNode != nil {
+		switch {
+		case node == nil || matchedNode != nil:
 			return false
-		}
-		if nodePosition(fileset, node).Line == lineNum {
+		case nodePosition(fileset, node).Line == lineNum:
 			matchedNode = node
 			return false
 		}
@@ -108,7 +113,7 @@ func getCallExprArgs(node ast.Node) ([]ast.Expr, error) {
 	if visitor.expr == nil {
 		return nil, errors.New("failed to find call expression")
 	}
-	debug("usaing (%T): %s", visitor.expr, debugFormatNode{visitor.expr})
+	debug("callExpr: %s", debugFormatNode{visitor.expr})
 	return visitor.expr.Args, nil
 }
 
@@ -120,7 +125,7 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 	if v.expr != nil || node == nil {
 		return nil
 	}
-	debug("visit (%T): %s", node, debugFormatNode{node})
+	debug("visit: %s", debugFormatNode{node})
 
 	switch typed := node.(type) {
 	case *ast.CallExpr:
@@ -157,5 +162,5 @@ func (n debugFormatNode) String() string {
 	if err != nil {
 		return fmt.Sprintf("failed to format %s: %s", n.Node, err)
 	}
-	return out
+	return fmt.Sprintf("(%T) %s", n.Node, out)
 }
