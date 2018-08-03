@@ -97,6 +97,7 @@ func getCallExprArgs(node ast.Node) ([]ast.Expr, error) {
 	if visitor.expr == nil {
 		return nil, errors.New("failed to find call expression")
 	}
+	debug("using (%T): %s", visitor.expr, debugFormatNode{visitor.expr})
 	return visitor.expr.Args, nil
 }
 
@@ -110,8 +111,12 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 	}
 	debug("visit (%T): %s", node, debugFormatNode{node})
 
-	if callExpr, ok := node.(*ast.CallExpr); ok {
-		v.expr = callExpr
+	switch typed := node.(type) {
+	case *ast.DeferStmt:
+		ast.Walk(v, typed.Call.Fun)
+		return nil
+	case *ast.CallExpr:
+		v.expr = typed
 		return nil
 	}
 	return v
@@ -142,7 +147,7 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	return getCallExprArgs(node)
 }
 
-var debugEnabled = os.Getenv("GOTESTYOURSELF_DEBUG") != ""
+var debugEnabled = os.Getenv("GOTESTTOOLS_DEBUG") != ""
 
 func debug(format string, args ...interface{}) {
 	if debugEnabled {

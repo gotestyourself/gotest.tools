@@ -4,19 +4,20 @@ package source_test
 // package
 
 import (
+	"fmt"
 	"testing"
 
 	"gotest.tools/assert"
 	"gotest.tools/internal/source"
 )
 
-func TestGetConditionSingleLine(t *testing.T) {
+func TestFormattedCallExprArg_SingleLine(t *testing.T) {
 	msg, err := shim("not", "this", "this text")
 	assert.NilError(t, err)
 	assert.Equal(t, `"this text"`, msg)
 }
 
-func TestGetConditionMultiLine(t *testing.T) {
+func TestFormattedCallExprArg_MultiLine(t *testing.T) {
 	msg, err := shim(
 		"first",
 		"second",
@@ -26,7 +27,7 @@ func TestGetConditionMultiLine(t *testing.T) {
 	assert.Equal(t, `"this text"`, msg)
 }
 
-func TestGetConditionIfStatement(t *testing.T) {
+func TestFormattedCallExprArg_IfStatement(t *testing.T) {
 	if msg, err := shim(
 		"first",
 		"second",
@@ -39,4 +40,38 @@ func TestGetConditionIfStatement(t *testing.T) {
 
 func shim(_, _, _ string) (string, error) {
 	return source.FormattedCallExprArg(1, 2)
+}
+
+func TestFormattedCallExprArg_InDefer(t *testing.T) {
+	t.Skip("defer reports end of function block as line number")
+	cap := &capture{}
+	func() {
+		fmt.Println()
+		defer fmt.Println()
+		defer cap.shim("first", "second\n")
+	}()
+
+	assert.NilError(t, cap.err)
+	assert.Equal(t, cap.value, `"second"`)
+}
+
+type capture struct {
+	value string
+	err   error
+}
+
+func (c *capture) shim(_, _ string) {
+	c.value, c.err = source.FormattedCallExprArg(1, 1)
+}
+
+func TestFormattedCallExprArg_InAnonymousDefer(t *testing.T) {
+	cap := &capture{}
+	func() {
+		fmt.Println()
+		defer fmt.Println()
+		defer func() { cap.shim("first", "second") }()
+	}()
+
+	assert.NilError(t, cap.err)
+	assert.Equal(t, cap.value, `"second"`)
 }
