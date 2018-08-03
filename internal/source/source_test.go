@@ -43,12 +43,10 @@ func shim(_, _, _ string) (string, error) {
 }
 
 func TestFormattedCallExprArg_InDefer(t *testing.T) {
-	t.Skip("defer reports end of function block as line number")
 	cap := &capture{}
 	func() {
 		fmt.Println()
-		defer fmt.Println()
-		defer cap.shim("first", "second\n")
+		defer cap.shim("first", "second")
 	}()
 
 	assert.NilError(t, cap.err)
