@@ -1,7 +1,10 @@
 package icmd
 
 import (
+	"bytes"
+	"errors"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -9,6 +12,7 @@ import (
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
+	"gotest.tools/golden"
 	"gotest.tools/internal/maint"
 )
 
@@ -98,4 +102,57 @@ func TestRunCommandWithExitCode(t *testing.T) {
 		ExitCode: 99,
 		Error:    "exit status 99",
 	})
+}
+
+func TestResult_Match_NotMatched(t *testing.T) {
+	result := &Result{
+		Cmd:       exec.Command("binary", "arg1"),
+		ExitCode:  99,
+		Error:     errors.New("exit code 99"),
+		outBuffer: newLockedBuffer("the output"),
+		errBuffer: newLockedBuffer("the stderr"),
+		Timeout:   true,
+	}
+	exp := Expected{
+		ExitCode: 101,
+		Out:      "Something else",
+		Err:      None,
+	}
+	err := result.match(exp)
+	assert.ErrorContains(t, err, "Failures")
+	golden.Assert(t, err.Error(), "result-match-no-match.golden")
+}
+
+func newLockedBuffer(s string) *lockedBuffer {
+	return &lockedBuffer{buf: *bytes.NewBufferString(s)}
+}
+
+func TestResult_Match_NotMatchedNoError(t *testing.T) {
+	result := &Result{
+		Cmd:       exec.Command("binary", "arg1"),
+		outBuffer: newLockedBuffer("the output"),
+		errBuffer: newLockedBuffer("the stderr"),
+	}
+	exp := Expected{
+		ExitCode: 101,
+		Out:      "Something else",
+		Err:      None,
+	}
+	err := result.match(exp)
+	assert.ErrorContains(t, err, "Failures")
+	golden.Assert(t, err.Error(), "result-match-no-match-no-error.golden")
+}
+
+func TestResult_Match_Match(t *testing.T) {
+	result := &Result{
+		Cmd:       exec.Command("binary", "arg1"),
+		outBuffer: newLockedBuffer("the output"),
+		errBuffer: newLockedBuffer("the stderr"),
+	}
+	exp := Expected{
+		Out: "the output",
+		Err: "the stderr",
+	}
+	err := result.match(exp)
+	assert.NilError(t, err)
 }
