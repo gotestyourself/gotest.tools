@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"gotest.tools/assert"
+	"gotest.tools/fs"
 	"gotest.tools/skip"
 )
 
@@ -81,6 +82,7 @@ func TestToMap(t *testing.T) {
 		"=foo=bar",
 		"z=singlecharkey",
 		"b",
+		"",
 	}
 	actual := ToMap(source)
 	expected := map[string]string{
@@ -89,6 +91,29 @@ func TestToMap(t *testing.T) {
 		"=foo":       "bar",
 		"z":          "singlecharkey",
 		"b":          "",
+		"":           "",
 	}
 	assert.DeepEqual(t, expected, actual)
+}
+
+func TestChangeWorkingDir(t *testing.T) {
+	tmpDir := fs.NewDir(t, t.Name())
+	defer tmpDir.Remove()
+
+	origWorkDir, err := os.Getwd()
+	assert.NilError(t, err)
+
+	reset := ChangeWorkingDir(t, tmpDir.Path())
+	t.Run("changed to dir", func(t *testing.T) {
+		wd, err := os.Getwd()
+		assert.NilError(t, err)
+		assert.Equal(t, wd, tmpDir.Path())
+	})
+
+	t.Run("reset dir", func(t *testing.T) {
+		reset()
+		wd, err := os.Getwd()
+		assert.NilError(t, err)
+		assert.Equal(t, wd, origWorkDir)
+	})
 }
