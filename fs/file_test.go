@@ -38,3 +38,26 @@ func TestNewDirWithOpsAndManifestEqual(t *testing.T) {
 	)
 	assert.Assert(t, fs.Equal(dir.Path(), fs.Expected(t, manifestOps...)))
 }
+
+func TestNewFile(t *testing.T) {
+	t.Run("with test name", func(t *testing.T) {
+		tmpFile := fs.NewFile(t, t.Name())
+		_, err := os.Stat(tmpFile.Path())
+		assert.NilError(t, err)
+
+		tmpFile.Remove()
+		_, err = os.Stat(tmpFile.Path())
+		assert.ErrorType(t, err, os.IsNotExist)
+	})
+
+	t.Run(`with \ in name`, func(t *testing.T) {
+		tmpFile := fs.NewFile(t, `foo\thing`)
+		_, err := os.Stat(tmpFile.Path())
+		assert.NilError(t, err)
+
+		tmpFile.Remove()
+		_, err = os.Stat(tmpFile.Path())
+		assert.ErrorType(t, err, os.IsNotExist)
+	})
+
+}
