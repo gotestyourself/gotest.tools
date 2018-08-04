@@ -25,7 +25,7 @@ func FormattedCallExprArg(stackIndex int, argPos int) (string, error) {
 		return "", err
 	}
 	if argPos >= len(args) {
-		return "", errors.New("no arg")
+		return "", errors.New("failed to find expression")
 	}
 	return FormatNode(args[argPos])
 }

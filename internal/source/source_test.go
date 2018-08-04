@@ -5,10 +5,13 @@ package source_test
 
 import (
 	"fmt"
+	"runtime"
+	"strings"
 	"testing"
 
 	"gotest.tools/assert"
 	"gotest.tools/internal/source"
+	"gotest.tools/skip"
 )
 
 func TestFormattedCallExprArg_SingleLine(t *testing.T) {
@@ -43,6 +46,7 @@ func shim(_, _, _ string) (string, error) {
 }
 
 func TestFormattedCallExprArg_InDefer(t *testing.T) {
+	skip.If(t, isGoVersion18)
 	cap := &capture{}
 	func() {
 		defer cap.shim("first", "second")
@@ -50,6 +54,10 @@ func TestFormattedCallExprArg_InDefer(t *testing.T) {
 
 	assert.NilError(t, cap.err)
 	assert.Equal(t, cap.value, `"second"`)
+}
+
+func isGoVersion18() bool {
+	return strings.HasPrefix(runtime.Version(), "go1.8.")
 }
 
 type capture struct {
@@ -74,6 +82,7 @@ func TestFormattedCallExprArg_InAnonymousDefer(t *testing.T) {
 }
 
 func TestFormattedCallExprArg_InDeferMultipleDefers(t *testing.T) {
+	skip.If(t, isGoVersion18)
 	cap := &capture{}
 	func() {
 		fmt.Println()
