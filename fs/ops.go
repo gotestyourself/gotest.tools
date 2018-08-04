@@ -231,7 +231,7 @@ func WithSymlink(path, target string) PathOp {
 func WithHardlink(path, target string) PathOp {
 	return func(root Path) error {
 		if _, ok := root.(manifestDirectory); ok {
-			return errors.New("WithHardlink yet implemented for manifests")
+			return errors.New("WithHardlink not implemented for manifests")
 		}
 		return os.Link(filepath.Join(root.Path(), target), filepath.Join(root.Path(), path))
 	}
@@ -242,7 +242,7 @@ func WithHardlink(path, target string) PathOp {
 func WithTimestamps(atime, mtime time.Time) PathOp {
 	return func(root Path) error {
 		if _, ok := root.(manifestDirectory); ok {
-			return errors.New("WithTimestamp yet implemented for manifests")
+			return errors.New("WithTimestamp not implemented for manifests")
 		}
 		return os.Chtimes(root.Path(), atime, mtime)
 	}

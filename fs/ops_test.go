@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"runtime"
 	"testing"
+	"time"
 
 	"gotest.tools/assert"
 	"gotest.tools/fs"
@@ -51,4 +52,14 @@ func TestFromDirSymlink(t *testing.T) {
 			)))
 
 	assert.Assert(t, fs.Equal(dir.Path(), expected))
+}
+
+func TestWithTimestamps(t *testing.T) {
+	stamp := time.Date(2011, 11, 11, 5, 55, 55, 0, time.UTC)
+	tmpFile := fs.NewFile(t, t.Name(), fs.WithTimestamps(stamp, stamp))
+	defer tmpFile.Remove()
+
+	stat, err := os.Stat(tmpFile.Path())
+	assert.NilError(t, err)
+	assert.DeepEqual(t, stat.ModTime(), stamp)
 }
