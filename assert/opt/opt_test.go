@@ -236,3 +236,16 @@ func TestPathField(t *testing.T) {
 	}
 	assert.DeepEqual(t, matches, expected)
 }
+
+func TestPathDebug(t *testing.T) {
+	fixture := node{
+		Value: nodeValue{Value: 3},
+		Children: []node{
+			{Ref: &node{Value: nodeValue{Value: 9}}},
+		},
+		Labels: map[string]node{
+			"label1": {},
+		},
+	}
+	gocmp.Equal(fixture, fixture, gocmp.FilterPath(PathDebug, gocmp.Ignore()))
+}
