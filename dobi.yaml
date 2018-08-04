@@ -33,7 +33,9 @@ job=watch:
   interactive: true
   command: |
       filewatcher -x vendor gotestsum -- -test.timeout 10s
-  env: ['GOTESTSUM_FORMAT=short-verbose']
+  env:
+    - 'GOTESTSUM_FORMAT=short-verbose'
+    - 'GOTESTTOOLS_DEBUG={env.GOTESTTOOLS_DEBUG:}'
 
 job=test-unit:
   use: builder
