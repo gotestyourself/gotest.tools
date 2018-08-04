@@ -60,6 +60,16 @@ jobs:
           name: "Unit Test GO 1.10"
           command: scripts/ci/test 1.10-alpine
 
+  test-golang-1.11:
+    working_directory: /work
+    docker: [{image: 'docker:17.06-git'}]
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: "Unit Test GO 1.11"
+          command: scripts/ci/test 1.11beta3-alpine
+
   coverage:
     docker: [{image: 'circleci/golang:1.10'}]
     working_directory: /go/src/gotest.tools
@@ -89,4 +99,5 @@ workflows:
       - test-golang-1.8
       - test-golang-1.9
       - test-golang-1.10
+      - test-golang-1.11
       - coverage
