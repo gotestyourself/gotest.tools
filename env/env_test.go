@@ -81,6 +81,7 @@ func TestToMap(t *testing.T) {
 		"=foo=bar",
 		"z=singlecharkey",
 		"b",
+		"",
 	}
 	actual := ToMap(source)
 	expected := map[string]string{
@@ -89,6 +90,7 @@ func TestToMap(t *testing.T) {
 		"=foo":       "bar",
 		"z":          "singlecharkey",
 		"b":          "",
+		"":           "",
 	}
 	assert.DeepEqual(t, expected, actual)
 }
