@@ -7,7 +7,7 @@ import (
 	"gotest.tools/assert"
 )
 
-func TestRunCallsCleanup(t *testing.T) {
+func TestTestcase_Run_CallsCleanup(t *testing.T) {
 	calls := []int{}
 	var ctx context.Context
 	Run(t, "test-run-cleanup", func(t TestContext) {
@@ -23,4 +23,10 @@ func TestRunCallsCleanup(t *testing.T) {
 	})
 	assert.DeepEqual(t, calls, []int{0, 1, 2})
 	assert.Equal(t, ctx.Err(), context.Canceled)
+}
+
+func TestTestcase_Run_Parallel(t *testing.T) {
+	Run(t, "test-parallel", func(t TestContext) {
+		t.Parallel()
+	})
 }

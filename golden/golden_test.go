@@ -26,6 +26,8 @@ func (t *fakeT) Fail() {
 	t.Failed = true
 }
 
+func (t *fakeT) Helper() {}
+
 func TestGoldenGetInvalidFile(t *testing.T) {
 	fakeT := new(fakeT)
 

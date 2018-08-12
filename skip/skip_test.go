@@ -26,6 +26,8 @@ func (f *fakeSkipT) Log(args ...interface{}) {
 	f.logs = append(f.logs, fmt.Sprintf("%s", args[0]))
 }
 
+func (f *fakeSkipT) Helper() {}
+
 func version(v string) string {
 	return v
 }
@@ -95,4 +97,11 @@ func TestIfWithMessage(t *testing.T) {
 	If(skipT, SkipBecauseISaidSo, "see notes")
 
 	assert.Equal(t, "SkipBecauseISaidSo: see notes", skipT.reason)
+}
+
+func TestIf_InvalidCondition(t *testing.T) {
+	skipT := &fakeSkipT{}
+	assert.Assert(t, cmp.Panics(func() {
+		If(skipT, "just a string")
+	}))
 }

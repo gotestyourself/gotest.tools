@@ -41,6 +41,21 @@ func TestSecondThing(t *testing.T) {
 	require.NotZero(t, 77)
 }
 
+func TestOthers(t *testing.T) {
+	assert.Contains(t, []string{}, "foo")
+	require.Len(t, []int{}, 3)
+	assert.Panics(t, func() { panic("foo") })
+	require.EqualError(t, fmt.Errorf("bad days"), "good days")
+	assert.NotNil(t, nil)
+
+	assert.Fail(t, "why")
+	assert.FailNow(t, "why not")
+	require.NotEmpty(t, []bool{})
+
+	// Unsupported asseert
+	assert.NotContains(t, []bool{}, true)
+}
+
 func TestAssertNew(t *testing.T) {
 	a := assert.New(t)
 
