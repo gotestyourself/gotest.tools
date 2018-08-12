@@ -41,6 +41,21 @@ func TestSecondThing(t *testing.T) {
 	assert.Assert(t, 77 != 0)
 }
 
+func TestOthers(t *testing.T) {
+	assert.Check(t, cmp.Contains([]string{}, "foo"))
+	assert.Assert(t, cmp.Len([]int{}, 3))
+	assert.Check(t, cmp.Panics(func() { panic("foo") }))
+	assert.Error(t, fmt.Errorf("bad days"), "good days")
+	assert.Check(t, nil != nil)
+
+	t.Error("why")
+	t.Fatal("why not")
+	assert.Assert(t, len([]bool{}) != 0)
+
+	// Unsupported asseert
+	assert.NotContains(t, []bool{}, true)
+}
+
 func TestAssertNew(t *testing.T) {
 
 	assert.Check(t, cmp.Equal("a", "b"))

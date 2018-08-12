@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gotest.tools/assert"
 	"gotest.tools/env"
 	"gotest.tools/fs"
@@ -18,7 +19,8 @@ func TestRun(t *testing.T) {
 
 	defer env.Patch(t, "GOPATH", dir.Path())()
 	err := run(options{
-		pkgs: []string{"example.com/example"},
+		pkgs:             []string{"example.com/example"},
+		showLoaderErrors: true,
 	})
 	assert.NilError(t, err)
 
@@ -26,3 +28,25 @@ func TestRun(t *testing.T) {
 	assert.NilError(t, err)
 	golden.Assert(t, string(raw), "full-expected/some_test.go")
 }
+
+func TestSetupFlags(t *testing.T) {
+	flags, opts := setupFlags("testing")
+	assert.Assert(t, flags.Usage != nil)
+
+	err := flags.Parse([]string{
+		"--dry-run",
+		"--debug",
+		"--cmp-pkg-import-alias=foo",
+		"--print-loader-errors",
+	})
+	assert.NilError(t, err)
+	expected := &options{
+		dryRun:           true,
+		debug:            true,
+		cmpImportName:    "foo",
+		showLoaderErrors: true,
+	}
+	assert.DeepEqual(t, opts, expected, cmpOptions)
+}
+
+var cmpOptions = cmp.AllowUnexported(options{})

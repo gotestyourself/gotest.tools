@@ -19,9 +19,9 @@ type call struct {
 }
 
 func (c call) String() string {
-	args := new(bytes.Buffer)
-	format.Node(args, token.NewFileSet(), c.expr)
-	return args.String()
+	buf := new(bytes.Buffer)
+	format.Node(buf, token.NewFileSet(), c.expr)
+	return buf.String()
 }
 
 func (c call) StringWithFileInfo() string {
