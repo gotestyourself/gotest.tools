@@ -5,6 +5,7 @@ import (
 	"go/ast"
 	"io"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -39,6 +40,52 @@ func TestDeepEqualeWithUnexported(t *testing.T) {
 	result := DeepEqual(Stub{}, Stub{unx: 1})()
 	assertFailure(t, result, `cannot handle unexported field: {cmp.Stub}.unx
 consider using AllowUnexported or cmpopts.IgnoreUnexported`)
+}
+
+func TestRegexp(t *testing.T) {
+	var testcases = []struct {
+		regex  interface{}
+		value  string
+		match  bool
+		expErr string
+	}{
+		{
+			regex: "^[0-9]+$",
+			value: "12123423456",
+			match: true,
+		},
+		{
+			regex:  "bob",
+			value:  "Probably",
+			expErr: "value \"Probably\" does not match regexp \"bob\"",
+		},
+		{
+			regex:  "^1",
+			value:  "2123423456",
+			expErr: "value \"2123423456\" does not match regexp \"^1\"",
+		},
+		{ // precompiled regex
+			regex: regexp.MustCompile("^d[0-9a-f]{8}$"),
+			value: "d1632beef",
+			match: true,
+		},
+		{ // bad regex
+			regex:  "^1(",
+			value:  "2",
+			expErr: "error parsing regexp: missing closing ): `^1(`",
+		},
+	}
+
+	for _, c := range testcases {
+		t.Run(fmt.Sprintf("regex=%q value=%q", c.regex, c.value), func(t *testing.T) {
+			res := Regexp(c.regex, c.value)()
+			if c.match {
+				assertSuccess(t, res)
+			} else {
+				assertFailure(t, res, c.expErr)
+			}
+		})
+	}
 }
 
 func TestLen(t *testing.T) {

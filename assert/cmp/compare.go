@@ -4,6 +4,7 @@ package cmp // import "gotest.tools/assert/cmp"
 import (
 	"fmt"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -56,6 +57,28 @@ func toResult(success bool, msg string) Result {
 		return ResultSuccess
 	}
 	return ResultFailure(msg)
+}
+
+// Regexp succeeds if value v matches regular expression r.
+// Here r can either be a string or a precompiled regexp.
+//
+// Example:
+//   assert.Assert(t, is.Regexp("^[0-9a-f]{32}$", str))
+//   r := regexp.MustCompile("^[0-9a-f]{32}$")
+//   assert.Assert(t, is.Regexp(r, str))
+func Regexp(r interface{}, v string) Comparison {
+	return func() Result {
+		rr, ok := r.(*regexp.Regexp)
+		if !ok {
+			var err error
+			rr, err = regexp.Compile(r.(string))
+			if err != nil {
+				return ResultFailure(err.Error())
+			}
+		}
+		return toResult(rr.MatchString(v),
+			fmt.Sprintf("value %q does not match regexp %q", v, rr.String()))
+	}
 }
 
 // Equal succeeds if x == y. See assert.Equal for full documentation.
