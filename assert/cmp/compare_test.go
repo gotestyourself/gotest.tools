@@ -44,45 +44,57 @@ consider using AllowUnexported or cmpopts.IgnoreUnexported`)
 
 func TestRegexp(t *testing.T) {
 	var testcases = []struct {
+		name   string
 		regex  interface{}
 		value  string
 		match  bool
 		expErr string
 	}{
 		{
+			name:  "pattern string match",
 			regex: "^[0-9]+$",
 			value: "12123423456",
 			match: true,
 		},
 		{
+			name:   "simple pattern string no match",
 			regex:  "bob",
 			value:  "Probably",
-			expErr: "value \"Probably\" does not match regexp \"bob\"",
+			expErr: `value "Probably" does not match regexp "bob"`,
 		},
 		{
+			name:   "pattern string no match",
 			regex:  "^1",
 			value:  "2123423456",
-			expErr: "value \"2123423456\" does not match regexp \"^1\"",
+			expErr: `value "2123423456" does not match regexp "^1"`,
 		},
-		{ // precompiled regex
+		{
+			name:  "regexp match",
 			regex: regexp.MustCompile("^d[0-9a-f]{8}$"),
 			value: "d1632beef",
 			match: true,
 		},
-		{ // bad regex
+		{
+			name:   "invalid regexp",
 			regex:  "^1(",
 			value:  "2",
 			expErr: "error parsing regexp: missing closing ): `^1(`",
 		},
+		{
+			name:   "invalid type",
+			regex:  struct{}{},
+			value:  "some string",
+			expErr: "invalid type struct {} for regex pattern",
+		},
 	}
 
-	for _, c := range testcases {
-		t.Run(fmt.Sprintf("regex=%q value=%q", c.regex, c.value), func(t *testing.T) {
-			res := Regexp(c.regex, c.value)()
-			if c.match {
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := Regexp(tc.regex, tc.value)()
+			if tc.match {
 				assertSuccess(t, res)
 			} else {
-				assertFailure(t, res, c.expErr)
+				assertFailure(t, res, tc.expErr)
 			}
 		})
 	}
