@@ -59,25 +59,36 @@ func toResult(success bool, msg string) Result {
 	return ResultFailure(msg)
 }
 
-// Regexp succeeds if value v matches regular expression r.
-// Here r can either be a string or a precompiled regexp.
+// RegexOrPattern may be either a *regexp.Regexp or a string that is a valid
+// regexp pattern.
+type RegexOrPattern interface{}
+
+// Regexp succeeds if value v matches regular expression re.
 //
 // Example:
-//   assert.Assert(t, is.Regexp("^[0-9a-f]{32}$", str))
+//   assert.Assert(t, cmp.Regexp("^[0-9a-f]{32}$", str))
 //   r := regexp.MustCompile("^[0-9a-f]{32}$")
-//   assert.Assert(t, is.Regexp(r, str))
-func Regexp(r interface{}, v string) Comparison {
+//   assert.Assert(t, cmp.Regexp(r, str))
+func Regexp(re RegexOrPattern, v string) Comparison {
+	match := func(re *regexp.Regexp) Result {
+		return toResult(
+			re.MatchString(v),
+			fmt.Sprintf("value %q does not match regexp %q", v, re.String()))
+	}
+
 	return func() Result {
-		rr, ok := r.(*regexp.Regexp)
-		if !ok {
-			var err error
-			rr, err = regexp.Compile(r.(string))
+		switch regex := re.(type) {
+		case *regexp.Regexp:
+			return match(regex)
+		case string:
+			re, err := regexp.Compile(regex)
 			if err != nil {
 				return ResultFailure(err.Error())
 			}
+			return match(re)
+		default:
+			return ResultFailure(fmt.Sprintf("invalid type %T for regex pattern", regex))
 		}
-		return toResult(rr.MatchString(v),
-			fmt.Sprintf("value %q does not match regexp %q", v, rr.String()))
 	}
 }
 
