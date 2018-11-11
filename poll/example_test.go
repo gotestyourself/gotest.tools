@@ -19,7 +19,7 @@ func ExampleWaitOn() {
 	check := func(t poll.LogT) poll.Result {
 		actual, err := numOfProcesses()
 		if err != nil {
-			return poll.Error(errors.Wrapf(err, "failed to get number of processes"))
+			return poll.Error(errors.Wrap(err, "failed to get number of processes"))
 		}
 		if actual == desired {
 			return poll.Success()
