@@ -1,6 +1,7 @@
 package fs_test
 
 import (
+	"io/ioutil"
 	"os"
 	"testing"
 
@@ -60,4 +61,26 @@ func TestNewFile(t *testing.T) {
 		assert.ErrorType(t, err, os.IsNotExist)
 	})
 
+}
+
+func TestUpdate(t *testing.T) {
+	t.Run("with file", func(t *testing.T) {
+		tmpFile := fs.NewFile(t, "test-update-file", fs.WithContent("contenta"))
+		defer tmpFile.Remove()
+		tmpFile.Update(t, fs.WithContent("contentb"))
+		content, err := ioutil.ReadFile(tmpFile.Path())
+		assert.NilError(t, err)
+		assert.Equal(t, string(content), "contentb")
+	})
+
+	t.Run("with dir", func(t *testing.T) {
+		tmpDir := fs.NewDir(t, "test-update-dir")
+		defer tmpDir.Remove()
+		tmpDir.Update(t, fs.WithFile("file1", "contenta"))
+		tmpDir.Update(t, fs.WithFile("file2", "contentb"))
+		expected := fs.Expected(t,
+			fs.WithFile("file1", "contenta"),
+			fs.WithFile("file2", "contentb"))
+		assert.Assert(t, fs.Equal(tmpDir.Path(), expected))
+	})
 }
