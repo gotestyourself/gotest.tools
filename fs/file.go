@@ -44,16 +44,7 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	}
 	tempfile, err := ioutil.TempFile("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
-	file := &File{path: tempfile.Name()}
-	assert.NilError(t, tempfile.Close())
-
-	for _, op := range ops {
-		assert.NilError(t, op(file))
-	}
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(file.Remove)
-	}
-	return file
+	return wrapFile(t, tempfile, ops...)
 }
 
 func cleanPrefix(prefix string) string {
@@ -88,8 +79,34 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	}
 	path, err := ioutil.TempDir("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
-	dir := &Dir{path: path}
+	return wrapDir(t, path, ops...)
+}
 
+// NewFile creates a new file in the directory with the specified name.
+// The PathOps are applied to the before returning the File.
+func (d *Dir) NewFile(t assert.TestingT, name string, ops ...PathOp) *File {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	f, err := os.Create(d.Join(name))
+	assert.NilError(t, err)
+	return wrapFile(t, f, ops...)
+}
+
+// NewDir returns a new subdirectory in the directory with the specified name.
+// The PathOps are applied before returning the Dir.
+func (d *Dir) NewDir(t assert.TestingT, name string, ops ...PathOp) *Dir {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	path := d.Join(name)
+	err := os.Mkdir(path, os.ModePerm)
+	assert.NilError(t, err)
+	return wrapDir(t, path, ops...)
+}
+
+func wrapDir(t assert.TestingT, path string, ops ...PathOp) *Dir {
+	dir := &Dir{path: path}
 	for _, op := range ops {
 		assert.NilError(t, op(dir))
 	}
@@ -97,6 +114,18 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 		tc.AddCleanup(dir.Remove)
 	}
 	return dir
+}
+
+func wrapFile(t assert.TestingT, f *os.File, ops ...PathOp) *File {
+	file := &File{path: f.Name()}
+	assert.NilError(t, f.Close())
+	for _, op := range ops {
+		assert.NilError(t, op(file))
+	}
+	if tc, ok := t.(subtest.TestContext); ok {
+		tc.AddCleanup(file.Remove)
+	}
+	return file
 }
 
 // Path returns the full path to the directory
