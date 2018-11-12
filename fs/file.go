@@ -61,7 +61,7 @@ func cleanPrefix(prefix string) string {
 	return strings.Replace(prefix, "/", "-", -1)
 }
 
-// Update applies the specified PathOps to the File.
+// Update applies the PathOps to the File.
 func (f *File) Update(t assert.TestingT, ops ...PathOp) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -101,7 +101,7 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	return dir
 }
 
-// Update applies the specified PathOps to the Dir.
+// Update applies the PathOps to the Dir.
 func (d *Dir) Update(t assert.TestingT, ops ...PathOp) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
