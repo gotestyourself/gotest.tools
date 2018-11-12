@@ -46,7 +46,7 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	assert.NilError(t, err)
 	file := &File{path: tempfile.Name()}
 	assert.NilError(t, tempfile.Close())
-	file.Update(t, ops...)
+	assert.NilError(t, applyPathOps(file, ops))
 	if tc, ok := t.(subtest.TestContext); ok {
 		tc.AddCleanup(file.Remove)
 	}
@@ -66,9 +66,7 @@ func (f *File) Update(t assert.TestingT, ops ...PathOp) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	for _, op := range ops {
-		assert.NilError(t, op(f))
-	}
+	assert.NilError(t, applyPathOps(f, ops))
 }
 
 // Path returns the full path to the file
@@ -96,7 +94,7 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	path, err := ioutil.TempDir("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
 	dir := &Dir{path: path}
-	dir.Update(t, ops...)
+	assert.NilError(t, applyPathOps(dir, ops))
 	if tc, ok := t.(subtest.TestContext); ok {
 		tc.AddCleanup(dir.Remove)
 	}
@@ -108,9 +106,7 @@ func (d *Dir) Update(t assert.TestingT, ops ...PathOp) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	for _, op := range ops {
-		assert.NilError(t, op(d))
-	}
+	assert.NilError(t, applyPathOps(d, ops))
 }
 
 // Path returns the full path to the directory
