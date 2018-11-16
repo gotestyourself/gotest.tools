@@ -1,6 +1,7 @@
 package fs_test
 
 import (
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -62,4 +63,26 @@ func TestWithTimestamps(t *testing.T) {
 	stat, err := os.Stat(tmpFile.Path())
 	assert.NilError(t, err)
 	assert.DeepEqual(t, stat.ModTime(), stamp)
+}
+
+func TestApply(t *testing.T) {
+	t.Run("with file", func(t *testing.T) {
+		tmpFile := fs.NewFile(t, "test-update-file", fs.WithContent("contenta"))
+		defer tmpFile.Remove()
+		fs.Apply(t, tmpFile, fs.WithContent("contentb"))
+		content, err := ioutil.ReadFile(tmpFile.Path())
+		assert.NilError(t, err)
+		assert.Equal(t, string(content), "contentb")
+	})
+
+	t.Run("with dir", func(t *testing.T) {
+		tmpDir := fs.NewDir(t, "test-update-dir")
+		defer tmpDir.Remove()
+		fs.Apply(t, tmpDir, fs.WithFile("file1", "contenta"))
+		fs.Apply(t, tmpDir, fs.WithFile("file2", "contentb"))
+		expected := fs.Expected(t,
+			fs.WithFile("file1", "contenta"),
+			fs.WithFile("file2", "contentb"))
+		assert.Assert(t, fs.Equal(tmpDir.Path(), expected))
+	})
 }

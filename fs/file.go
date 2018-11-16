@@ -61,14 +61,6 @@ func cleanPrefix(prefix string) string {
 	return strings.Replace(prefix, "/", "-", -1)
 }
 
-// Update applies the PathOps to the File
-func (f *File) Update(t assert.TestingT, ops ...PathOp) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	assert.NilError(t, applyPathOps(f, ops))
-}
-
 // Path returns the full path to the file
 func (f *File) Path() string {
 	return f.path
@@ -99,14 +91,6 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 		tc.AddCleanup(dir.Remove)
 	}
 	return dir
-}
-
-// Update applies the PathOps to the Dir
-func (d *Dir) Update(t assert.TestingT, ops ...PathOp) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	assert.NilError(t, applyPathOps(d, ops))
 }
 
 // Path returns the full path to the directory
