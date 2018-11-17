@@ -60,3 +60,11 @@ func ExampleEqual() {
 func operationWhichCreatesFiles() string {
 	return "example-path"
 }
+
+// Add a file to an existing directory
+func ExampleApply() {
+	dir := fs.NewDir(t, "test-name")
+	defer dir.Remove()
+
+	fs.Apply(t, dir, fs.WithFile("file1", "content\n"))
+}
