@@ -2,6 +2,8 @@ package poll
 
 import (
 	"fmt"
+	"net"
+	"os"
 	"testing"
 	"time"
 
@@ -36,6 +38,52 @@ func TestWaitOn(t *testing.T) {
 
 	WaitOn(t, check, WithDelay(0))
 	assert.Equal(t, end, counter)
+}
+
+func TestWaitOnFile(t *testing.T) {
+	fakeT := &fakeT{}
+	fakeFilePath := "./fakefile"
+	defer os.Remove(fakeFilePath)
+
+	go func() {
+		time.Sleep(time.Second)
+		os.Create(fakeFilePath)
+	}()
+
+	_, err := os.Stat(fakeFilePath)
+	assert.ErrorType(t, err, os.IsNotExist)
+	WaitOn(fakeT, FileCheck(fakeFilePath))
+	_, err = os.Stat(fakeFilePath)
+	assert.NilError(t, err)
+}
+
+func TestWaitOnSocketWithTimeout(t *testing.T) {
+	fakeT := &fakeT{}
+	network := "tcp"
+	fakeURL := "localhost:55555"
+	done := make(chan struct{})
+
+	go func(done chan struct{}) {
+		time.Sleep(100 * time.Millisecond)
+		l, err := net.Listen(network, fakeURL)
+		if err != nil {
+			return
+		}
+		for {
+			select {
+			case <-done:
+				l.Close()
+			}
+		}
+	}(done)
+
+	_, err := net.DialTimeout(network, fakeURL, 100*time.Millisecond)
+	assert.ErrorContains(t, err, "connection refused")
+	WaitOn(fakeT, SocketCheck(network, fakeURL), WithTimeout(time.Second))
+	_, err = net.DialTimeout(network, fakeURL, 100*time.Millisecond)
+	assert.NilError(t, err)
+
+	close(done)
 }
 
 func TestWaitOnWithTimeout(t *testing.T) {
