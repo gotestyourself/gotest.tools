@@ -26,6 +26,7 @@ type file struct {
 	resource
 	content             io.ReadCloser
 	ignoreCariageReturn bool
+	assertFunc          func(b []byte) bool
 }
 
 func (f *file) Type() string {
@@ -44,6 +45,7 @@ func (f *symlink) Type() string {
 type directory struct {
 	resource
 	items map[string]dirEntry
+	glob  string
 }
 
 func (f *directory) Type() string {

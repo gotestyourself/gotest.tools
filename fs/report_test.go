@@ -176,3 +176,56 @@ func TestMatchAnyFileMode(t *testing.T) {
 		WithFile("data", "content", MatchAnyFileMode))
 	assert.Assert(t, Equal(dir.Path(), expected))
 }
+
+func TestMatchFileContent(t *testing.T) {
+	dir := NewDir(t, t.Name(),
+		WithFile("data", "content"))
+	defer dir.Remove()
+	t.Run("content match", func(t *testing.T) {
+		manifest := Expected(t,
+			WithFile("data", "different", MatchFileContent(func(b []byte) bool {
+				return true
+			})))
+		assert.Assert(t, Equal(dir.Path(), manifest))
+	})
+	t.Run("content does not match", func(t *testing.T) {
+		manifest := Expected(t,
+			WithFile("data", "data", MatchFileContent(func(b []byte) bool {
+				return false
+			})))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+
+		expected := fmtExpected(`directory %s does not match expected:
+/data
+  content differs from assert function expectation
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+}
+
+func TestMatchExtraFilesGlob(t *testing.T) {
+	file1 := WithFile("data.yml", "content")
+	dir := NewDir(t, t.Name(),
+		file1,
+		WithFile("foo.go", "content"),
+		WithFile("bar.go", "content"))
+	defer dir.Remove()
+
+	t.Run("matching glob", func(t *testing.T) {
+		manifest := Expected(t, file1, MatchExtraFilesGlob("*.go"))
+		assert.Assert(t, Equal(dir.Path(), manifest))
+	})
+
+	t.Run("mismatching glob", func(t *testing.T) {
+		manifest := Expected(t, file1, MatchExtraFilesGlob("*.yml"))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+		expected := fmtExpected(`directory %s does not match expected:
+/
+  bar.go: unexpected file
+  foo.go: unexpected file
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+}
