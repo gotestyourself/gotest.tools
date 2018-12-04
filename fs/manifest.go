@@ -8,6 +8,7 @@ import (
 
 	"github.com/pkg/errors"
 	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 // Manifest stores the expected structure and properties of files and directories
@@ -26,7 +27,7 @@ type file struct {
 	resource
 	content             io.ReadCloser
 	ignoreCariageReturn bool
-	assertFunc          func(b []byte) bool
+	compareContentFunc  func(b []byte) cmp.CompareResult
 }
 
 func (f *file) Type() string {
@@ -45,7 +46,6 @@ func (f *symlink) Type() string {
 type directory struct {
 	resource
 	items map[string]dirEntry
-	glob  string
 }
 
 func (f *directory) Type() string {

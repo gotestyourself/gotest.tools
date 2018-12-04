@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"gotest.tools/assert"
+	"gotest.tools/assert/cmp"
 )
 
 // resourcePath is an adaptor for resources so they can be used as a Path
@@ -147,23 +148,12 @@ func MatchExtraFiles(path Path) error {
 	return nil
 }
 
-// MatchExtraFilesGlob is a PathOp that updates a Manifest to allow extra files in a directory which
-// match the file glob pattern, and with properties that match all ops.
-func MatchExtraFilesGlob(glob string, ops ...PathOp) PathOp {
-	return func(path Path) error {
-		if m, ok := path.(*directoryPath); ok {
-			m.directory.glob = glob
-		}
-		return nil
-	}
-}
-
-// MatchFileContent is a PathOp that updates a Manifest to use the provided function to check a files
-// content. The function should return true if the content is as expected.
-func MatchFileContent(f func([]byte) bool) PathOp {
+// MatchFileContent is a PathOp that updates a Manifest to use the provided
+// function to check a files content.
+func MatchFileContent(f func([]byte) cmp.CompareResult) PathOp {
 	return func(path Path) error {
 		if m, ok := path.(*filePath); ok {
-			m.file.assertFunc = f
+			m.file.compareContentFunc = f
 		}
 		return nil
 	}

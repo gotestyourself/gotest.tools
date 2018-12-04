@@ -102,9 +102,10 @@ func eqFile(x, y *file) []problem {
 		return p
 	}
 
-	if x.assertFunc != nil {
-		if !x.assertFunc(yContent) {
-			p = append(p, "content differs from assert function expectation")
+	if x.compareContentFunc != nil {
+		r := x.compareContentFunc(yContent)
+		if !r.Success() {
+			p = append(p, existenceProblem("content", r.FailureMessage()))
 		}
 		return p
 	}
@@ -182,16 +183,6 @@ func eqDirectory(path string, x, y *directory) []failure {
 	if _, ok := x.items[anyFile]; !ok {
 		for _, name := range sortedKeys(y.items) {
 			if _, ok := x.items[name]; !ok {
-				if x.glob != "" {
-					res, err := filepath.Match(x.glob, name)
-					if err != nil {
-						p = append(p, errProblem("failed to apply match function", err))
-						continue
-					}
-					if res {
-						continue
-					}
-				}
 				yEntry := y.items[name]
 				p = append(p, existenceProblem(name, "unexpected %s", yEntry.Type()))
 			}

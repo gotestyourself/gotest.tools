@@ -14,6 +14,12 @@ type Result interface {
 	Success() bool
 }
 
+// CompareResult is the result of comparison
+type CompareResult interface {
+	Result
+	FailureMessage() string
+}
+
 type result struct {
 	success bool
 	message string
@@ -32,13 +38,13 @@ func (r result) FailureMessage() string {
 var ResultSuccess = result{success: true}
 
 // ResultFailure returns a failed Result with a failure message.
-func ResultFailure(message string) Result {
+func ResultFailure(message string) CompareResult {
 	return result{message: message}
 }
 
 // ResultFromError returns ResultSuccess if err is nil. Otherwise ResultFailure
 // is returned with the error message as the failure message.
-func ResultFromError(err error) Result {
+func ResultFromError(err error) CompareResult {
 	if err == nil {
 		return ResultSuccess
 	}
