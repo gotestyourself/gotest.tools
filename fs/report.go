@@ -101,6 +101,15 @@ func eqFile(x, y *file) []problem {
 	if xErr != nil || yErr != nil {
 		return p
 	}
+
+	if x.compareContentFunc != nil {
+		r := x.compareContentFunc(yContent)
+		if !r.Success() {
+			p = append(p, existenceProblem("content", r.FailureMessage()))
+		}
+		return p
+	}
+
 	if x.ignoreCariageReturn || y.ignoreCariageReturn {
 		xContent = removeCarriageReturn(xContent)
 		yContent = removeCarriageReturn(yContent)

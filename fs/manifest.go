@@ -26,6 +26,7 @@ type file struct {
 	resource
 	content             io.ReadCloser
 	ignoreCariageReturn bool
+	compareContentFunc  func(b []byte) CompareResult
 }
 
 func (f *file) Type() string {
