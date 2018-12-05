@@ -1,6 +1,7 @@
 {
   "Vendor": true,
   "Deadline": "2m",
+  "Concurrency": 2,
   "Sort": ["linter", "severity", "path"],
   "Exclude": [
     "example_test\\.go",

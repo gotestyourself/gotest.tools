@@ -181,18 +181,22 @@ func TestMatchFileContent(t *testing.T) {
 	dir := NewDir(t, t.Name(),
 		WithFile("data", "content"))
 	defer dir.Remove()
-	t.Run("content match", func(t *testing.T) {
+
+	t.Run("content matches", func(t *testing.T) {
+		matcher := func(b []byte) CompareResult {
+			return is.ResultSuccess
+		}
 		manifest := Expected(t,
-			WithFile("data", "different", MatchFileContent(func(b []byte) is.CompareResult {
-				return is.ResultSuccess
-			})))
+			WithFile("data", "different", MatchFileContent(matcher)))
 		assert.Assert(t, Equal(dir.Path(), manifest))
 	})
+
 	t.Run("content does not match", func(t *testing.T) {
+		matcher := func(b []byte) CompareResult {
+			return is.ResultFailure("data content differs from expected")
+		}
 		manifest := Expected(t,
-			WithFile("data", "content", MatchFileContent(func(b []byte) is.CompareResult {
-				return is.ResultFailure("data content differs from expected")
-			})))
+			WithFile("data", "content", MatchFileContent(matcher)))
 		result := Equal(dir.Path(), manifest)()
 		assert.Assert(t, !result.Success())
 

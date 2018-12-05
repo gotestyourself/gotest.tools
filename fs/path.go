@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
 )
 
 // resourcePath is an adaptor for resources so they can be used as a Path
@@ -148,9 +147,18 @@ func MatchExtraFiles(path Path) error {
 	return nil
 }
 
+// CompareResult is the result of comparison.
+//
+// See gotest.tools/assert/cmp.StringResult for a convenient implementation of
+// this interface.
+type CompareResult interface {
+	Success() bool
+	FailureMessage() string
+}
+
 // MatchFileContent is a PathOp that updates a Manifest to use the provided
-// function to check a files content.
-func MatchFileContent(f func([]byte) cmp.CompareResult) PathOp {
+// function to determine if a file's content matches the expectation.
+func MatchFileContent(f func([]byte) CompareResult) PathOp {
 	return func(path Path) error {
 		if m, ok := path.(*filePath); ok {
 			m.file.compareContentFunc = f

@@ -191,7 +191,7 @@ func TestDeepEqualEquivalenceToReflectDeepEqual(t *testing.T) {
 		expected := reflect.DeepEqual(testcase.left, testcase.right)
 		res := DeepEqual(testcase.left, testcase.right, cmpStub)()
 		if res.Success() != expected {
-			msg := res.(result).FailureMessage()
+			msg := res.(StringResult).FailureMessage()
 			t.Errorf("deepEqual(%v, %v) did not return %v (message %s)",
 				testcase.left, testcase.right, expected, msg)
 		}
@@ -368,7 +368,7 @@ func assertSuccess(t testingT, res Result) {
 		ht.Helper()
 	}
 	if !res.Success() {
-		msg := res.(result).FailureMessage()
+		msg := res.(StringResult).FailureMessage()
 		t.Errorf("expected success, but got failure with message %q", msg)
 	}
 }
@@ -380,7 +380,7 @@ func assertFailure(t testingT, res Result, expected string) {
 	if res.Success() {
 		t.Errorf("expected failure")
 	}
-	message := res.(result).FailureMessage()
+	message := res.(StringResult).FailureMessage()
 	if message != expected {
 		t.Errorf("expected \n%q\ngot\n%q\n", expected, message)
 	}
@@ -393,7 +393,7 @@ func assertFailureHasPrefix(t testingT, res Result, prefix string) {
 	if res.Success() {
 		t.Errorf("expected failure")
 	}
-	message := res.(result).FailureMessage()
+	message := res.(StringResult).FailureMessage()
 	if !strings.HasPrefix(message, prefix) {
 		t.Errorf("expected \n%v\nto start with\n%v\n", message, prefix)
 	}
