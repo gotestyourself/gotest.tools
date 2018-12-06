@@ -71,6 +71,11 @@ func (p *directoryPath) AddDirectory(path string, ops ...PathOp) error {
 	return applyPathOps(exp, ops)
 }
 
+func (p *directoryPath) AddGlob(glob string, ops ...PathOp) error {
+	p.directory.globs = append(p.directory.globs, glob)
+	return nil
+}
+
 // Expected returns a Manifest with a directory structured created by ops. The
 // PathOp operations are applied to the manifest as expectations of the
 // filesystem structure and properties.
@@ -162,6 +167,17 @@ func MatchFileContent(f func([]byte) CompareResult) PathOp {
 	return func(path Path) error {
 		if m, ok := path.(*filePath); ok {
 			m.file.compareContentFunc = f
+		}
+		return nil
+	}
+}
+
+// MatchExtraFilesGlob is a PathOp that updates a Manifest to allow extra files in a directory which
+// match the file glob pattern, and with properties that match all ops.
+func MatchExtraFilesGlob(glob string, ops ...PathOp) PathOp {
+	return func(path Path) error {
+		if m, ok := path.(*directoryPath); ok {
+			m.AddGlob(glob, ops...)
 		}
 		return nil
 	}

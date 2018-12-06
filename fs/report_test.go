@@ -207,3 +207,43 @@ func TestMatchFileContent(t *testing.T) {
 		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 	})
 }
+
+func TestMatchExtraFilesGlob(t *testing.T) {
+	dir := NewDir(t, t.Name(),
+		WithFile("t.go", "data"),
+		WithFile("a.go", "data"),
+		WithFile("conf.yml", "content"))
+	defer dir.Remove()
+
+	t.Run("matching globs", func(t *testing.T) {
+		manifest := Expected(t, MatchExtraFilesGlob("*.go"), MatchExtraFilesGlob("*.yml"))
+		assert.Assert(t, Equal(dir.Path(), manifest))
+	})
+
+	t.Run("matching partial glob", func(t *testing.T) {
+		manifest := Expected(t, MatchExtraFilesGlob("*.go"))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+
+		expected := fmtExpected(`directory %s does not match expected:
+/
+  conf.yml: unexpected file
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+
+	t.Run("invalid glob", func(t *testing.T) {
+		manifest := Expected(t, MatchExtraFilesGlob("[-x]"))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+
+		expected := fmtExpected(`directory %s does not match expected:
+/
+  failed to match glob pattern: syntax error in pattern
+  failed to match glob pattern: syntax error in pattern
+  failed to match glob pattern: syntax error in pattern
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+
+}

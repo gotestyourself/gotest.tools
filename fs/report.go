@@ -184,7 +184,7 @@ func eqDirectory(path string, x, y *directory) []failure {
 		for _, name := range sortedKeys(y.items) {
 			if _, ok := x.items[name]; !ok {
 				yEntry := y.items[name]
-				p = append(p, existenceProblem(name, "unexpected %s", yEntry.Type()))
+				p = append(p, matchGlob(name, yEntry.Type(), x.globs)...)
 			}
 		}
 	}
@@ -222,6 +222,26 @@ func eqEntry(path string, x, y dirEntry) []failure {
 		return eqDirectory(path, typed, y.(*directory))
 	}
 	return nil
+}
+
+func matchGlob(name, eType string, globs []string) []problem {
+	var p []problem
+
+	for _, glob := range globs {
+		ok, err := filepath.Match(glob, name)
+		if err != nil {
+			p = append(p, errProblem("failed to match glob pattern", err))
+		}
+		if ok {
+			return p
+		}
+	}
+
+	if len(p) == 0 {
+		p = append(p, existenceProblem(name, "unexpected %s", eType))
+	}
+
+	return p
 }
 
 func formatFailures(failures []failure) string {

@@ -45,6 +45,7 @@ func (f *symlink) Type() string {
 type directory struct {
 	resource
 	items map[string]dirEntry
+	globs []string
 }
 
 func (f *directory) Type() string {
