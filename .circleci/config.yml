@@ -13,9 +13,7 @@ jobs:
       - run:
           name: "Install Dependencies"
           command: |
-            dockerfile=dobifiles/Dockerfile
-            echo "COPY . ." >> $dockerfile
-            docker build -f $dockerfile --tag cli-builder:$CIRCLE_BUILD_NUM .
+            docker build --target dev-with-source --tag cli-builder:$CIRCLE_BUILD_NUM .
             docker run --name \
                 deps-$CIRCLE_BUILD_NUM cli-builder:$CIRCLE_BUILD_NUM \
                 dep ensure
@@ -25,9 +23,7 @@ jobs:
       - run:
           name: "Lint"
           command: |
-            dockerfile=dobifiles/Dockerfile.lint
-            echo "COPY . ." >> $dockerfile
-            docker build -f $dockerfile --tag cli-linter:$CIRCLE_BUILD_NUM .
+            docker build --target dev-with-source --tag cli-linter:$CIRCLE_BUILD_NUM .
             docker run --rm cli-linter:$CIRCLE_BUILD_NUM
 
   test-golang-1.9:
@@ -71,7 +67,7 @@ jobs:
           command: scripts/ci/test 1.11-alpine
 
   coverage:
-    docker: [{image: 'circleci/golang:1.10'}]
+    docker: [{image: 'circleci/golang:1.11'}]
     working_directory: /go/src/gotest.tools
     steps:
       - checkout

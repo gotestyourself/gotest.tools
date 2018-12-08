@@ -17,6 +17,7 @@ func TestRun(t *testing.T) {
 		fs.WithDir("src/example.com/example", fs.FromDir("testdata/full")))
 	defer dir.Remove()
 
+	defer env.Patch(t, "GO111MODULE", "off")()
 	defer env.Patch(t, "GOPATH", dir.Path())()
 	err := run(options{
 		pkgs:             []string{"example.com/example"},
