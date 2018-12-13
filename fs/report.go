@@ -40,6 +40,11 @@ type failure struct {
 	problems []problem
 }
 
+type globMatch struct {
+	match    bool
+	failures []failure
+}
+
 type problem string
 
 func notEqual(property string, x, y interface{}) problem {
@@ -157,6 +162,7 @@ func eqSymlink(x, y *symlink) []problem {
 	return p
 }
 
+// nolint: gocyclo
 func eqDirectory(path string, x, y *directory) []failure {
 	p := eqResource(x.resource, y.resource)
 	var f []failure
@@ -180,11 +186,24 @@ func eqDirectory(path string, x, y *directory) []failure {
 		f = append(f, eqEntry(filepath.Join(path, name), xEntry, yEntry)...)
 	}
 
+	globFiles := make(map[string]bool)
+
+	if len(x.filepathGlobs) != 0 {
+		for _, name := range sortedKeys(y.items) {
+			yEntry := y.items[name]
+			m := matchGlob(name, yEntry, x.filepathGlobs)
+			globFiles[name] = m.match
+			f = append(f, m.failures...)
+		}
+	}
+
 	if _, ok := x.items[anyFile]; !ok {
 		for _, name := range sortedKeys(y.items) {
-			if _, ok := x.items[name]; !ok {
+			_, ok := x.items[name]
+			match := globFiles[name]
+			if !ok && !match {
 				yEntry := y.items[name]
-				p = append(p, matchGlob(name, yEntry.Type(), x.globs)...)
+				p = append(p, existenceProblem(name, "unexpected %s", yEntry.Type()))
 			}
 		}
 	}
@@ -224,24 +243,23 @@ func eqEntry(path string, x, y dirEntry) []failure {
 	return nil
 }
 
-func matchGlob(name, eType string, globs []string) []problem {
-	var p []problem
+func matchGlob(name string, yEntry dirEntry, globs map[string]*filePath) globMatch {
+	m := globMatch{}
 
-	for _, glob := range globs {
+	for glob, expectedFile := range globs {
 		ok, err := filepath.Match(glob, name)
 		if err != nil {
-			p = append(p, errProblem("failed to match glob pattern", err))
+			p := errProblem("failed to match glob pattern", err)
+			f := failure{path: name, problems: []problem{p}}
+			m.failures = append(m.failures, f)
 		}
 		if ok {
-			return p
+			m.match = true
+			m.failures = eqEntry(name, expectedFile.file, yEntry)
+			return m
 		}
 	}
-
-	if len(p) == 0 {
-		p = append(p, existenceProblem(name, "unexpected %s", eType))
-	}
-
-	return p
+	return m
 }
 
 func formatFailures(failures []failure) string {
