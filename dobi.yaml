@@ -11,15 +11,15 @@ mount=depsources:
 
 image=builder:
   image: gotesttools-dev
-  context: dobifiles/
-  dockerfile: Dockerfile
+  context: .
+  target: dev
   args:
-    GOLANG_VERSION: '{env.GOLANG_VERSION:}' 
+    GOLANG_VERSION: '{env.GOLANG_VERSION:}'
 
 image=linter:
   image: gotesttools-lint
-  context: dobifiles/
-  dockerfile: Dockerfile.lint
+  context: .
+  target: linter
 
 job=shell:
   use: builder
