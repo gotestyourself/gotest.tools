@@ -175,7 +175,7 @@ func MatchFileContent(f func([]byte) CompareResult) PathOp {
 	}
 }
 
-// MatchFilesWithGlob is a PathOp that updates a Manifest to mathc files using
+// MatchFilesWithGlob is a PathOp that updates a Manifest to match files using
 // glob pattern, and check them using the ops.
 func MatchFilesWithGlob(glob string, ops ...PathOp) PathOp {
 	return func(path Path) error {
