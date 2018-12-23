@@ -105,3 +105,32 @@ func TestIf_InvalidCondition(t *testing.T) {
 		If(skipT, "just a string")
 	}))
 }
+
+func TestIfWithSkipResultFunc(t *testing.T) {
+	t.Run("no extra message", func(t *testing.T) {
+		skipT := &fakeSkipT{}
+		If(skipT, alwaysSkipWithMessage)
+
+		assert.Equal(t, "alwaysSkipWithMessage: skip because I said so!", skipT.reason)
+	})
+	t.Run("with extra message", func(t *testing.T) {
+		skipT := &fakeSkipT{}
+		If(skipT, alwaysSkipWithMessage, "also %v", 4)
+
+		assert.Equal(t, "alwaysSkipWithMessage: skip because I said so!: also 4", skipT.reason)
+	})
+}
+
+func alwaysSkipWithMessage() Result {
+	return skipResult{}
+}
+
+type skipResult struct{}
+
+func (s skipResult) Skip() bool {
+	return true
+}
+
+func (s skipResult) Message() string {
+	return "skip because I said so!"
+}
