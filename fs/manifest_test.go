@@ -54,6 +54,7 @@ func TestManifestFromDir(t *testing.T) {
 							content:  readCloser("content k"),
 						},
 					},
+					filepathGlobs: map[string]*filePath{},
 				},
 				"f": &symlink{
 					resource: newResource(defaultSymlinkMode),
@@ -64,6 +65,7 @@ func TestManifestFromDir(t *testing.T) {
 					content:  readCloser("content x"),
 				},
 			},
+			filepathGlobs: map[string]*filePath{},
 		},
 	}
 	actual := ManifestFromDir(t, srcDir.Path())

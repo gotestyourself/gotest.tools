@@ -8,6 +8,7 @@ import (
 
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
+	"gotest.tools/skip"
 )
 
 func TestEqualMissingRoot(t *testing.T) {
@@ -206,4 +207,68 @@ func TestMatchFileContent(t *testing.T) {
 `, dir.Path())
 		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 	})
+}
+
+func TestMatchExtraFilesGlob(t *testing.T) {
+	dir := NewDir(t, t.Name(),
+		WithFile("t.go", "data"),
+		WithFile("a.go", "data"),
+		WithFile("conf.yml", "content", WithMode(0600)))
+	defer dir.Remove()
+
+	t.Run("matching globs", func(t *testing.T) {
+		manifest := Expected(t,
+			MatchFilesWithGlob("*.go", MatchAnyFileMode, MatchAnyFileContent),
+			MatchFilesWithGlob("*.yml", MatchAnyFileMode, MatchAnyFileContent))
+		assert.Assert(t, Equal(dir.Path(), manifest))
+	})
+
+	t.Run("matching globs with wrong mode", func(t *testing.T) {
+		skip.If(t, runtime.GOOS == "windows", "expect mode does not match on windows")
+		manifest := Expected(t,
+			MatchFilesWithGlob("*.go", MatchAnyFileMode, MatchAnyFileContent),
+			MatchFilesWithGlob("*.yml", MatchAnyFileContent, WithMode(0700)))
+
+		result := Equal(dir.Path(), manifest)()
+
+		assert.Assert(t, !result.Success())
+		expected := fmtExpected(`directory %s does not match expected:
+conf.yml
+  mode: expected -rwx------ got -rw-------
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+
+	t.Run("matching partial glob", func(t *testing.T) {
+		manifest := Expected(t, MatchFilesWithGlob("*.go", MatchAnyFileMode, MatchAnyFileContent))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+
+		expected := fmtExpected(`directory %s does not match expected:
+/
+  conf.yml: unexpected file
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+
+	t.Run("invalid glob", func(t *testing.T) {
+		manifest := Expected(t, MatchFilesWithGlob("[-x]"))
+		result := Equal(dir.Path(), manifest)()
+		assert.Assert(t, !result.Success())
+
+		expected := fmtExpected(`directory %s does not match expected:
+/
+  a.go: unexpected file
+  conf.yml: unexpected file
+  t.go: unexpected file
+a.go
+  failed to match glob pattern: syntax error in pattern
+conf.yml
+  failed to match glob pattern: syntax error in pattern
+t.go
+  failed to match glob pattern: syntax error in pattern
+`, dir.Path())
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
+	})
+
 }
