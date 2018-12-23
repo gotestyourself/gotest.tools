@@ -40,11 +40,6 @@ type failure struct {
 	problems []problem
 }
 
-type globMatch struct {
-	match    bool
-	failures []failure
-}
-
 type problem string
 
 func notEqual(property string, x, y interface{}) problem {
@@ -162,15 +157,16 @@ func eqSymlink(x, y *symlink) []problem {
 	return p
 }
 
-// nolint: gocyclo
 func eqDirectory(path string, x, y *directory) []failure {
 	p := eqResource(x.resource, y.resource)
 	var f []failure
+	matchedFiles := make(map[string]bool)
 
 	for _, name := range sortedKeys(x.items) {
 		if name == anyFile {
 			continue
 		}
+		matchedFiles[name] = true
 		xEntry := x.items[name]
 		yEntry, ok := y.items[name]
 		if !ok {
@@ -186,32 +182,30 @@ func eqDirectory(path string, x, y *directory) []failure {
 		f = append(f, eqEntry(filepath.Join(path, name), xEntry, yEntry)...)
 	}
 
-	globFiles := make(map[string]bool)
-
 	if len(x.filepathGlobs) != 0 {
 		for _, name := range sortedKeys(y.items) {
-			yEntry := y.items[name]
-			m := matchGlob(name, yEntry, x.filepathGlobs)
-			globFiles[name] = m.match
+			m := matchGlob(name, y.items[name], x.filepathGlobs)
+			matchedFiles[name] = m.match
 			f = append(f, m.failures...)
 		}
 	}
 
-	if _, ok := x.items[anyFile]; !ok {
-		for _, name := range sortedKeys(y.items) {
-			_, ok := x.items[name]
-			match := globFiles[name]
-			if !ok && !match {
-				yEntry := y.items[name]
-				p = append(p, existenceProblem(name, "unexpected %s", yEntry.Type()))
-			}
+	if _, ok := x.items[anyFile]; ok {
+		return maybeAppendFailure(f, path, p)
+	}
+	for _, name := range sortedKeys(y.items) {
+		if !matchedFiles[name] {
+			p = append(p, existenceProblem(name, "unexpected %s", y.items[name].Type()))
 		}
 	}
+	return maybeAppendFailure(f, path, p)
+}
 
-	if len(p) > 0 {
-		f = append(f, failure{path: path, problems: p})
+func maybeAppendFailure(failures []failure, path string, problems []problem) []failure {
+	if len(problems) > 0 {
+		return append(failures, failure{path: path, problems: problems})
 	}
-	return f
+	return failures
 }
 
 func sortedKeys(items map[string]dirEntry) []string {
@@ -241,6 +235,11 @@ func eqEntry(path string, x, y dirEntry) []failure {
 		return eqDirectory(path, typed, y.(*directory))
 	}
 	return nil
+}
+
+type globMatch struct {
+	match    bool
+	failures []failure
 }
 
 func matchGlob(name string, yEntry dirEntry, globs map[string]*filePath) globMatch {

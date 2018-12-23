@@ -8,6 +8,7 @@ import (
 
 	"gotest.tools/assert"
 	is "gotest.tools/assert/cmp"
+	"gotest.tools/skip"
 )
 
 func TestEqualMissingRoot(t *testing.T) {
@@ -223,22 +224,19 @@ func TestMatchExtraFilesGlob(t *testing.T) {
 	})
 
 	t.Run("matching globs with wrong mode", func(t *testing.T) {
+		skip.If(t, runtime.GOOS == "windows", "expect mode does not match on windows")
 		manifest := Expected(t,
 			MatchFilesWithGlob("*.go", MatchAnyFileMode, MatchAnyFileContent),
 			MatchFilesWithGlob("*.yml", MatchAnyFileContent, WithMode(0700)))
 
 		result := Equal(dir.Path(), manifest)()
 
-		if runtime.GOOS == "windows" {
-			assert.Assert(t, result.Success())
-		} else {
-			assert.Assert(t, !result.Success())
-			expected := fmtExpected(`directory %s does not match expected:
+		assert.Assert(t, !result.Success())
+		expected := fmtExpected(`directory %s does not match expected:
 conf.yml
   mode: expected -rwx------ got -rw-------
 `, dir.Path())
-			assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
-		}
+		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 	})
 
 	t.Run("matching partial glob", func(t *testing.T) {
