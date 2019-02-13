@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 const defaultFileMode = 0644

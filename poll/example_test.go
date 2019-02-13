@@ -4,7 +4,7 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	"gotest.tools/poll"
+	"gotest.tools/v3/poll"
 )
 
 var t poll.TestingT

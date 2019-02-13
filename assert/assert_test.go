@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	gocmp "github.com/google/go-cmp/cmp"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert/cmp"
 )
 
 type fakeTestingT struct {

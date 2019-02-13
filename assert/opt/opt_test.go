@@ -5,8 +5,8 @@ import (
 	"time"
 
 	gocmp "github.com/google/go-cmp/cmp"
-	"gotest.tools/assert"
-	"gotest.tools/internal/source"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/internal/source"
 )
 
 func TestDurationWithThreshold(t *testing.T) {

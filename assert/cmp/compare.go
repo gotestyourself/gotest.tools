@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
-	"gotest.tools/internal/format"
+	"gotest.tools/v3/internal/format"
 )
 
 // Comparison is a function which compares values and returns ResultSuccess if

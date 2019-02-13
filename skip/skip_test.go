@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 type fakeSkipT struct {

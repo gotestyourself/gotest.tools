@@ -3,8 +3,8 @@ package golden_test
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/golden"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/golden"
 )
 
 var t = &testing.T{}

@@ -70,9 +70,9 @@ import (
 	"go/token"
 
 	gocmp "github.com/google/go-cmp/cmp"
-	"gotest.tools/assert/cmp"
-	"gotest.tools/internal/format"
-	"gotest.tools/internal/source"
+	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/internal/format"
+	"gotest.tools/v3/internal/source"
 )
 
 // BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.

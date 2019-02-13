@@ -9,9 +9,9 @@ import (
 	"strings"
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/internal/source"
-	"gotest.tools/skip"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/internal/source"
+	"gotest.tools/v3/skip"
 )
 
 func TestFormattedCallExprArg_SingleLine(t *testing.T) {

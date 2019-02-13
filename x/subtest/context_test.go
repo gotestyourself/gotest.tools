@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestTestcase_Run_CallsCleanup(t *testing.T) {

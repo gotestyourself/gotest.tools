@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 // resourcePath is an adaptor for resources so they can be used as a Path

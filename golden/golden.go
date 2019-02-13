@@ -12,9 +12,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
-	"gotest.tools/internal/format"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/internal/format"
 )
 
 var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")

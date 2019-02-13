@@ -7,8 +7,8 @@ import (
 	"os"
 	"strings"
 
-	"gotest.tools/assert"
-	"gotest.tools/x/subtest"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/x/subtest"
 )
 
 type helperT interface {

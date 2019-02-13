@@ -313,7 +313,7 @@ func TestError(t *testing.T) {
 	assertFailureHasPrefix(t, result,
 		`expected error "the error message", got "wrapped: other"
 other
-gotest.tools/assert/cmp.TestError`)
+gotest.tools`)
 
 	msg := "the message"
 	result = Error(errors.New(msg), msg)()
