@@ -16,7 +16,8 @@ import (
 // Result will contain a message about why it failed.
 type Comparison func() Result
 
-// DeepEqual compares two values using google/go-cmp (http://bit.do/go-cmp)
+// DeepEqual compares two values using google/go-cmp
+// (https://godoc.org/github.com/google/go-cmp/cmp)
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
