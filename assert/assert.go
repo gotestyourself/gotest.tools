@@ -58,7 +58,7 @@ Automated migration from testify
 gty-migrate-from-testify is a binary which can update source code which uses
 testify assertions to use the assertions provided by this package.
 
-See http://bit.do/cmd-gty-migrate-from-testify.
+See https://godoc.org/gotest.tools/assert/cmd/gty-migrate-from-testify.
 
 
 */
@@ -260,8 +260,8 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 	assert(t, t.FailNow, argsAfterT, cmp.Equal(x, y), msgAndArgs...)
 }
 
-// DeepEqual uses google/go-cmp (http://bit.do/go-cmp) to assert two values are
-// equal and fails the test if they are not equal.
+// DeepEqual uses google/go-cmp (https://godoc.org/github.com/google/go-cmp/cmp)
+// to assert two values are equal and fails the test if they are not equal.
 //
 // Package https://godoc.org/gotest.tools/assert/opt provides some additional
 // commonly used Options.
