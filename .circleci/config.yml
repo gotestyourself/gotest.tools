@@ -64,7 +64,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: "Unit Test GO 1.12"
-          command: scripts/ci/test 1.12rc1-alpine
+          command: scripts/ci/test 1.12-alpine
 
   coverage:
     docker: [{image: 'circleci/golang:1.11'}]

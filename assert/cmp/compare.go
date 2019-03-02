@@ -21,7 +21,7 @@ type Comparison func() Result
 // and succeeds if the values are equal.
 //
 // The comparison can be customized using comparison Options.
-// Package https://godoc.org/gotest.tools/assert/opt provides some additional
+// Package http://gotest.tools/assert/opt provides some additional
 // commonly used Options.
 func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
 	return func() (result Result) {
@@ -284,10 +284,16 @@ func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 // ErrorType succeeds if err is not nil and is of the expected type.
 //
 // Expected can be one of:
-// a func(error) bool which returns true if the error is the expected type,
-// an instance of (or a pointer to) a struct of the expected type,
-// a pointer to an interface the error is expected to implement,
-// a reflect.Type of the expected struct or interface.
+//   func(error) bool
+// Function should return true if the error is the expected type.
+//   type struct{}, type &struct{}
+// A struct or a pointer to a struct.
+// Fails if the error is not of the same type as expected.
+//   type &interface{}
+// A pointer to an interface type.
+// Fails if err does not implement the interface.
+//   reflect.Type
+// Fails if err does not implement the reflect.Type
 func ErrorType(err error, expected interface{}) Comparison {
 	return func() Result {
 		switch expectedType := expected.(type) {
