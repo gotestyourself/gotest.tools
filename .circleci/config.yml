@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@dev:0.0.4
+  go: gotest/tools@0.0.4
 
 workflows:
   version: 2
@@ -69,8 +69,9 @@ jobs:
       tag: 1.9-alpine
     working_directory: /go/src/gotest.tools
     steps:
-      - checkout
       - go/install-git
+      - go/install-ssh
+      - checkout
       - go/install-gotestsum
       - install-deps
       - run:
@@ -84,8 +85,9 @@ jobs:
       tag: 1.10-alpine
     working_directory: /go/src/gotest.tools
     steps:
-      - checkout
       - go/install-git
+      - go/install-ssh
+      - checkout
       - go/install-gotestsum
       - install-deps
       - run:
