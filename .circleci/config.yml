@@ -1,4 +1,41 @@
-version: 2
+version: 2.1
+
+orbs:
+  go: gotest/tools@0.0.4
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - lint
+      - test-golang-1_9:
+          name: test-golang-1.9
+      - test-golang-1_10:
+          name: test-golang-1.10
+      - go/test:
+          name: test-golang-1.11
+          executor:
+            name: go/golang
+            tag: 1.11-alpine
+      - go/test:
+          name: test-golang-1.12
+          executor:
+            name: go/golang
+            tag: 1.12-alpine
+          codecov-upload: true
+
+commands:
+  install-deps:
+    description: Install dep and dependencies
+    steps:
+      - run:
+          name: Install dep
+          command: |
+            command -v dep && exit
+            wget -O- -q https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+      - run:
+          name: Install dependencies
+          command: dep ensure
 
 jobs:
 
@@ -26,74 +63,39 @@ jobs:
             docker build --target dev-with-source --tag cli-linter:$CIRCLE_BUILD_NUM .
             docker run --rm cli-linter:$CIRCLE_BUILD_NUM
 
-  test-golang-1.9:
-    working_directory: /work
-    docker: [{image: 'docker:17.06-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Unit Test GO 1.9"
-          command: scripts/ci/test 1.9-alpine
-
-  test-golang-1.10:
-    working_directory: /work
-    docker: [{image: 'docker:17.06-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Unit Test GO 1.10"
-          command: scripts/ci/test 1.10-alpine
-
-  test-golang-1.11:
-    working_directory: /work
-    docker: [{image: 'docker:17.06-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Unit Test GO 1.11"
-          command: scripts/ci/test 1.11-alpine
-
-  test-golang-1.12:
-    working_directory: /work
-    docker: [{image: 'docker:17.06-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          name: "Unit Test GO 1.12"
-          command: scripts/ci/test 1.12-alpine
-
-  coverage:
-    docker: [{image: 'circleci/golang:1.11'}]
+  test-golang-1_9:
+    executor:
+      name: go/golang
+      tag: 1.9-alpine
     working_directory: /go/src/gotest.tools
     steps:
+      - go/install-git
+      - go/install-ssh
       - checkout
+      - go/install-gotestsum
+      - install-deps
       - run:
-          name: "Download dependencies"
+          name: "Unit Test GO 1.9"
           command: |
-            curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-            dep ensure
-            go get gotest.tools/gotestsum
-      - run:
-          name: "Coverage"
-          command: |
-            mkdir -p junitxml/unit
-            gotestsum --junitfile=junitxml/unit/junit.xml -- \
-              -coverprofile=coverage.txt ./...
-            bash <(curl -s https://codecov.io/bash)
-      - store_test_results:
-          path: junitxml/
+            go test -v $(go list ./... | grep -v '/vendor/')
 
-workflows:
-  version: 2
-  ci:
-    jobs:
-      - lint
-      - test-golang-1.9
-      - test-golang-1.10
-      - test-golang-1.11
-      - test-golang-1.12
-      - coverage
+  test-golang-1_10:
+    executor:
+      name: go/golang
+      tag: 1.10-alpine
+    working_directory: /go/src/gotest.tools
+    steps:
+      - go/install-git
+      - go/install-ssh
+      - checkout
+      - go/install-gotestsum
+      - install-deps
+      - run:
+          name: go test
+          environment:
+            GOTESTSUM_JUNITFILE: /tmp/test-reports/unit/junit.xml
+          command: |
+            mkdir -p /tmp/test-reports/unit
+            gotestsum
+      - store_test_results:
+          path: /tmp/test-reports
