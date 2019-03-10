@@ -209,11 +209,11 @@ func boolFailureMessage(expr ast.Expr) (string, error) {
 //   bool
 // True is success. False is a failure.
 // The failure message will contain the literal source code of the expression.
-//   cmp.Comparison 
+//   cmp.Comparison
 // Uses cmp.Result.Success() to check for success of failure.
 // The comparison is responsible for producing a helpful failure message.
 // http://gotest.tools/assert/cmp provides many common comparisons.
-//   error           
+//   error
 // A nil value is considered success.
 // A non-nil error is a failure, err.Error() is used as the failure message.
 func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {

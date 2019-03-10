@@ -242,10 +242,12 @@ func ErrorContains(err error, substring string) Comparison {
 	}
 }
 
+type causer interface {
+	Cause() error
+}
+
 func formatErrorMessage(err error) string {
-	if _, ok := err.(interface {
-		Cause() error
-	}); ok {
+	if _, ok := err.(causer); ok {
 		return fmt.Sprintf("%q\n%+v", err, err)
 	}
 	// This error was not wrapped with github.com/pkg/errors

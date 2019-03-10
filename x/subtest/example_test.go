@@ -45,11 +45,10 @@ func ExampleRun_tableTest() {
 }
 
 func startFakeService(t subtest.TestContext) string {
-	// t.AddCleanup(shutdown)
 	return "url"
 }
 
-func newClient(T subtest.TestContext) *http.Client {
+func newClient(_ subtest.TestContext) *http.Client {
 	return &http.Client{}
 }
 

@@ -150,7 +150,7 @@ const anyFile = "*"
 // to contain unspecified files.
 func MatchExtraFiles(path Path) error {
 	if m, ok := path.(*directoryPath); ok {
-		m.AddFile(anyFile)
+		return m.AddFile(anyFile)
 	}
 	return nil
 }
@@ -180,7 +180,7 @@ func MatchFileContent(f func([]byte) CompareResult) PathOp {
 func MatchFilesWithGlob(glob string, ops ...PathOp) PathOp {
 	return func(path Path) error {
 		if m, ok := path.(*directoryPath); ok {
-			m.AddGlobFiles(glob, ops...)
+			return m.AddGlobFiles(glob, ops...)
 		}
 		return nil
 	}

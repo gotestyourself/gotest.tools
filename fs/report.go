@@ -159,7 +159,7 @@ func eqSymlink(x, y *symlink) []problem {
 
 func eqDirectory(path string, x, y *directory) []failure {
 	p := eqResource(x.resource, y.resource)
-	var f []failure
+	var f []failure // nolint: prealloc
 	matchedFiles := make(map[string]bool)
 
 	for _, name := range sortedKeys(x.items) {
@@ -209,7 +209,7 @@ func maybeAppendFailure(failures []failure, path string, problems []problem) []f
 }
 
 func sortedKeys(items map[string]dirEntry) []string {
-	var keys []string
+	keys := make([]string, 0, len(items))
 	for key := range items {
 		keys = append(keys, key)
 	}

@@ -1,0 +1,49 @@
+linters-settings:
+  gocyclo:
+    min-complexity: 10
+  goconst:
+    min-len: 5
+    min-occurrences: 10
+  lll:
+    line-length: 100
+  gocritic:
+    enabled-tags:
+      - diagnostic
+      - performance
+      - style
+    disabled-checks:
+      - builtinShadow
+      - commentFormatting # https://github.com/go-critic/go-critic/issues/755
+      - importShadow
+      - octalLiteral
+      - paramTypeCombine
+      - singleCaseSwitch
+      - unnamedResult
+      - wrapperFunc
+    settings:
+      hugeParam:
+        sizeThreshold: 256
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - text: 'result .* is always'
+      linters: [unparam]
+    - text: 'always receives'
+      linters: [unparam]
+    - path: _test\.go
+      linters: [errcheck, staticcheck]
+    - path: internal/difflib/difflib\.go
+      text: .
+    - text: 'return value of .*Close` is not checked'
+      linters: [errcheck]
+
+linters:
+  enable-all: true
+  disable:
+    - dupl
+    - gochecknoglobals
+    - gochecknoinits
+    - gosec
+    - scopelint
+    - maligned

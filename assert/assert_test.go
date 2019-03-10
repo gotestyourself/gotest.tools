@@ -154,7 +154,7 @@ func TestCheckFailure(t *testing.T) {
 func TestCheckSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
-	if !Check(fakeT, 1 == 1) {
+	if !Check(fakeT, true) {
 		t.Error("expected check to return true on success")
 	}
 	expectSuccess(t, fakeT)
