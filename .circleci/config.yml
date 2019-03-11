@@ -1,16 +1,16 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@0.0.4
+  go: gotest/tools@0.0.8
 
 workflows:
   version: 2
   ci:
     jobs:
-      - lint
-      - test-golang-1_9:
+      - go/lint
+      - test-golang-1-9:
           name: test-golang-1.9
-      - test-golang-1_10:
+      - test-golang-1-10:
           name: test-golang-1.10
       - go/test:
           name: test-golang-1.11
@@ -39,31 +39,7 @@ commands:
 
 jobs:
 
-  lint:
-    working_directory: /work
-    docker: [{image: 'docker:17.06-git'}]
-    steps:
-      - checkout
-      - setup_remote_docker
-      - run:
-          command: docker version
-      - run:
-          name: "Install Dependencies"
-          command: |
-            docker build --target dev-with-source --tag cli-builder:$CIRCLE_BUILD_NUM .
-            docker run --name \
-                deps-$CIRCLE_BUILD_NUM cli-builder:$CIRCLE_BUILD_NUM \
-                dep ensure
-            docker cp \
-                deps-$CIRCLE_BUILD_NUM:/go/src/gotest.tools/vendor \
-                vendor
-      - run:
-          name: "Lint"
-          command: |
-            docker build --target dev-with-source --tag cli-linter:$CIRCLE_BUILD_NUM .
-            docker run --rm cli-linter:$CIRCLE_BUILD_NUM
-
-  test-golang-1_9:
+  test-golang-1-9:
     executor:
       name: go/golang
       tag: 1.9-alpine
@@ -79,7 +55,7 @@ jobs:
           command: |
             go test -v $(go list ./... | grep -v '/vendor/')
 
-  test-golang-1_10:
+  test-golang-1-10:
     executor:
       name: go/golang
       tag: 1.10-alpine

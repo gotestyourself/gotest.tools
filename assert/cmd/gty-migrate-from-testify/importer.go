@@ -33,7 +33,7 @@ type fakeImporter struct {
 	tmpDir string
 }
 
-func (f *fakeImporter) Cleanup() error {
+func (f *fakeImporter) Close() error {
 	return os.RemoveAll(f.tmpDir)
 }
 

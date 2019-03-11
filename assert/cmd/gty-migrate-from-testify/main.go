@@ -137,7 +137,7 @@ func loadProgram(opts options) (*loader.Program, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fakeImporter.Cleanup()
+	defer fakeImporter.Close()
 
 	conf := loader.Config{
 		Fset:        token.NewFileSet(),
@@ -238,7 +238,7 @@ func newImportNames(imports []*ast.ImportSpec, opt options) importNames {
 }
 
 func importedAs(spec *ast.ImportSpec, pkg string) bool {
-	if path.Base(strings.Trim(spec.Path.Value, `""`)) == pkg {
+	if path.Base(strings.Trim(spec.Path.Value, `"`)) == pkg {
 		return true
 	}
 	return spec.Name != nil && spec.Name.Name == pkg

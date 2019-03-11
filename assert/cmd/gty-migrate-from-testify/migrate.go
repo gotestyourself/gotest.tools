@@ -349,7 +349,7 @@ func convertNegativeComparison(
 func convertFail(tcall call, selector string) ast.Node {
 	extraArgs := tcall.extraArgs(1)
 	if len(extraArgs) > 1 {
-		selector = selector + "f"
+		selector += "f"
 	}
 
 	return &ast.CallExpr{

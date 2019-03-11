@@ -66,7 +66,7 @@ func newMigrationFromSource(t *testing.T, source string) migration {
 
 	fakeImporter, err := newFakeImporter()
 	assert.NilError(t, err)
-	defer fakeImporter.Cleanup()
+	defer fakeImporter.Close()
 
 	opts := options{}
 	conf := loader.Config{

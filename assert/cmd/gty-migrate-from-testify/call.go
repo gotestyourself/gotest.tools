@@ -20,6 +20,7 @@ type call struct {
 
 func (c call) String() string {
 	buf := new(bytes.Buffer)
+	// nolint: errcheck
 	format.Node(buf, token.NewFileSet(), c.expr)
 	return buf.String()
 }
