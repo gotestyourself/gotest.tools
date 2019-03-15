@@ -1,10 +1,9 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@0.0.8
+  go: gotest/tools@0.0.9
 
 workflows:
-  version: 2
   ci:
     jobs:
       - go/lint
@@ -16,12 +15,12 @@ workflows:
           name: test-golang-1.11
           executor:
             name: go/golang
-            tag: 1.11-alpine
+            tag:  1.11-alpine
       - go/test:
           name: test-golang-1.12
           executor:
             name: go/golang
-            tag: 1.12-alpine
+            tag:  1.12-alpine
           codecov-upload: true
 
 commands:
@@ -45,10 +44,9 @@ jobs:
       tag: 1.9-alpine
     working_directory: /go/src/gotest.tools
     steps:
-      - go/install-git
+      - go/install: {package: git}
       - go/install-ssh
       - checkout
-      - go/install-gotestsum
       - install-deps
       - run:
           name: "Unit Test GO 1.9"
@@ -61,7 +59,7 @@ jobs:
       tag: 1.10-alpine
     working_directory: /go/src/gotest.tools
     steps:
-      - go/install-git
+      - go/install: {package: git}
       - go/install-ssh
       - checkout
       - go/install-gotestsum
