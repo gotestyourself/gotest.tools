@@ -65,10 +65,6 @@ func removeCarriageReturn(in []byte) []byte {
 	return bytes.Replace(in, []byte("\r\n"), []byte("\n"), -1)
 }
 
-func exactBytes(in []byte) []byte {
-	return in
-}
-
 // Assert compares actual to the expected value in the golden file.
 //
 // Running `go test pkgname -test.update-golden` will write the value of actual
