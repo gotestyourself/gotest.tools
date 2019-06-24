@@ -28,6 +28,34 @@ func (t *fakeT) Fail() {
 
 func (t *fakeT) Helper() {}
 
+func TestGoldenOpenInvalidFile(t *testing.T) {
+	fakeT := new(fakeT)
+
+	Open(fakeT, "/invalid/path")
+	assert.Assert(t, fakeT.Failed)
+}
+
+func TestGoldenOpenAbsolutePath(t *testing.T) {
+	file := fs.NewFile(t, "abs-test", fs.WithContent("content\n"))
+	defer file.Remove()
+	fakeT := new(fakeT)
+
+	f := Open(fakeT, file.Path())
+	assert.Assert(t, !fakeT.Failed)
+	f.Close()
+}
+
+func TestGoldenOpen(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	f := Open(fakeT, filename)
+	assert.Assert(t, !fakeT.Failed)
+	f.Close()
+}
+
 func TestGoldenGetInvalidFile(t *testing.T) {
 	fakeT := new(fakeT)
 
