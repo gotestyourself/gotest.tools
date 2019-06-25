@@ -14,32 +14,33 @@ import (
 )
 
 func TestDeepEqual(t *testing.T) {
-	actual := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
-	expected := `
---- result
-+++ exp
-{[]string}[0]:
-	-: "a"
-	+: "b"
-{[]string}[1]:
-	-: "b"
-	+: "a"
-`
-	args := []ast.Expr{&ast.Ident{Name: "result"}, &ast.Ident{Name: "exp"}}
-	assertFailureTemplate(t, actual, args, expected)
+	t.Run("failure", func(t *testing.T) {
+		result := DeepEqual([]string{"a", "b"}, []string{"b", "a"})()
+		if result.Success() {
+			t.Errorf("expected failure")
+		}
 
-	actual = DeepEqual([]string{"a"}, []string{"a"})()
-	assertSuccess(t, actual)
+		args := []ast.Expr{&ast.Ident{Name: "result"}, &ast.Ident{Name: "exp"}}
+		message := result.(templatedResult).FailureMessage(args)
+		expected := "\n--- result\n+++ exp\n"
+		if !strings.HasPrefix(message, expected) {
+			t.Errorf("expected prefix \n%q\ngot\n%q\n", expected, message)
+		}
+	})
+
+	t.Run("success", func(t *testing.T) {
+		actual := DeepEqual([]string{"a"}, []string{"a"})()
+		assertSuccess(t, actual)
+	})
 }
 
 type Stub struct {
 	unx int
 }
 
-func TestDeepEqualeWithUnexported(t *testing.T) {
+func TestDeepEqualWithUnexported(t *testing.T) {
 	result := DeepEqual(Stub{}, Stub{unx: 1})()
-	assertFailure(t, result, `cannot handle unexported field: {cmp.Stub}.unx
-consider using AllowUnexported or cmpopts.IgnoreUnexported`)
+	assertFailureHasPrefix(t, result, `cannot handle unexported field: {cmp.Stub}.unx`)
 }
 
 func TestRegexp(t *testing.T) {

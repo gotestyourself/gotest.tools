@@ -302,13 +302,9 @@ func TestDeepEqualFailure(t *testing.T) {
 
 	fakeT := &fakeTestingT{}
 	DeepEqual(fakeT, actual, expected, gocmp.AllowUnexported(stub{}))
-	expectFailNowed(t, fakeT, "assertion failed: "+`
---- actual
-+++ expected
-{assert.stub}.b:
-	-: 1
-	+: 2
-`)
+	if !fakeT.failNowed {
+		t.Fatal("should have failNowed")
+	}
 }
 
 func TestErrorFailure(t *testing.T) {

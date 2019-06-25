@@ -186,7 +186,12 @@ func TestPathStringFromStruct(t *testing.T) {
 
 	spec := "Ref.Children.Labels.Value"
 	matches := matchPaths(fixture, PathString(spec))
-	expected := []string{`{opt.node}.Ref.Children[1].Labels["first"].Value`}
+	expected := []string{
+		`{opt.node}.Ref.Children[1].Labels["first"].Value`,
+		// as of google/go-cmp 0.3.0 PathFilter seems to traverse some parts
+		// of the tree more than once.
+		`{opt.node}.Ref.Children[1].Labels["first"].Value`,
+	}
 	assert.DeepEqual(t, matches, expected)
 }
 
@@ -211,7 +216,14 @@ func TestPathStringFromSlice(t *testing.T) {
 
 	spec := "Ref.Children.Labels.Ref.Value"
 	matches := matchPaths(fixture, PathString(spec))
-	expected := []string{`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`}
+	expected := []string{
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		// as of google/go-cmp 0.3.0 PathFilter seems to traverse some parts
+		// of the tree more than once.
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+	}
 	assert.DeepEqual(t, matches, expected)
 }
 
@@ -229,6 +241,13 @@ func TestPathField(t *testing.T) {
 	matches := matchPaths(fixture, filter)
 	expected := []string{
 		"{opt.node}.Value.Value",
+		"{opt.node}.Children[0].Value.Value",
+		"{opt.node}.Children[1].Value.Value",
+		"{opt.node}.Children[2].Value.Value",
+		"{opt.node}.Children[2].Ref.Value.Value",
+
+		// as of google/go-cmp 0.3.0 PathFilter seems to traverse some parts
+		// of the tree twice.
 		"{opt.node}.Children[0].Value.Value",
 		"{opt.node}.Children[1].Value.Value",
 		"{opt.node}.Children[2].Value.Value",
