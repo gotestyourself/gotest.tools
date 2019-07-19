@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"os"
 	"os/exec"
 	"strings"
 	"sync"
@@ -191,12 +192,13 @@ func (r *Result) setExitError(err error) {
 // Cmd contains the arguments and options for a process to run as part of a test
 // suite.
 type Cmd struct {
-	Command []string
-	Timeout time.Duration
-	Stdin   io.Reader
-	Stdout  io.Writer
-	Dir     string
-	Env     []string
+	Command    []string
+	Timeout    time.Duration
+	Stdin      io.Reader
+	Stdout     io.Writer
+	Dir        string
+	Env        []string
+	ExtraFiles []*os.File
 }
 
 // Command create a simple Cmd with the specified command and arguments
@@ -252,6 +254,8 @@ func buildCmd(cmd Cmd) *Result {
 		execCmd.Stdout = outBuffer
 	}
 	execCmd.Stderr = errBuffer
+	execCmd.ExtraFiles = cmd.ExtraFiles
+
 	return &Result{
 		Cmd:       execCmd,
 		outBuffer: outBuffer,
