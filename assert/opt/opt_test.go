@@ -6,6 +6,7 @@ import (
 
 	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/assert"
+	"gotest.tools/internal/source"
 )
 
 func TestDurationWithThreshold(t *testing.T) {
@@ -186,7 +187,15 @@ func TestPathStringFromStruct(t *testing.T) {
 
 	spec := "Ref.Children.Labels.Value"
 	matches := matchPaths(fixture, PathString(spec))
-	expected := []string{`{opt.node}.Ref.Children[1].Labels["first"].Value`}
+	expected := []string{
+		`{opt.node}.Ref.Children[1].Labels["first"].Value`,
+	}
+
+	if !source.GoVersionLessThan(11) {
+		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
+		// of the tree more than once.
+		expected = append(expected, `{opt.node}.Ref.Children[1].Labels["first"].Value`)
+	}
 	assert.DeepEqual(t, matches, expected)
 }
 
@@ -211,7 +220,19 @@ func TestPathStringFromSlice(t *testing.T) {
 
 	spec := "Ref.Children.Labels.Ref.Value"
 	matches := matchPaths(fixture, PathString(spec))
-	expected := []string{`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`}
+	expected := []string{
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+	}
+
+	if !source.GoVersionLessThan(11) {
+		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
+		// of the tree more than once.
+		expected = append(expected,
+			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		)
+	}
 	assert.DeepEqual(t, matches, expected)
 }
 
@@ -233,6 +254,17 @@ func TestPathField(t *testing.T) {
 		"{opt.node}.Children[1].Value.Value",
 		"{opt.node}.Children[2].Value.Value",
 		"{opt.node}.Children[2].Ref.Value.Value",
+	}
+
+	if !source.GoVersionLessThan(11) {
+		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
+		// of the tree more than once.
+		expected = append(expected,
+			"{opt.node}.Children[0].Value.Value",
+			"{opt.node}.Children[1].Value.Value",
+			"{opt.node}.Children[2].Value.Value",
+			"{opt.node}.Children[2].Ref.Value.Value",
+		)
 	}
 	assert.DeepEqual(t, matches, expected)
 }
