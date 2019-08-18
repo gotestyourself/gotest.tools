@@ -5,7 +5,7 @@ import (
 	"go/token"
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestCall_String(t *testing.T) {

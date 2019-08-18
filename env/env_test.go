@@ -6,9 +6,9 @@ import (
 	"sort"
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/fs"
-	"gotest.tools/skip"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/fs"
+	"gotest.tools/v3/skip"
 )
 
 func TestPatchFromUnset(t *testing.T) {

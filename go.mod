@@ -1,4 +1,4 @@
-module gotest.tools
+module gotest.tools/v3
 
 require (
 	github.com/google/go-cmp v0.3.0

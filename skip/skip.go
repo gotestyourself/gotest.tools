@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"gotest.tools/internal/format"
-	"gotest.tools/internal/source"
+	"gotest.tools/v3/internal/format"
+	"gotest.tools/v3/internal/source"
 )
 
 type skipT interface {

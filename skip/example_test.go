@@ -3,7 +3,7 @@ package skip_test
 import (
 	"testing"
 
-	"gotest.tools/skip"
+	"gotest.tools/v3/skip"
 )
 
 var apiVersion = ""

@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"gotest.tools/assert"
-	"gotest.tools/x/subtest"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/x/subtest"
 )
 
 // Path objects return their filesystem path. Path may be implemented by a
