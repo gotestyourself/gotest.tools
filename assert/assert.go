@@ -62,7 +62,7 @@ See http://gotest.tools/assert/cmd/gty-migrate-from-testify.
 
 
 */
-package assert // import "gotest.tools/assert"
+package assert // import "gotest.tools/v3/assert"
 
 import (
 	"fmt"

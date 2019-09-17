@@ -2,7 +2,7 @@
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
 */
-package golden // import "gotest.tools/golden"
+package golden // import "gotest.tools/v3/golden"
 
 import (
 	"bytes"
