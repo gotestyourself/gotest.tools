@@ -7,8 +7,6 @@ workflows:
   ci:
     jobs:
       - go/lint
-      - test-golang-1-9:
-          name: test-golang-1.9
       - test-golang-1-10:
           name: test-golang-1.10
       - go/test:
@@ -21,6 +19,11 @@ workflows:
           executor:
             name: go/golang
             tag:  1.12-alpine
+      - go/test:
+          name: test-golang-1.13
+          executor:
+            name: go/golang
+            tag:  1.13-alpine
           codecov-upload: true
 
 commands:
@@ -37,21 +40,6 @@ commands:
           command: dep ensure
 
 jobs:
-
-  test-golang-1-9:
-    executor:
-      name: go/golang
-      tag: 1.9-alpine
-    working_directory: /go/src/gotest.tools
-    steps:
-      - go/install: {package: git}
-      - go/install-ssh
-      - checkout
-      - install-deps
-      - run:
-          name: "Unit Test GO 1.9"
-          command: |
-            go test -v $(go list ./... | grep -v '/vendor/')
 
   test-golang-1-10:
     executor:
