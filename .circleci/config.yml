@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@0.0.10
+  go: gotest/tools@0.0.12
 
 workflows:
   ci:
@@ -28,6 +28,10 @@ workflows:
       - go/test:
           name: test-windows-go1.12
           executor: windows
+          pre-steps:
+            - run: |
+                git config --global core.autocrlf false
+                git config --global core.symlinks true
 
 executors:
   windows:
