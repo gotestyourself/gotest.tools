@@ -27,9 +27,9 @@ func (tc *testcase) Ctx() context.Context {
 	return tc.ctx
 }
 
-// Cleanup runs all cleanup functions. Functions are run in the opposite order
+// cleanup runs all cleanup functions. Functions are run in the opposite order
 // in which they were added. Cleanup is called automatically before Run exits.
-func (tc *testcase) Cleanup() {
+func (tc *testcase) cleanup() {
 	for _, f := range tc.cleanupFuncs {
 		// Defer all cleanup functions so they all run even if one calls
 		// t.FailNow() or panics. Deferring them also runs them in reverse order.
@@ -59,7 +59,7 @@ type parallel interface {
 func Run(t *testing.T, name string, subtest func(t TestContext)) bool {
 	return t.Run(name, func(t *testing.T) {
 		tc := &testcase{TB: t}
-		defer tc.Cleanup()
+		defer tc.cleanup()
 		subtest(tc)
 	})
 }
