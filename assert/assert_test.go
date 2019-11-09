@@ -133,6 +133,7 @@ func TestNilErrorSuccess(t *testing.T) {
 
 	var customErr *customError
 	NilError(fakeT, customErr)
+	expectSuccess(t, fakeT)
 }
 
 func TestNilErrorFailure(t *testing.T) {

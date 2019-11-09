@@ -68,6 +68,7 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
+	"reflect"
 
 	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/assert/cmp"
@@ -118,6 +119,10 @@ func assert(
 		return true
 
 	case error:
+		// Handle nil structs which implement error as a nil error
+		if reflect.ValueOf(check).IsNil() {
+			return true
+		}
 		msg := "error is not nil: "
 		t.Log(format.WithCustomMessage(failureMessage+msg+check.Error(), msgAndArgs...))
 
