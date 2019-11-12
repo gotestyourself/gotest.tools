@@ -6,6 +6,21 @@ A collection of packages to augment `testing` and support common patterns.
 [![CircleCI](https://circleci.com/gh/gotestyourself/gotest.tools/tree/master.svg?style=shield)](https://circleci.com/gh/gotestyourself/gotest.tools/tree/master)
 [![Go Reportcard](https://goreportcard.com/badge/gotest.tools)](https://goreportcard.com/report/gotest.tools)
 
+## Usage
+
+With Go modules enabled (go1.11+)
+
+```
+$ go get gotest.tools/v3
+```
+
+```
+import "gotest.tools/v3/assert"
+```
+
+To use `gotest.tools` with an older version of Go that does not understand Go
+module paths pin to version `v2.3.0`.
+
 
 ## Packages
 
