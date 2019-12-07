@@ -145,7 +145,7 @@ func setUpdateFlag() func() {
 
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
 	_ = os.Mkdir("testdata", 0755)
-	f, err := ioutil.TempFile("testdata", "")
+	f, err := ioutil.TempFile("testdata", t.Name()+"-")
 	assert.NilError(t, err, "fail to create test golden file")
 	defer f.Close() // nolint: errcheck
 
@@ -170,7 +170,7 @@ func TestStringFailure(t *testing.T) {
  this is
 -the text
 +not the text
-`)
+`+failurePostamble(filename))
 }
 
 type failure interface {
@@ -184,5 +184,5 @@ func TestBytesFailure(t *testing.T) {
 	result := Bytes([]byte("5555"), filename)()
 	assert.Assert(t, !result.Success())
 	assert.Equal(t, result.(failure).FailureMessage(),
-		`[53 53 53 53] (actual) != [53 53 53 54] (expected)`)
+		`[53 53 53 53] (actual) != [53 53 53 54] (expected)`+failurePostamble(filename))
 }
