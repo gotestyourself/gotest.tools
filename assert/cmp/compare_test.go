@@ -304,6 +304,16 @@ bbbb`
 	assertFailureTemplate(t, res, args, expected)
 }
 
+func TestEqual_PointersNotEqual(t *testing.T) {
+	x := 123
+	y := 123
+
+	res := Equal(&x, &y)()
+	args := []ast.Expr{&ast.Ident{Name: "x"}, &ast.Ident{Name: "y"}}
+	expected := fmt.Sprintf("%p (x *int) != %p (y *int)", &x, &y)
+	assertFailureTemplate(t, res, args, expected)
+}
+
 func TestError(t *testing.T) {
 	result := Error(nil, "the error message")()
 	assertFailure(t, result, "expected an error, got nil")
