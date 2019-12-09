@@ -104,10 +104,10 @@ func Equal(x, y interface{}) Comparison {
 			return multiLineDiffResult(diff)
 		}
 		return ResultFailureTemplate(`
-			{{- .Data.x}} (
+			{{- printf "%v" .Data.x}} (
 				{{- with callArg 0 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.x -}}
-			) != {{ .Data.y}} (
+			) != {{ printf "%v" .Data.y}} (
 				{{- with callArg 1 }}{{ formatNode . }} {{end -}}
 				{{- printf "%T" .Data.y -}}
 			)`,
