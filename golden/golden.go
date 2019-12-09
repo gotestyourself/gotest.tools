@@ -1,6 +1,9 @@
 /*Package golden provides tools for comparing large mutli-line strings.
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
+Golden files can be automatically updated to match new values by running
+`go test pkgname -test.update-golden`. To ensure the update is correct
+compare the diff of the old expected value to the new expected value.
 */
 package golden // import "gotest.tools/golden"
 
@@ -68,11 +71,12 @@ func exactBytes(in []byte) []byte {
 	return in
 }
 
-// Assert compares the actual content to the expected content in the golden file.
-// If the `-test.update-golden` flag is set then the actual content is written
+// Assert compares actual to the expected value in the golden file.
+//
+// Running `go test pkgname -test.update-golden` will write the value of actual
 // to the golden file.
-// Returns whether the assertion was successful (true) or not (false).
-// This is equivalent to assert.Check(t, String(actual, filename))
+//
+// This is equivalent to assert.Assert(t, String(actual, filename))
 func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -82,7 +86,8 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 
 // String compares actual to the contents of filename and returns success
 // if the strings are equal.
-// If the `-test.update-golden` flag is set then the actual content is written
+//
+// Running `go test pkgname -test.update-golden` will write the value of actual
 // to the golden file.
 //
 // Any \r\n substrings in actual are converted to a single \n character
@@ -102,15 +107,23 @@ func String(actual string, filename string) cmp.Comparison {
 			From: "expected",
 			To:   "actual",
 		})
-		return cmp.ResultFailure("\n" + diff)
+		return cmp.ResultFailure("\n" + diff + failurePostamble(filename))
 	}
 }
 
-// AssertBytes compares the actual result to the expected result in the golden
-// file. If the `-test.update-golden` flag is set then the actual content is
-// written to the golden file.
-// Returns whether the assertion was successful (true) or not (false).
-// This is equivalent to assert.Check(t, Bytes(actual, filename))
+func failurePostamble(filename string) string {
+	return fmt.Sprintf(`
+
+You can run 'go test . -test.update-golden' to automatically update %s to the new expected value.'
+`, Path(filename))
+}
+
+// AssertBytes compares actual to the expected value in the golden.
+//
+// Running `go test pkgname -test.update-golden` will write the value of actual
+// to the golden file.
+//
+// This is equivalent to assert.Assert(t, Bytes(actual, filename))
 func AssertBytes(
 	t assert.TestingT,
 	actual []byte,
@@ -125,7 +138,8 @@ func AssertBytes(
 
 // Bytes compares actual to the contents of filename and returns success
 // if the bytes are equal.
-// If the `-test.update-golden` flag is set then the actual content is written
+//
+// Running `go test pkgname -test.update-golden` will write the value of actual
 // to the golden file.
 func Bytes(actual []byte, filename string) cmp.Comparison {
 	return func() cmp.Result {
@@ -134,7 +148,7 @@ func Bytes(actual []byte, filename string) cmp.Comparison {
 			return result
 		}
 		msg := fmt.Sprintf("%v (actual) != %v (expected)", actual, expected)
-		return cmp.ResultFailure(msg)
+		return cmp.ResultFailure(msg + failurePostamble(filename))
 	}
 }
 
