@@ -36,6 +36,10 @@ type helperT interface {
 	Helper()
 }
 
+type cleanupT interface {
+	Cleanup(f func())
+}
+
 // NewFile creates a new file in a temporary directory using prefix as part of
 // the filename. The PathOps are applied to the before returning the File.
 func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
@@ -49,6 +53,9 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	assert.NilError(t, applyPathOps(file, ops))
 	if tc, ok := t.(subtest.TestContext); ok {
 		tc.AddCleanup(file.Remove)
+	}
+	if ct, ok := t.(cleanupT); ok {
+		ct.Cleanup(file.Remove)
 	}
 	return file
 }
@@ -89,6 +96,9 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	assert.NilError(t, applyPathOps(dir, ops))
 	if tc, ok := t.(subtest.TestContext); ok {
 		tc.AddCleanup(dir.Remove)
+	}
+	if ct, ok := t.(cleanupT); ok {
+		ct.Cleanup(dir.Remove)
 	}
 	return dir
 }
