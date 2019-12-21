@@ -5,6 +5,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -85,4 +86,15 @@ func TestApply(t *testing.T) {
 			fs.WithFile("file2", "contentb"))
 		assert.Assert(t, fs.Equal(tmpDir.Path(), expected))
 	})
+}
+
+func TestWithReaderContent(t *testing.T) {
+	content := "this is a test"
+	dir := fs.NewDir(t, t.Name(),
+		fs.WithFile("1", "",
+			fs.WithReaderContent(strings.NewReader(content))),
+	)
+	defer dir.Remove()
+	expected := fs.Expected(t, fs.WithFile("1", content))
+	assert.Assert(t, fs.Equal(dir.Path(), expected))
 }
