@@ -73,6 +73,7 @@ func WithReaderContent(r io.Reader) PathOp {
 			return err
 		}
 		_, err = io.Copy(f, r)
+		f.Close()
 		return err
 	}
 }
