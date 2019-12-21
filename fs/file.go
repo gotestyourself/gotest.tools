@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"gotest.tools/v3/assert"
-	"gotest.tools/v3/x/subtest"
+	"gotest.tools/v3/internal/cleanup"
 )
 
 // Path objects return their filesystem path. Path may be implemented by a
@@ -36,27 +36,23 @@ type helperT interface {
 	Helper()
 }
 
-type cleanupT interface {
-	Cleanup(f func())
-}
-
 // NewFile creates a new file in a temporary directory using prefix as part of
 // the filename. The PathOps are applied to the before returning the File.
+//
+// When used with Go 1.14+ the file will be automatically removed when the test
+// ends, unless the TEST_NOCLEANUP env var is set to true.
 func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
 	tempfile, err := ioutil.TempFile("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
+
 	file := &File{path: tempfile.Name()}
+	cleanup.Cleanup(t, file.Remove)
+
 	assert.NilError(t, tempfile.Close())
 	assert.NilError(t, applyPathOps(file, ops))
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(file.Remove)
-	}
-	if ct, ok := t.(cleanupT); ok {
-		ct.Cleanup(file.Remove)
-	}
 	return file
 }
 
@@ -86,6 +82,9 @@ type Dir struct {
 
 // NewDir returns a new temporary directory using prefix as part of the directory
 // name. The PathOps are applied before returning the Dir.
+//
+// When used with Go 1.14+ the directory will be automatically removed when the test
+// ends, unless the TEST_NOCLEANUP env var is set to true.
 func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -93,13 +92,9 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	path, err := ioutil.TempDir("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
 	dir := &Dir{path: path}
+	cleanup.Cleanup(t, dir.Remove)
+
 	assert.NilError(t, applyPathOps(dir, ops))
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(dir.Remove)
-	}
-	if ct, ok := t.(cleanupT); ok {
-		ct.Cleanup(dir.Remove)
-	}
 	return dir
 }
 

@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"gotest.tools/v3/assert"
-	"gotest.tools/v3/x/subtest"
+	"gotest.tools/v3/internal/cleanup"
 )
 
 type helperT interface {
@@ -18,30 +18,34 @@ type helperT interface {
 // Patch changes the value of an environment variable, and returns a
 // function which will reset the the value of that variable back to the
 // previous state.
+//
+// When used with Go 1.14+ the unpatch function will be called automatically
+// when the test ends, unless the TEST_NOCLEANUP env var is set to true.
 func Patch(t assert.TestingT, key, value string) func() {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	oldValue, ok := os.LookupEnv(key)
+	oldValue, envVarExists := os.LookupEnv(key)
 	assert.NilError(t, os.Setenv(key, value))
-	cleanup := func() {
+	clean := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
-		if !ok {
+		if !envVarExists {
 			assert.NilError(t, os.Unsetenv(key))
 			return
 		}
 		assert.NilError(t, os.Setenv(key, oldValue))
 	}
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(cleanup)
-	}
-	return cleanup
+	cleanup.Cleanup(t, clean)
+	return clean
 }
 
 // PatchAll sets the environment to env, and returns a function which will
 // reset the environment back to the previous state.
+//
+// When used with Go 1.14+ the unpatch function will be called automatically
+// when the test ends, unless the TEST_NOCLEANUP env var is set to true.
 func PatchAll(t assert.TestingT, env map[string]string) func() {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -52,7 +56,7 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 	for key, value := range env {
 		assert.NilError(t, os.Setenv(key, value), "setenv %s=%s", key, value)
 	}
-	cleanup := func() {
+	clean := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
@@ -61,10 +65,8 @@ func PatchAll(t assert.TestingT, env map[string]string) func() {
 			assert.NilError(t, os.Setenv(key, oldVal), "setenv %s=%s", key, oldVal)
 		}
 	}
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(cleanup)
-	}
-	return cleanup
+	cleanup.Cleanup(t, clean)
+	return clean
 }
 
 // ToMap takes a list of strings in the format returned by os.Environ() and
@@ -94,6 +96,10 @@ func getParts(raw string) (string, string) {
 
 // ChangeWorkingDir to the directory, and return a function which restores the
 // previous working directory.
+//
+// When used with Go 1.14+ the previous working directory will be restored
+// automatically when the test ends, unless the TEST_NOCLEANUP env var is set to
+// true.
 func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
@@ -101,14 +107,12 @@ func ChangeWorkingDir(t assert.TestingT, dir string) func() {
 	cwd, err := os.Getwd()
 	assert.NilError(t, err)
 	assert.NilError(t, os.Chdir(dir))
-	cleanup := func() {
+	clean := func() {
 		if ht, ok := t.(helperT); ok {
 			ht.Helper()
 		}
 		assert.NilError(t, os.Chdir(cwd))
 	}
-	if tc, ok := t.(subtest.TestContext); ok {
-		tc.AddCleanup(cleanup)
-	}
-	return cleanup
+	cleanup.Cleanup(t, clean)
+	return clean
 }
