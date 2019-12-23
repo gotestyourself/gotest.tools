@@ -68,6 +68,9 @@ func Run(t *testing.T, name string, subtest func(t TestContext)) bool {
 type TestContext interface {
 	testing.TB
 	// AddCleanup function which will be run when before Run returns.
+	//
+	// Deprecated: Go 1.14+ now includes a testing.TB.Cleanup(func()) which
+	// should be used instead. AddCleanup will be removed in a future release.
 	AddCleanup(f func())
 	// Ctx returns a context for the test case. Multiple calls from the same subtest
 	// will return the same context. The context is cancelled when Run
