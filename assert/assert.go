@@ -257,7 +257,7 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 // Equal uses the == operator to assert two values are equal and fails the test
 // if they are not equal.
 //
-// If the comparison fails Equal will use the variable names for x and y as part
+// If the comparison fails Equal will use the variable names as part
 // of the failure message to identify the actual and expected values.
 //
 // If either x or y are a multi-line string the failure message will include a
@@ -265,12 +265,12 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 // the unified diff will be augmented by replacing whitespace characters with
 // visible characters to identify the whitespace difference.
 //
-// This is equivalent to Assert(t, cmp.Equal(x, y)).
-func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
+// This is equivalent to Assert(t, cmp.Equal(actual, expected)).
+func Equal(t TestingT, actual, expected interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, argsAfterT, cmp.Equal(x, y), msgAndArgs...)
+	assert(t, t.FailNow, argsAfterT, cmp.Equal(actual, expected), msgAndArgs...)
 }
 
 // DeepEqual uses google/go-cmp (https://godoc.org/github.com/google/go-cmp/cmp)
@@ -279,12 +279,12 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 // Package http://pkg.go.dev/gotest.tools/v3/assert/opt provides some additional
 // commonly used Options.
 //
-// This is equivalent to Assert(t, cmp.DeepEqual(x, y)).
-func DeepEqual(t TestingT, x, y interface{}, opts ...gocmp.Option) {
+// This is equivalent to Assert(t, cmp.DeepEqual(actual, expected)).
+func DeepEqual(t TestingT, actual, expected interface{}, opts ...gocmp.Option) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	assert(t, t.FailNow, argsAfterT, cmp.DeepEqual(x, y, opts...))
+	assert(t, t.FailNow, argsAfterT, cmp.DeepEqual(actual, expected, opts...))
 }
 
 // Error fails the test if err is nil, or the error message is not the expected
