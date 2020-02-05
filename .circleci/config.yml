@@ -59,7 +59,7 @@ jobs:
     executor:
       name: go/golang
       tag: 1.10-alpine
-    working_directory: /go/src/gotest.tools
+    working_directory: /go/src/gotest.tools/v3
     steps:
       - go/install: {package: git}
       - go/install-ssh
