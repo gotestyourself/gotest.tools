@@ -87,6 +87,7 @@ jobs:
     - checkout
     - go/install-golangci-lint:
         prefix: v2
+        version: 1.21.0
     - run:
         name: Lint
         command: |

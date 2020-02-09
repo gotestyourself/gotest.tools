@@ -39,6 +39,11 @@ issues:
       linters: [errcheck]
     - text: 'SA1019'
       linters: [staticcheck]
+    - path: internal/
+      text: 'ST1000'
+      linters: [stylecheck]
+    - path: 'example_test\.go'
+      linters: [bodyclose]
 
 linters:
   enable-all: true
@@ -50,3 +55,6 @@ linters:
     - scopelint
     - maligned
     - gocritic
+    - funlen
+    - godox
+    - wsl
