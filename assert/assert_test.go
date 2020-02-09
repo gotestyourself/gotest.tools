@@ -115,32 +115,70 @@ func TestAssertWithComparisonAndExtraMessage(t *testing.T) {
 	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
 }
 
-type customError struct{}
+type customError struct {
+	field bool
+}
 
 func (e *customError) Error() string {
+	// access a field of the receiver to simulate the behaviour of most
+	// implementations, and test handling of non-nil typed errors.
+	e.field = true
 	return "custom error"
 }
 
-func TestNilErrorSuccess(t *testing.T) {
-	fakeT := &fakeTestingT{}
+func TestNilError(t *testing.T) {
+	t.Run("nil interface", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		var err error
+		NilError(fakeT, err)
+		expectSuccess(t, fakeT)
+	})
 
-	var err error
-	NilError(fakeT, err)
-	expectSuccess(t, fakeT)
+	t.Run("nil literal", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		NilError(fakeT, nil)
+		expectSuccess(t, fakeT)
+	})
 
-	NilError(fakeT, nil)
-	expectSuccess(t, fakeT)
+	t.Run("interface with non-nil type", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		var customErr *customError
+		NilError(fakeT, customErr)
+		expected := "assertion failed: error is not nil: error has type *assert.customError"
+		expectFailNowed(t, fakeT, expected)
+	})
 
-	var customErr *customError
-	NilError(fakeT, customErr)
-	expectSuccess(t, fakeT)
+	t.Run("non-nil error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		NilError(fakeT, fmt.Errorf("this is the error"))
+		expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
+	})
+
+	t.Run("non-nil error with struct type", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		err := structError{}
+		NilError(fakeT, err)
+		expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is a struct")
+	})
+
+	t.Run("non-nil error with map type", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		var err mapError
+		NilError(fakeT, err)
+		expectFailNowed(t, fakeT, "assertion failed: error is not nil: ")
+	})
 }
 
-func TestNilErrorFailure(t *testing.T) {
-	fakeT := &fakeTestingT{}
+type structError struct{}
 
-	NilError(fakeT, fmt.Errorf("this is the error"))
-	expectFailNowed(t, fakeT, "assertion failed: error is not nil: this is the error")
+func (structError) Error() string {
+	return "this is a struct"
+}
+
+type mapError map[int]string
+
+func (m mapError) Error() string {
+	return m[0]
 }
 
 func TestCheckFailure(t *testing.T) {
