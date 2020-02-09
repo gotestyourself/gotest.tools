@@ -1,12 +1,12 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@0.0.12
+  go: gotest/tools@0.0.13
 
 workflows:
   ci:
     jobs:
-      - go/lint
+      - lint
       - test-golang-1-10:
           name: test-golang-1.10
       - go/test:
@@ -25,6 +25,11 @@ workflows:
             name: go/golang
             tag:  1.13-alpine
           codecov-upload: true
+      - go/test:
+          name: test-golang-1.14
+          executor:
+            name: go/golang
+            tag:  1.14rc1-alpine
       - go/test:
           name: test-windows-go1.12
           executor: windows
@@ -75,3 +80,14 @@ jobs:
             gotestsum
       - store_test_results:
           path: /tmp/test-reports
+
+  lint:
+    executor: go/golang
+    steps:
+    - checkout
+    - go/install-golangci-lint:
+        prefix: v2
+    - run:
+        name: Lint
+        command: |
+          golangci-lint run -v --concurrency 2
