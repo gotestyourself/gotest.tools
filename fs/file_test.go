@@ -59,5 +59,4 @@ func TestNewFile(t *testing.T) {
 		_, err = os.Stat(tmpFile.Path())
 		assert.ErrorType(t, err, os.IsNotExist)
 	})
-
 }

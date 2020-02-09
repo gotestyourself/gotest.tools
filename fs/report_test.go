@@ -270,5 +270,4 @@ t.go
 `, dir.Path())
 		assert.Equal(t, result.(cmpFailure).FailureMessage(), expected)
 	})
-
 }
