@@ -49,7 +49,7 @@ The example below shows assert used with some common types.
 
 Comparisons
 
-Package http://gotest.tools/assert/cmp provides
+Package http://pkg.go.dev/gotest.tools/v3/assert/cmp provides
 many common comparisons. Additional comparisons can be written to compare
 values in other ways. See the example Assert (CustomComparison).
 
@@ -58,7 +58,7 @@ Automated migration from testify
 gty-migrate-from-testify is a command which translates Go source code from
 testify assertions to the assertions provided by this package.
 
-See http://gotest.tools/assert/cmd/gty-migrate-from-testify.
+See http://pkg.go.dev/gotest.tools/v3/assert/cmd/gty-migrate-from-testify.
 
 
 */
@@ -222,7 +222,7 @@ func boolFailureMessage(expr ast.Expr) (string, error) {
 //   cmp.Comparison
 // Uses cmp.Result.Success() to check for success of failure.
 // The comparison is responsible for producing a helpful failure message.
-// http://gotest.tools/assert/cmp provides many common comparisons.
+// http://pkg.go.dev/gotest.tools/v3/assert/cmp provides many common comparisons.
 //   error
 // A nil value is considered success.
 // A non-nil error is a failure, err.Error() is used as the failure message.
@@ -276,7 +276,7 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
 // DeepEqual uses google/go-cmp (https://godoc.org/github.com/google/go-cmp/cmp)
 // to assert two values are equal and fails the test if they are not equal.
 //
-// Package http://gotest.tools/assert/opt provides some additional
+// Package http://pkg.go.dev/gotest.tools/v3/assert/opt provides some additional
 // commonly used Options.
 //
 // This is equivalent to Assert(t, cmp.DeepEqual(x, y)).
