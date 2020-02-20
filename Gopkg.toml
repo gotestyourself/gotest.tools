@@ -9,7 +9,7 @@
 
 [[constraint]]
   name = "github.com/google/go-cmp"
-  version = "0.2.0"
+  version = "0.4.0"
 
 [[constraint]]
   # Commit a53bc13 dropped support for go1.8. Pinning the previous commit for
