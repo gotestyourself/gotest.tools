@@ -40,7 +40,7 @@ type Stub struct {
 
 func TestDeepEqualWithUnexported(t *testing.T) {
 	result := DeepEqual(Stub{}, Stub{unx: 1})()
-	assertFailureHasPrefix(t, result, `cannot handle unexported field: {cmp.Stub}.unx`)
+	assertFailureHasPrefix(t, result, `cannot handle unexported field at {cmp.Stub}.unx:`)
 }
 
 func TestRegexp(t *testing.T) {

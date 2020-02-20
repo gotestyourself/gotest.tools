@@ -7,6 +7,7 @@ import (
 	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/internal/source"
+	"gotest.tools/v3/skip"
 )
 
 func TestDurationWithThreshold(t *testing.T) {
@@ -172,6 +173,7 @@ func matchPaths(fixture interface{}, filter func(gocmp.Path) bool) []string {
 }
 
 func TestPathStringFromStruct(t *testing.T) {
+	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := node{
 		Ref: &node{
 			Children: []node{
@@ -200,6 +202,7 @@ func TestPathStringFromStruct(t *testing.T) {
 }
 
 func TestPathStringFromSlice(t *testing.T) {
+	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := []node{
 		{
 			Ref: &node{
@@ -237,6 +240,7 @@ func TestPathStringFromSlice(t *testing.T) {
 }
 
 func TestPathField(t *testing.T) {
+	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := node{
 		Value: nodeValue{Value: 3},
 		Children: []node{
