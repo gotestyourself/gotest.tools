@@ -43,8 +43,10 @@ func TestPatch_IntegrationWithCleanup(t *testing.T) {
 		assert.Equal(t, os.Getenv(key), "the-new-value")
 	})
 
-	v, ok := os.LookupEnv(key)
-	assert.Assert(t, !ok, "expected env var to be unset, got %v", v)
+	t.Run("env var is unset", func(t *testing.T) {
+		v, ok := os.LookupEnv(key)
+		assert.Assert(t, !ok, "expected env var to be unset, got %v", v)
+	})
 }
 
 func TestPatchAll(t *testing.T) {
