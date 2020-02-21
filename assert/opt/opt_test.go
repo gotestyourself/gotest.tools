@@ -6,8 +6,6 @@ import (
 
 	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/assert"
-	"gotest.tools/v3/internal/source"
-	"gotest.tools/v3/skip"
 )
 
 func TestDurationWithThreshold(t *testing.T) {
@@ -173,7 +171,6 @@ func matchPaths(fixture interface{}, filter func(gocmp.Path) bool) []string {
 }
 
 func TestPathStringFromStruct(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := node{
 		Ref: &node{
 			Children: []node{
@@ -191,18 +188,12 @@ func TestPathStringFromStruct(t *testing.T) {
 	matches := matchPaths(fixture, PathString(spec))
 	expected := []string{
 		`{opt.node}.Ref.Children[1].Labels["first"].Value`,
-	}
-
-	if !source.GoVersionLessThan(11) {
-		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
-		// of the tree more than once.
-		expected = append(expected, `{opt.node}.Ref.Children[1].Labels["first"].Value`)
+		`{opt.node}.Ref.Children[1].Labels["first"].Value`,
 	}
 	assert.DeepEqual(t, matches, expected)
 }
 
 func TestPathStringFromSlice(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := []node{
 		{
 			Ref: &node{
@@ -225,22 +216,14 @@ func TestPathStringFromSlice(t *testing.T) {
 	matches := matchPaths(fixture, PathString(spec))
 	expected := []string{
 		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
-	}
-
-	if !source.GoVersionLessThan(11) {
-		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
-		// of the tree more than once.
-		expected = append(expected,
-			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
-			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
-			`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
-		)
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
+		`{[]opt.node}[0].Ref.Children[1].Labels["second"].Ref.Value`,
 	}
 	assert.DeepEqual(t, matches, expected)
 }
 
 func TestPathField(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(11), "expected value is different with go1.10")
 	fixture := node{
 		Value: nodeValue{Value: 3},
 		Children: []node{
@@ -258,17 +241,10 @@ func TestPathField(t *testing.T) {
 		"{opt.node}.Children[1].Value.Value",
 		"{opt.node}.Children[2].Value.Value",
 		"{opt.node}.Children[2].Ref.Value.Value",
-	}
-
-	if !source.GoVersionLessThan(11) {
-		// as of google/go-cmp 0.3.0 and go1.11 PathFilter seems to traverse some parts
-		// of the tree more than once.
-		expected = append(expected,
-			"{opt.node}.Children[0].Value.Value",
-			"{opt.node}.Children[1].Value.Value",
-			"{opt.node}.Children[2].Value.Value",
-			"{opt.node}.Children[2].Ref.Value.Value",
-		)
+		"{opt.node}.Children[0].Value.Value",
+		"{opt.node}.Children[1].Value.Value",
+		"{opt.node}.Children[2].Value.Value",
+		"{opt.node}.Children[2].Ref.Value.Value",
 	}
 	assert.DeepEqual(t, matches, expected)
 }

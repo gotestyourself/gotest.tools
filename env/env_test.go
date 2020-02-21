@@ -35,7 +35,7 @@ func TestPatch(t *testing.T) {
 }
 
 func TestPatch_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(14))
+	skip.If(t, source.GoVersionLessThan(1, 14))
 
 	key := "totally_unique_env_var_key"
 	t.Run("cleanup in subtest", func(t *testing.T) {
@@ -90,7 +90,7 @@ func sorted(source []string) []string {
 }
 
 func TestPatchAll_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(14))
+	skip.If(t, source.GoVersionLessThan(1, 14))
 
 	key := "totally_unique_env_var_key"
 	t.Run("cleanup in subtest", func(t *testing.T) {
@@ -143,7 +143,7 @@ func TestChangeWorkingDir(t *testing.T) {
 }
 
 func TestChangeWorkingDir_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(14))
+	skip.If(t, source.GoVersionLessThan(1, 14))
 
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()
