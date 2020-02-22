@@ -2,12 +2,21 @@
 provides a testing.TB, and context.Context.
 
 This package was inspired by github.com/frankban/quicktest.
+
+DEPRECATED
+
+With the addition of T.Cleanup() in go1.14 this package provides very
+little value. A context.Context can be managed by tests that need it with
+little enough boilerplate that it doesn't make sense to wrap testing.T in a
+TestContext.
 */
 package subtest // import "gotest.tools/v3/x/subtest"
 
 import (
 	"context"
 	"testing"
+
+	"gotest.tools/v3/internal/cleanup"
 )
 
 type testcase struct {
@@ -22,7 +31,7 @@ func (tc *testcase) Ctx() context.Context {
 	if tc.ctx == nil {
 		var cancel func()
 		tc.ctx, cancel = context.WithCancel(context.Background())
-		tc.AddCleanup(cancel)
+		cleanup.Cleanup(tc, cancel)
 	}
 	return tc.ctx
 }
