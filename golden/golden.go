@@ -54,21 +54,15 @@ func Path(filename string) string {
 	return filepath.Join("testdata", filename)
 }
 
-func update(filename string, actual []byte, normalize normalize) error {
+func update(filename string, actual []byte) error {
 	if *flagUpdate {
-		return ioutil.WriteFile(Path(filename), normalize(actual), 0644)
+		return ioutil.WriteFile(Path(filename), actual, 0644)
 	}
 	return nil
 }
 
-type normalize func([]byte) []byte
-
 func removeCarriageReturn(in []byte) []byte {
 	return bytes.Replace(in, []byte("\r\n"), []byte("\n"), -1)
-}
-
-func exactBytes(in []byte) []byte {
-	return in
 }
 
 // Assert compares actual to the expected value in the golden file.
@@ -97,7 +91,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 func String(actual string, filename string) cmp.Comparison {
 	return func() cmp.Result {
 		actualBytes := removeCarriageReturn([]byte(actual))
-		result, expected := compare(actualBytes, filename, removeCarriageReturn)
+		result, expected := compare(actualBytes, filename)
 		if result != nil {
 			return result
 		}
@@ -143,7 +137,7 @@ func AssertBytes(
 // to the golden file.
 func Bytes(actual []byte, filename string) cmp.Comparison {
 	return func() cmp.Result {
-		result, expected := compare(actual, filename, exactBytes)
+		result, expected := compare(actual, filename)
 		if result != nil {
 			return result
 		}
@@ -152,8 +146,8 @@ func Bytes(actual []byte, filename string) cmp.Comparison {
 	}
 }
 
-func compare(actual []byte, filename string, normalize normalize) (cmp.Result, []byte) {
-	if err := update(filename, actual, normalize); err != nil {
+func compare(actual []byte, filename string) (cmp.Result, []byte) {
+	if err := update(filename, actual); err != nil {
 		return cmp.ResultFromError(err), nil
 	}
 	expected, err := ioutil.ReadFile(Path(filename))

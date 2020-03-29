@@ -117,7 +117,7 @@ func TestGoldenAssert(t *testing.T) {
 	assert.Assert(t, !fakeT.Failed)
 }
 
-func TestGoldenAssertWithCarriageReturnInActual(t *testing.T) {
+func TestAssert_WithCarriageReturnInActual(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "a\rfoo\nbar\n")
 	defer clean()
 
@@ -125,6 +125,24 @@ func TestGoldenAssertWithCarriageReturnInActual(t *testing.T) {
 
 	Assert(fakeT, "a\rfoo\r\nbar\r\n", filename)
 	assert.Assert(t, !fakeT.Failed)
+}
+
+func TestAssert_WithCarriageReturnInActual_UpdateGolden(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "")
+	defer clean()
+	unsetUpdateFlag := setUpdateFlag()
+	defer unsetUpdateFlag()
+
+	fakeT := new(fakeT)
+	Assert(fakeT, "a\rfoo\r\nbar\r\n", filename)
+	assert.Assert(t, !fakeT.Failed)
+
+	unsetUpdateFlag()
+	actual := Get(fakeT, filename)
+	assert.Equal(t, string(actual), "a\rfoo\nbar\n")
+
+	Assert(t, "a\rfoo\r\nbar\r\n", filename, "matches with carriage returns")
+	Assert(t, "a\rfoo\nbar\n", filename, "matches without carriage returns")
 }
 
 func TestGoldenAssertBytes(t *testing.T) {
