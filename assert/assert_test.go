@@ -207,6 +207,16 @@ func TestCheckEqualFailure(t *testing.T) {
 	expectFailed(t, fakeT, "assertion failed: 5 (actual int) != 9 (expected int)")
 }
 
+func TestCheck_MultipleFunctionsOnTheSameLine(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	f := func(b bool) {}
+	f(Check(fakeT, false))
+	// TODO: update the expected when there is a more correct fix
+	expectFailed(t, fakeT,
+		"assertion failed: but assert failed to find the expression to print")
+}
+
 func TestEqualSuccess(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
