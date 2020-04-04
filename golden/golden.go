@@ -26,6 +26,19 @@ type helperT interface {
 	Helper()
 }
 
+// NormalizeCRLFToLF enables end-of-line normalization for actual values passed
+// to Assert and String, as well as the values saved to golden files with
+// -test.update-golden.
+//
+// Defaults to true. If you use the core.autocrlf=true git setting on windows
+// you will need to set this to false.
+//
+// The value may be set to false by setting GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF=false
+// in the environment before running tests.
+//
+// The default value may change in a future major release.
+var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "false"
+
 // Open opens the file in ./testdata
 func Open(t assert.TestingT, filename string) *os.File {
 	if ht, ok := t.(helperT); ok {
@@ -62,6 +75,9 @@ func update(filename string, actual []byte) error {
 }
 
 func removeCarriageReturn(in []byte) []byte {
+	if !NormalizeCRLFToLF {
+		return in
+	}
 	return bytes.Replace(in, []byte("\r\n"), []byte("\n"), -1)
 }
 
