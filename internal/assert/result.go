@@ -10,7 +10,7 @@ import (
 )
 
 func runComparison(
-	t TestingT,
+	t LogT,
 	argSelector argSelector,
 	f cmp.Comparison,
 	msgAndArgs ...interface{},
@@ -88,14 +88,14 @@ func isShortPrintableExpr(expr ast.Expr) bool {
 
 type argSelector func([]ast.Expr) []ast.Expr
 
-func argsAfterT(args []ast.Expr) []ast.Expr {
+func ArgsAfterT(args []ast.Expr) []ast.Expr {
 	if len(args) < 1 {
 		return nil
 	}
 	return args[1:]
 }
 
-func argsFromComparisonCall(args []ast.Expr) []ast.Expr {
+func ArgsFromComparisonCall(args []ast.Expr) []ast.Expr {
 	if len(args) < 1 {
 		return nil
 	}
