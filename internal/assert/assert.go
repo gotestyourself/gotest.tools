@@ -53,10 +53,10 @@ func Eval(
 		t.Log(format.WithCustomMessage(failureMessage+msg, msgAndArgs...))
 
 	case cmp.Comparison:
-		success = runComparison(t, argSelector, check, msgAndArgs...)
+		success = RunComparison(t, argSelector, check, msgAndArgs...)
 
 	case func() cmp.Result:
-		success = runComparison(t, argSelector, check, msgAndArgs...)
+		success = RunComparison(t, argSelector, check, msgAndArgs...)
 
 	default:
 		t.Log(fmt.Sprintf("invalid Comparison: %v (%T)", check, check))
