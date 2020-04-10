@@ -6,23 +6,6 @@ linters-settings:
     min-occurrences: 10
   lll:
     line-length: 100
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - performance
-      - style
-    disabled-checks:
-      - builtinShadow
-      - commentFormatting # https://github.com/go-critic/go-critic/issues/755
-      - importShadow
-      - octalLiteral
-      - paramTypeCombine
-      - singleCaseSwitch
-      - unnamedResult
-      - wrapperFunc
-    settings:
-      hugeParam:
-        sizeThreshold: 256
 
 issues:
   exclude-use-default: false
@@ -46,15 +29,33 @@ issues:
       linters: [bodyclose]
 
 linters:
-  enable-all: true
-  disable:
-    - dupl
-    - gochecknoglobals
-    - gochecknoinits
-    - gosec
-    - scopelint
-    - maligned
-    - gocritic
-    - funlen
-    - godox
-    - wsl
+  disable-all: true
+  enable:
+    - bodyclose
+    - deadcode
+    - depguard
+    - dogsled
+    - errcheck
+    - gocognit
+    - goconst
+    - gocyclo
+    - gofmt
+    - goimports
+    - golint
+    - gosimple
+    - govet
+    - ineffassign
+    - interfacer
+    - lll
+    - misspell
+    - nakedret
+    - prealloc
+    - staticcheck
+    - structcheck
+    - stylecheck
+    - typecheck
+    - unconvert
+    - unparam
+    - unused
+    - varcheck
+    - whitespace
