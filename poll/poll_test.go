@@ -73,3 +73,16 @@ func TestWaitOnWithCheckError(t *testing.T) {
 	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check) }))
 	assert.Equal(t, "polling check failed: broke", fakeT.failed)
 }
+
+func TestWaitOn_WithCompare(t *testing.T) {
+	fakeT := &fakeT{}
+
+	check := func(t LogT) Result {
+		return Compare(cmp.Equal(3, 4))
+	}
+
+	assert.Assert(t, cmp.Panics(func() {
+		WaitOn(fakeT, check, WithDelay(0), WithTimeout(10*time.Millisecond))
+	}))
+	assert.Assert(t, cmp.Contains(fakeT.failed, "assertion failed: 3 (int) != 4 (int)"))
+}
