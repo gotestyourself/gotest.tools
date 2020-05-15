@@ -90,7 +90,25 @@ func TestRunSuite(t *testing.T) {
 	assert.Equal(t, fakeSuite.counter, expectedCount)
 
 	expected := []string{"TestOne", "TestSkip", "TestTwo"}
-	assert.Assert(t, is.Compare(expected, fakeSuite.testCalls))
-	assert.Assert(t, is.Compare(expected, fakeSuite.afterTestCalls))
-	assert.Assert(t, is.Compare(expected, fakeSuite.beforeTestCalls))
+	assert.Assert(t, is.DeepEqual(expected, fakeSuite.testCalls))
+	assert.Assert(t, is.DeepEqual(expected, fakeSuite.afterTestCalls))
+	assert.Assert(t, is.DeepEqual(expected, fakeSuite.beforeTestCalls))
+}
+
+func TestIsTestMethod(t *testing.T) {
+	var testcases = []struct {
+		input    string
+		expected bool
+	}{
+		{input: "Test"},
+		{input: "Testnotatest"},
+		{input: "Test語"},
+		{input: "TestI", expected: true},
+		{input: "TestIsOne", expected: true},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.input, func(t *testing.T) {
+			assert.Equal(t, isTestMethod(tc.input), tc.expected)
+		})
+	}
 }
