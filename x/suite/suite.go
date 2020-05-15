@@ -18,10 +18,7 @@ import (
 
 // TestingSuite used is the interface for a test suite
 type TestingSuite interface {
-	T() *testing.T
-	// SetT is internal, do not use it.
-	// Deprecated: SetT should be unexported.
-	SetT(*testing.T)
+	S() *Suite
 }
 
 // Suite is an implementation of TestingSuite which can be embedded in a test
@@ -35,14 +32,14 @@ func (s *Suite) T() *testing.T {
 	return s.t
 }
 
-// SetT sets the current *testing.T context.
-func (s *Suite) SetT(t *testing.T) {
-	s.t = t
+// S returns itself to implement the TestingSuite interface.
+func (s *Suite) S() *Suite {
+	return s
 }
 
 // Run all the tests in a testing suite
 func Run(t *testing.T, suite TestingSuite) {
-	suite.SetT(t)
+	suite.S().t = t
 
 	if s, ok := suite.(setupSuite); ok {
 		s.SetupSuite()
@@ -61,28 +58,29 @@ func Run(t *testing.T, suite TestingSuite) {
 	}
 }
 
-func newTestFunc(suite TestingSuite, method reflect.Method) func(*testing.T) {
-	suiteType := reflect.TypeOf(suite)
+func newTestFunc(ts TestingSuite, method reflect.Method) func(*testing.T) {
+	suiteType := reflect.TypeOf(ts)
+	suite := ts.S()
 	return func(t *testing.T) {
 		parentT := suite.T()
-		suite.SetT(t)
-		if s, ok := suite.(setupTest); ok {
+		suite.t = t
+		if s, ok := ts.(setupTest); ok {
 			s.SetupTest()
 		}
 		suiteName := suiteType.Elem().Name()
-		if s, ok := suite.(beforeTest); ok {
+		if s, ok := ts.(beforeTest); ok {
 			s.BeforeTest(suiteName, method.Name)
 		}
 		defer func() {
-			if s, ok := suite.(afterTest); ok {
+			if s, ok := ts.(afterTest); ok {
 				s.AfterTest(suiteName, method.Name)
 			}
-			if s, ok := suite.(teardownTest); ok {
+			if s, ok := ts.(teardownTest); ok {
 				s.TearDownTest()
 			}
-			suite.SetT(parentT)
+			suite.t = parentT
 		}()
-		method.Func.Call([]reflect.Value{reflect.ValueOf(suite)})
+		method.Func.Call([]reflect.Value{reflect.ValueOf(ts)})
 	}
 }
 
