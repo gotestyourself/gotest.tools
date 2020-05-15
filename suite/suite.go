@@ -20,6 +20,7 @@ import (
 	"unicode/utf8"
 
 	"gotest.tools/v3/assert"
+	issert "gotest.tools/v3/internal/assert"
 )
 
 // TestingSuite used is the interface for a test suite
@@ -109,8 +110,10 @@ func (s *Suite) Assert(comparison assert.BoolOrComparison, msgAndArgs ...interfa
 	if ht, ok := testing.TB(s.t).(helperT); ok {
 		ht.Helper()
 	}
-	// TODO: will print `comparison` instead of caller ast when used with bool
-	assert.Assert(s.t, comparison, msgAndArgs...)
+
+	if !issert.Eval(s.t, issert.ArgsAtZeroIndex, comparison, msgAndArgs...) {
+		s.t.FailNow()
+	}
 }
 
 // Check performs a comparison and marks the test as having failed if the comparison
@@ -119,8 +122,11 @@ func (s *Suite) Check(comparison assert.BoolOrComparison, msgAndArgs ...interfac
 	if ht, ok := testing.TB(s.t).(helperT); ok {
 		ht.Helper()
 	}
-	// TODO: will print `comparison` instead of caller ast when used with bool
-	return assert.Check(s.t, comparison, msgAndArgs...)
+	if !issert.Eval(s.t, issert.ArgsAtZeroIndex, comparison, msgAndArgs...) {
+		s.t.Fail()
+		return false
+	}
+	return true
 }
 
 type setupSuite interface {
