@@ -2,15 +2,8 @@
 
 Suites can be used to group tests together, and to perform common setup and
 teardown for each test in the suite.
-
-TODO: example
-
-Regular expression to select test suites specified command-line
-argument "-run". Regular expression to select the methods
-of test suites specified command-line argument "-m".
-Suite object has assertion methods.
 */
-package suite
+package suite // import "gotest.tools/v3/x/suite"
 
 import (
 	"reflect"
