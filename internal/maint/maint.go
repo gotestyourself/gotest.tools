@@ -1,4 +1,4 @@
-package maint // import "gotest.tools/v3/internal/maint"
+package maint
 
 import (
 	"fmt"

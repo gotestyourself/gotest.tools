@@ -1,5 +1,5 @@
 /*Package cmp provides Comparisons for Assert and Check*/
-package cmp // import "gotest.tools/v3/assert/cmp"
+package cmp
 
 import (
 	"fmt"

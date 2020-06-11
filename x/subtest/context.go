@@ -10,7 +10,7 @@ little value. A context.Context can be managed by tests that need it with
 little enough boilerplate that it doesn't make sense to wrap testing.T in a
 TestContext.
 */
-package subtest // import "gotest.tools/v3/x/subtest"
+package subtest
 
 import (
 	"context"

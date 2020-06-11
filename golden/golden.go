@@ -5,7 +5,7 @@ Golden files can be automatically updated to match new values by running
 `go test pkgname -test.update-golden`. To ensure the update is correct
 compare the diff of the old expected value to the new expected value.
 */
-package golden // import "gotest.tools/v3/golden"
+package golden
 
 import (
 	"bytes"

@@ -1,7 +1,7 @@
 /*Package fs provides tools for creating temporary files, and testing the
 contents and structure of a directory.
 */
-package fs // import "gotest.tools/v3/fs"
+package fs
 
 import (
 	"io/ioutil"
