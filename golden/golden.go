@@ -39,6 +39,11 @@ type helperT interface {
 // The default value may change in a future major release.
 var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "false"
 
+// FlagUpdate returns true when the -test.update-golden flag has been set.
+func FlagUpdate() bool {
+	return *flagUpdate
+}
+
 // Open opens the file in ./testdata
 func Open(t assert.TestingT, filename string) *os.File {
 	if ht, ok := t.(helperT); ok {
