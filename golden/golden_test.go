@@ -204,3 +204,10 @@ func TestBytesFailure(t *testing.T) {
 	assert.Equal(t, result.(failure).FailureMessage(),
 		`[53 53 53 53] (actual) != [53 53 53 54] (expected)`+failurePostamble(filename))
 }
+
+func TestFlagUpdate(t *testing.T) {
+	assert.Assert(t, !FlagUpdate())
+	undo := setUpdateFlag()
+	defer undo()
+	assert.Assert(t, FlagUpdate())
+}
