@@ -7,13 +7,6 @@ workflows:
   ci:
     jobs:
       - lint
-      - test-golang-1-10:
-          name: test-golang-1.10
-      - go/test:
-          name: test-golang-1.11
-          executor:
-            name: go/golang
-            tag:  1.11-alpine
       - go/test:
           name: test-golang-1.12
           executor:
@@ -24,12 +17,17 @@ workflows:
           executor:
             name: go/golang
             tag:  1.13-alpine
-          codecov-upload: true
       - go/test:
           name: test-golang-1.14
           executor:
             name: go/golang
             tag:  1.14-alpine
+      - go/test:
+          name: test-golang-1.15
+          executor:
+            name: go/golang
+            tag:  1.15-alpine
+          codecov-upload: true
       - go/test:
           name: test-windows-go1.12
           executor: windows
@@ -45,41 +43,7 @@ executors:
       resource_class: windows.medium
       shell: bash.exe
 
-commands:
-  install-deps:
-    description: Install dep and dependencies
-    steps:
-      - run:
-          name: Install dep
-          command: |
-            command -v dep && exit
-            wget -O- -q https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
-      - run:
-          name: Install dependencies
-          command: dep ensure
-
 jobs:
-
-  test-golang-1-10:
-    executor:
-      name: go/golang
-      tag: 1.10-alpine
-    working_directory: /go/src/gotest.tools/v3
-    steps:
-      - go/install: {package: git}
-      - go/install-ssh
-      - checkout
-      - go/install-gotestsum
-      - install-deps
-      - run:
-          name: go test
-          environment:
-            GOTESTSUM_JUNITFILE: /tmp/test-reports/unit/junit.xml
-          command: |
-            mkdir -p /tmp/test-reports/unit
-            gotestsum
-      - store_test_results:
-          path: /tmp/test-reports
 
   lint:
     executor: go/golang
