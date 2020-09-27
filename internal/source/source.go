@@ -143,6 +143,9 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 
 	switch typed := node.(type) {
 	case *ast.CallExpr:
+		if !isGoTestToolsCallExpr(typed) {
+			return v
+		}
 		v.expr = typed
 		return nil
 	case *ast.DeferStmt:
@@ -150,6 +153,27 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 		return nil
 	}
 	return v
+}
+
+func isGoTestToolsCallExpr(ce *ast.CallExpr) bool {
+	debug("call expr function: (%T), %v", ce.Fun, ce.Fun)
+	se, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	ident, ok := se.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch ident.Name {
+	// TODO: use import alias from file for these values
+	case "assert", "skip":
+		return true
+	case "gotestToolsTestShim":
+		// gotestToolsTestShim is used by tests of this package.
+		return true
+	}
+	return false
 }
 
 // FormatNode using go/format.Node and return the result as a string
