@@ -72,13 +72,6 @@ func Path(filename string) string {
 	return filepath.Join("testdata", filename)
 }
 
-func update(filename string, actual []byte) error {
-	if *flagUpdate {
-		return ioutil.WriteFile(Path(filename), actual, 0644)
-	}
-	return nil
-}
-
 func removeCarriageReturn(in []byte) []byte {
 	if !NormalizeCRLFToLF {
 		return in
@@ -179,4 +172,16 @@ func compare(actual []byte, filename string) (cmp.Result, []byte) {
 		return cmp.ResultSuccess, nil
 	}
 	return nil, expected
+}
+
+func update(filename string, actual []byte) error {
+	if dir := filepath.Dir(filename); dir != "." {
+		if err := os.MkdirAll(dir, 0755); err != nil {
+			return err
+		}
+	}
+	if *flagUpdate {
+		return ioutil.WriteFile(Path(filename), actual, 0644)
+	}
+	return nil
 }
