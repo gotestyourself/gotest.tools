@@ -211,3 +211,33 @@ func TestFlagUpdate(t *testing.T) {
 	defer undo()
 	assert.Assert(t, FlagUpdate())
 }
+
+func TestUpdate_CreatesPathsAndFile(t *testing.T) {
+	undo := setUpdateFlag()
+	defer undo()
+
+	dir := fs.NewDir(t, t.Name())
+
+	t.Run("creates the file", func(t *testing.T) {
+		filename := dir.Join("filename")
+		err := update(filename, nil)
+		assert.NilError(t, err)
+
+		_, err = os.Stat(filename)
+		assert.NilError(t, err)
+	})
+
+	t.Run("creates directories", func(t *testing.T) {
+		filename := dir.Join("one/two/filename")
+		err := update(filename, nil)
+		assert.NilError(t, err)
+
+		_, err = os.Stat(filename)
+		assert.NilError(t, err)
+
+		t.Run("no error when directory exists", func(t *testing.T) {
+			err = update(filename, nil)
+			assert.NilError(t, err)
+		})
+	})
+}
