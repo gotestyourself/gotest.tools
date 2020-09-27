@@ -64,8 +64,7 @@ func getNodeAtLine(filename string, lineNum int) (ast.Node, error) {
 			return node, err
 		}
 	}
-	return nil, errors.Errorf(
-		"failed to find an expression on line %d in %s", lineNum, filename)
+	return nil, errors.Errorf("failed to find an expression on line %d in %s", lineNum, filename)
 }
 
 func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
