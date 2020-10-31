@@ -3,7 +3,7 @@
 A collection of packages to augment `testing` and support common patterns.
 
 [![GoDoc](https://godoc.org/gotest.tools?status.svg)](https://pkg.go.dev/gotest.tools/v3/?tab=subdirectories)
-[![CircleCI](https://circleci.com/gh/gotestyourself/gotest.tools/tree/master.svg?style=shield)](https://circleci.com/gh/gotestyourself/gotest.tools/tree/master)
+[![CircleCI](https://circleci.com/gh/gotestyourself/gotest.tools/tree/main.svg?style=shield)](https://circleci.com/gh/gotestyourself/gotest.tools/tree/main)
 [![Go Reportcard](https://goreportcard.com/badge/gotest.tools)](https://goreportcard.com/report/gotest.tools)
 
 ## Usage
