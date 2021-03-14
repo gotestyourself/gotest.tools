@@ -27,7 +27,7 @@ workflows:
           name: test-golang-1.16
           executor:
             name: go/golang
-            tag:  1.16-rc-alpine
+            tag:  1.16-alpine
       - go/test:
           name: test-windows
           executor: windows
