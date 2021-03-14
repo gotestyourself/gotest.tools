@@ -1,6 +1,7 @@
 package opt
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -167,6 +168,7 @@ func (p *pathRecorder) record(path gocmp.Path) bool {
 func matchPaths(fixture interface{}, filter func(gocmp.Path) bool) []string {
 	rec := &pathRecorder{filter: filter}
 	gocmp.Equal(fixture, fixture, gocmp.FilterPath(rec.record, gocmp.Ignore()))
+	sort.Strings(rec.matches)
 	return rec.matches
 }
 
@@ -236,15 +238,15 @@ func TestPathField(t *testing.T) {
 	filter := PathField(nodeValue{}, "Value")
 	matches := matchPaths(fixture, filter)
 	expected := []string{
+		"{opt.node}.Children[0].Value.Value",
+		"{opt.node}.Children[0].Value.Value",
+		"{opt.node}.Children[1].Value.Value",
+		"{opt.node}.Children[1].Value.Value",
+		"{opt.node}.Children[2].Ref.Value.Value",
+		"{opt.node}.Children[2].Ref.Value.Value",
+		"{opt.node}.Children[2].Value.Value",
+		"{opt.node}.Children[2].Value.Value",
 		"{opt.node}.Value.Value",
-		"{opt.node}.Children[0].Value.Value",
-		"{opt.node}.Children[1].Value.Value",
-		"{opt.node}.Children[2].Value.Value",
-		"{opt.node}.Children[2].Ref.Value.Value",
-		"{opt.node}.Children[0].Value.Value",
-		"{opt.node}.Children[1].Value.Value",
-		"{opt.node}.Children[2].Value.Value",
-		"{opt.node}.Children[2].Ref.Value.Value",
 	}
 	assert.DeepEqual(t, matches, expected)
 }
