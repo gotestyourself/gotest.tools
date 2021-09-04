@@ -8,11 +8,6 @@ workflows:
     jobs:
       - lint
       - go/test:
-          name: test-golang-1.13
-          executor:
-            name: go/golang
-            tag:  1.13-alpine
-      - go/test:
           name: test-golang-1.14
           executor:
             name: go/golang
@@ -22,12 +17,16 @@ workflows:
           executor:
             name: go/golang
             tag:  1.15-alpine
-          codecov-upload: true
       - go/test:
           name: test-golang-1.16
           executor:
             name: go/golang
             tag:  1.16-alpine
+      - go/test:
+          name: test-golang-1.17
+          executor:
+            name: go/golang
+            tag:  1.17-alpine
       - go/test:
           name: test-windows
           executor: windows
