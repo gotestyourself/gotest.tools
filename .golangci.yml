@@ -15,7 +15,7 @@ issues:
     - text: 'always receives'
       linters: [unparam]
     - path: _test\.go
-      linters: [errcheck, staticcheck]
+      linters: [errcheck, staticcheck, lll]
     - path: internal/difflib/difflib\.go
       text: .
     - text: 'return value of .*Close` is not checked'
