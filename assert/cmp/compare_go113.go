@@ -25,6 +25,5 @@ func ErrorIs(actual error, expected error) Comparison {
 				{{- printf "%T" .Data.x -}}
 			)`,
 			map[string]interface{}{"a": actual, "x": expected})
-		//return ResultFailure(fmt.Sprintf("error is %v, not %v (%T)", actual, target, target))
 	}
 }
