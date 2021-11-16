@@ -1,7 +1,10 @@
 package fs_test
 
 import (
+	"errors"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"gotest.tools/v3/assert"
@@ -91,4 +94,25 @@ func TestNewDir_IntegrationWithCleanup(t *testing.T) {
 		_, err := os.Stat(tmpFile.Path())
 		assert.ErrorType(t, err, os.IsNotExist)
 	})
+}
+
+func TestDirFromPath(t *testing.T) {
+	tmpdir, err := ioutil.TempDir("", t.Name())
+	assert.NilError(t, err)
+	t.Cleanup(func() {
+		os.RemoveAll(tmpdir)
+	})
+
+	dir := fs.DirFromPath(t, tmpdir, fs.WithFile("newfile", ""))
+
+	_, err = os.Stat(dir.Join("newfile"))
+	assert.NilError(t, err)
+
+	assert.Equal(t, dir.Path(), tmpdir)
+	assert.Equal(t, dir.Join("newfile"), filepath.Join(tmpdir, "newfile"))
+
+	dir.Remove()
+
+	_, err = os.Stat(tmpdir)
+	assert.Assert(t, errors.Is(err, os.ErrNotExist))
 }
