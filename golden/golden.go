@@ -178,7 +178,7 @@ func update(filename string, actual []byte) error {
 	if !*flagUpdate {
 		return nil
 	}
-	if dir := filepath.Dir(filename); dir != "." {
+	if dir := filepath.Dir(Path(filename)); dir != "." {
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			return err
 		}
