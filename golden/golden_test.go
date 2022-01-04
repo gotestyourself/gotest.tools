@@ -107,6 +107,43 @@ func TestGoldenAssertInvalidContentUpdate(t *testing.T) {
 	assert.Assert(t, !fakeT.Failed)
 }
 
+func TestGoldenAssertAbsolutePath(t *testing.T) {
+	file := fs.NewFile(t, "abs-test", fs.WithContent("foo"))
+	defer file.Remove()
+	fakeT := new(fakeT)
+
+	Assert(fakeT, "foo", file.Path())
+	assert.Assert(t, !fakeT.Failed)
+}
+
+func TestGoldenAssertInDir(t *testing.T) {
+	filename, clean := setupGoldenFileWithDir(t, "testdatasubdir", "foo")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	Assert(fakeT, "foo", filepath.Join("testdatasubdir", filename))
+	assert.Assert(t, !fakeT.Failed)
+
+	_, err := os.Stat("testdatasubdir")
+	assert.Assert(t, os.IsNotExist(err), "testdatasubdir should not exist outside of testdata")
+}
+
+func TestGoldenAssertInDir_UpdateGolden(t *testing.T) {
+	filename, clean := setupGoldenFileWithDir(t, "testdatasubdir", "foo")
+	defer clean()
+	unsetUpdateFlag := setUpdateFlag()
+	defer unsetUpdateFlag()
+
+	fakeT := new(fakeT)
+
+	Assert(fakeT, "foo", filepath.Join("testdatasubdir", filename))
+	assert.Assert(t, !fakeT.Failed)
+
+	_, err := os.Stat("testdatasubdir")
+	assert.Assert(t, os.IsNotExist(err), "testdatasubdir should not exist outside of testdata")
+}
+
 func TestGoldenAssert(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "foo")
 	defer clean()
@@ -159,6 +196,22 @@ func setUpdateFlag() func() {
 	oldFlagUpdate := *flagUpdate
 	*flagUpdate = true
 	return func() { *flagUpdate = oldFlagUpdate }
+}
+
+func setupGoldenFileWithDir(t *testing.T, dirname, content string) (string, func()) {
+	dirpath := filepath.Join("testdata", dirname)
+	_ = os.MkdirAll(filepath.Join("testdata", dirname), 0755)
+	f, err := ioutil.TempFile(dirpath, t.Name()+"-")
+	assert.NilError(t, err, "fail to create test golden file")
+	defer f.Close() // nolint: errcheck
+
+	_, err = f.Write([]byte(content))
+	assert.NilError(t, err)
+
+	return filepath.Base(f.Name()), func() {
+		assert.NilError(t, os.Remove(f.Name()))
+		assert.NilError(t, os.Remove(dirpath))
+	}
 }
 
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
