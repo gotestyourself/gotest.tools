@@ -75,6 +75,17 @@ func TestManifestFromDir(t *testing.T) {
 	actual.root.items["s"].(*directory).items["k"].(*file).content.Close()
 }
 
+func TestSymlinks(t *testing.T) {
+	rootDirectory := NewDir(t, "root",
+		WithFile("foo.txt", "foo"),
+		WithSymlink("foo.link", "foo.txt"))
+	defer rootDirectory.Remove()
+	expected := Expected(t,
+		WithFile("foo.txt", "foo"),
+		WithSymlink("foo.link", rootDirectory.Join("foo.txt")))
+	assert.Assert(t, Equal(rootDirectory.Path(), expected))
+}
+
 var cmpManifest = cmp.Options{
 	cmp.AllowUnexported(Manifest{}, resource{}, file{}, symlink{}, directory{}),
 	cmp.Comparer(func(x, y io.ReadCloser) bool {

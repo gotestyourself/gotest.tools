@@ -1,4 +1,4 @@
-// +build !windows,!darwin
+// +build darwin
 
 package fs
 
@@ -9,7 +9,7 @@ import (
 
 const (
 	defaultRootDirMode = os.ModeDir | 0700
-	defaultSymlinkMode = os.ModeSymlink | 0777
+	defaultSymlinkMode = os.ModeSymlink | 0755
 )
 
 func newResourceFromInfo(info os.FileInfo) resource {
