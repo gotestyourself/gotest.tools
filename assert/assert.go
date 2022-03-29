@@ -73,13 +73,6 @@ import (
 // BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.
 type BoolOrComparison interface{}
 
-// TestingT is the subset of testing.T used by the assert package.
-type TestingT interface {
-	FailNow()
-	Fail()
-	Log(args ...interface{})
-}
-
 type helperT interface {
 	Helper()
 }
