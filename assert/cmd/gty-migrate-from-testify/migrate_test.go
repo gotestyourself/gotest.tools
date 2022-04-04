@@ -1,13 +1,15 @@
 package main
 
 import (
-	"go/parser"
 	"go/token"
 	"testing"
 
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/env"
+	"gotest.tools/v3/fs"
+	"gotest.tools/v3/icmd"
 )
 
 func TestMigrateFileReplacesTestingT(t *testing.T) {
@@ -21,10 +23,11 @@ import (
 )
 
 func TestSomething(t *testing.T) {
-	a := assert.TestingT
-	b := require.TestingT
+	a := assert.TestingT(t)
+	b := require.TestingT(t)
 	c := require.TestingT(t)
 	if a == b {}
+	_ = c
 }
 
 func do(t require.TestingT) {}
@@ -37,15 +40,16 @@ func do(t require.TestingT) {}
 import (
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestSomething(t *testing.T) {
-	a := assert.TestingT
-	b := assert.TestingT
+	a := assert.TestingT(t)
+	b := assert.TestingT(t)
 	c := assert.TestingT(t)
 	if a == b {
 	}
+	_ = c
 }
 
 func do(t assert.TestingT) {}
@@ -56,38 +60,33 @@ func do(t assert.TestingT) {}
 }
 
 func newMigrationFromSource(t *testing.T, source string) migration {
+	t.Helper()
+	goMod := `module example.com/foo
+
+require  github.com/stretchr/testify v1.7.1
+`
+
+	dir := fs.NewDir(t, t.Name(),
+		fs.WithFile("foo.go", source),
+		fs.WithFile("go.mod", goMod))
 	fileset := token.NewFileSet()
-	nodes, err := parser.ParseFile(
-		fileset,
-		"foo.go",
-		source,
-		parser.AllErrors|parser.ParseComments)
-	assert.NilError(t, err)
 
-	fakeImporter, err := newFakeImporter()
-	assert.NilError(t, err)
-	defer fakeImporter.Close()
+	env.ChangeWorkingDir(t, dir.Path())
+	icmd.RunCommand("go", "mod", "tidy").Assert(t, icmd.Success)
 
-	opts := options{}
-	conf := loader.Config{
-		Fset:        fileset,
-		ParserMode:  parser.ParseComments,
-		Build:       buildContext(opts),
-		AllowErrors: true,
-		FindPackage: fakeImporter.Import,
-	}
-	conf.TypeChecker.Error = func(e error) {}
-	conf.CreateFromFiles("foo.go", nodes)
-	prog, err := conf.Load()
+	opts := options{pkgs: []string{"./..."}}
+	pkgs, err := loadPackages(opts, fileset)
 	assert.NilError(t, err)
+	packages.PrintErrors(pkgs)
 
-	pkgInfo := prog.InitialPackages()[0]
+	pkg := pkgs[0]
+	assert.Assert(t, !pkg.IllTyped)
 
 	return migration{
-		file:        pkgInfo.Files[0],
+		file:        pkg.Syntax[0],
 		fileset:     fileset,
-		importNames: newImportNames(nodes.Imports, opts),
-		pkgInfo:     pkgInfo,
+		importNames: newImportNames(pkg.Syntax[0].Imports, opts),
+		pkgInfo:     pkg.TypesInfo,
 	}
 }
 
@@ -113,8 +112,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -148,8 +147,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -186,7 +185,7 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestSomething(t *testing.T) {
@@ -234,8 +233,8 @@ func TestOtherName(z *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -270,6 +269,7 @@ import (
 func TestSomething(t *testing.T) {
 	var err error
 	assert.Error(t, err, "this is a comment")
+	require.ErrorContains(t, err, "this in the error")
 	assert.Empty(t, nil, "more comment")
 	require.Equal(t, []string{}, []string{}, "because")
 }
@@ -283,15 +283,96 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
 	var err error
 	assert.Check(t, is.ErrorContains(err, ""), "this is a comment")
+	assert.ErrorContains(t, err, "this in the error")
 	assert.Check(t, is.Len(nil, 0), "more comment")
 	assert.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
+}
+
+func TestMigrate_AssertAlreadyImported(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/require"
+	"gotest.tools/v3/assert"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Error(t, err, "this is the error")
+	require.Equal(t, []string{}, []string{}, "because")
+}
+`
+	migration := newMigrationFromSource(t, source)
+	migration.importNames.cmp = "is"
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Error(t, err, "this is the error")
+	assert.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
+}
+
+func TestMigrate_AssertAlreadyImportedWithAlias(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/require"
+	gtya "gotest.tools/v3/assert"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	gtya.Error(t, err, "this is the error")
+	require.Equal(t, []string{}, []string{}, "because")
+}
+`
+	migration := newMigrationFromSource(t, source)
+	migration.importNames.cmp = "is"
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	gtya "gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	gtya.Error(t, err, "this is the error")
+	gtya.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
 }
 `
 	actual, err := formatFile(migration)

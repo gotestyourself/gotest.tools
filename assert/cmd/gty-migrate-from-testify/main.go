@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/build"
 	"go/format"
-	"go/parser"
 	"go/token"
 	"io/ioutil"
 	"log"
@@ -17,7 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -27,7 +25,8 @@ type options struct {
 	debug            bool
 	cmpImportName    string
 	showLoaderErrors bool
-	useAllFiles      bool
+	buildFlags       []string
+	localImportPath  string
 }
 
 func main() {
@@ -62,12 +61,14 @@ func setupFlags(name string) (*pflag.FlagSet, *options) {
 		"import alias to use for the assert/cmp package")
 	flags.BoolVar(&opts.showLoaderErrors, "print-loader-errors", false,
 		"print errors from loading source")
-	flags.BoolVar(&opts.useAllFiles, "ignore-build-tags", false,
-		"migrate all files ignoring build tags")
+	flags.StringSliceVar(&opts.buildFlags, "build-tags", nil,
+		"build to pass to Go when loading source files")
+	flags.StringVar(&opts.localImportPath, "local-import-path", "",
+		"value to pass to 'goimports -local' flag for sorting local imports")
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %s [OPTIONS] PACKAGE [PACKAGE...]
 
-Migrate calls from testify/{assert|require} to gotest.tools/assert.
+Migrate calls from testify/{assert|require} to gotest.tools/v3/assert.
 
 %s`, name, flags.FlagUsages())
 	}
@@ -87,18 +88,19 @@ func handleExitError(name string, err error) {
 }
 
 func run(opts options) error {
-	program, err := loadProgram(opts)
+	imports.LocalPrefix = opts.localImportPath
+
+	fset := token.NewFileSet()
+	pkgs, err := loadPackages(opts, fset)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load program")
 	}
 
-	pkgs := program.InitialPackages()
 	debugf("package count: %d", len(pkgs))
-
-	fileset := program.Fset
 	for _, pkg := range pkgs {
-		for _, astFile := range pkg.Files {
-			absFilename := fileset.File(astFile.Pos()).Name()
+		debugf("file count for package %v: %d", pkg.PkgPath, len(pkg.Syntax))
+		for _, astFile := range pkg.Syntax {
+			absFilename := fset.File(astFile.Pos()).Name()
 			filename := relativePath(absFilename)
 			importNames := newImportNames(astFile.Imports, opts)
 			if !importNames.hasTestifyImports() {
@@ -109,9 +111,9 @@ func run(opts options) error {
 			debugf("migrating %s with imports: %#v", filename, importNames)
 			m := migration{
 				file:        astFile,
-				fileset:     fileset,
+				fileset:     fset,
 				importNames: importNames,
-				pkgInfo:     pkg,
+				pkgInfo:     pkg.TypesInfo,
 			}
 			migrateFile(m)
 			if opts.dryRun {
@@ -132,47 +134,33 @@ func run(opts options) error {
 	return nil
 }
 
-func loadProgram(opts options) (*loader.Program, error) {
-	fakeImporter, err := newFakeImporter()
+var loadMode = packages.NeedName |
+	packages.NeedFiles |
+	packages.NeedCompiledGoFiles |
+	packages.NeedDeps |
+	packages.NeedImports |
+	packages.NeedTypes |
+	packages.NeedTypesInfo |
+	packages.NeedTypesSizes |
+	packages.NeedSyntax
+
+func loadPackages(opts options, fset *token.FileSet) ([]*packages.Package, error) {
+	conf := &packages.Config{
+		Mode:       loadMode,
+		Fset:       fset,
+		Tests:      true,
+		Logf:       debugf,
+		BuildFlags: opts.buildFlags,
+	}
+
+	pkgs, err := packages.Load(conf, opts.pkgs...)
 	if err != nil {
 		return nil, err
 	}
-	defer fakeImporter.Close()
-
-	conf := loader.Config{
-		Fset:        token.NewFileSet(),
-		ParserMode:  parser.ParseComments,
-		Build:       buildContext(opts),
-		AllowErrors: true,
-		FindPackage: fakeImporter.Import,
-	}
-	for _, pkg := range opts.pkgs {
-		conf.ImportWithTests(pkg)
-	}
-	if !opts.showLoaderErrors {
-		conf.TypeChecker.Error = func(e error) {}
-	}
-	program, err := conf.Load()
 	if opts.showLoaderErrors {
-		for p, pkg := range program.AllPackages {
-			if len(pkg.Errors) > 0 {
-				fmt.Printf("Package %s loaded with some errors:\n", p.Name())
-				for _, err := range pkg.Errors {
-					fmt.Println("    ", err.Error())
-				}
-			}
-		}
+		packages.PrintErrors(pkgs)
 	}
-	return program, err
-}
-
-func buildContext(opts options) *build.Context {
-	c := build.Default
-	c.UseAllFiles = opts.useAllFiles
-	if val, ok := os.LookupEnv("GOPATH"); ok {
-		c.GOPATH = val
-	}
-	return &c
+	return pkgs, nil
 }
 
 func relativePath(p string) string {
@@ -214,8 +202,9 @@ func (p importNames) funcNameFromTestifyName(name string) string {
 }
 
 func newImportNames(imports []*ast.ImportSpec, opt options) importNames {
+	defaultAssertAlias := path.Base(pkgAssert)
 	importNames := importNames{
-		assert: path.Base(pkgAssert),
+		assert: defaultAssertAlias,
 		cmp:    path.Base(pkgCmp),
 	}
 	for _, spec := range imports {
@@ -225,7 +214,18 @@ func newImportNames(imports []*ast.ImportSpec, opt options) importNames {
 		case pkgTestifyRequire, pkgGopkgTestifyRequire:
 			importNames.testifyRequire = identOrDefault(spec.Name, "require")
 		default:
-			if importedAs(spec, path.Base(pkgAssert)) {
+			pkgPath := strings.Trim(spec.Path.Value, `"`)
+
+			switch {
+			// v3/assert is already imported and has an alias
+			case pkgPath == pkgAssert:
+				if spec.Name != nil && spec.Name.Name != "" {
+					importNames.assert = spec.Name.Name
+				}
+				continue
+
+			// some other package is imported as assert
+			case importedAs(spec, path.Base(pkgAssert)) && importNames.assert == defaultAssertAlias:
 				importNames.assert = "gtyassert"
 			}
 		}

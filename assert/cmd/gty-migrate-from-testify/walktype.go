@@ -3,12 +3,10 @@ package main
 import (
 	"go/ast"
 	"go/types"
-
-	"golang.org/x/tools/go/loader"
 )
 
 // walkForType walks the AST tree and returns the type of the expression
-func walkForType(pkgInfo *loader.PackageInfo, node ast.Node) types.Type {
+func walkForType(pkgInfo *types.Info, node ast.Node) types.Type {
 	var result types.Type
 
 	visit := func(node ast.Node) bool {

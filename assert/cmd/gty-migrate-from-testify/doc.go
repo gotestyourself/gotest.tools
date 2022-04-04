@@ -1,9 +1,9 @@
 /*
 
 Command gty-migrate-from-testify migrates packages from
-testify/assert and testify/require to gotest.tools/assert.
+testify/assert and testify/require to gotest.tools/v3/assert.
 
-	$ go get gotest.tools/assert/cmd/gty-migrate-from-testify
+	$ go get gotest.tools/v3/assert/cmd/gty-migrate-from-testify
 
 Usage:
 
