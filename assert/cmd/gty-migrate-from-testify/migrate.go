@@ -15,8 +15,8 @@ const (
 	pkgGopkgTestifyAssert  = "gopkg.in/stretchr/testify.v1/assert"
 	pkgTestifyRequire      = "github.com/stretchr/testify/require"
 	pkgGopkgTestifyRequire = "gopkg.in/stretchr/testify.v1/require"
-	pkgAssert              = "gotest.tools/assert"
-	pkgCmp                 = "gotest.tools/assert/cmp"
+	pkgAssert              = "gotest.tools/v3/assert"
+	pkgCmp                 = "gotest.tools/v3/assert/cmp"
 )
 
 const (

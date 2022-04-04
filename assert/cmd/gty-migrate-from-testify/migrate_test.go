@@ -40,7 +40,7 @@ func do(t require.TestingT) {}
 import (
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestSomething(t *testing.T) {
@@ -112,8 +112,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -147,8 +147,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -185,7 +185,7 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
+	"gotest.tools/v3/assert"
 )
 
 func TestSomething(t *testing.T) {
@@ -233,8 +233,8 @@ func TestOtherName(z *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	"gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	"gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {
@@ -283,8 +283,8 @@ func TestSomething(t *testing.T) {
 import (
 	"testing"
 
-	"gotest.tools/assert"
-	is "gotest.tools/assert/cmp"
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
 )
 
 func TestSomething(t *testing.T) {

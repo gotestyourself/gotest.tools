@@ -9,7 +9,7 @@ import (
 )
 
 // call wraps a testify/assert ast.CallExpr and exposes properties of the
-// expression to facilitate migrating the expression to a gotest.tools/assert
+// expression to facilitate migrating the expression to a gotest.tools/v3/assert
 type call struct {
 	fileset *token.FileSet
 	expr    *ast.CallExpr

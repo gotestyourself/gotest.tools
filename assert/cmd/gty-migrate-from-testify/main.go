@@ -65,7 +65,7 @@ func setupFlags(name string) (*pflag.FlagSet, *options) {
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %s [OPTIONS] PACKAGE [PACKAGE...]
 
-Migrate calls from testify/{assert|require} to gotest.tools/assert.
+Migrate calls from testify/{assert|require} to gotest.tools/v3/assert.
 
 %s`, name, flags.FlagUsages())
 	}
