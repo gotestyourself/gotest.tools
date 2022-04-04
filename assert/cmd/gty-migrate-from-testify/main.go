@@ -196,8 +196,9 @@ func (p importNames) funcNameFromTestifyName(name string) string {
 }
 
 func newImportNames(imports []*ast.ImportSpec, opt options) importNames {
+	defaultAssertAlias := path.Base(pkgAssert)
 	importNames := importNames{
-		assert: path.Base(pkgAssert),
+		assert: defaultAssertAlias,
 		cmp:    path.Base(pkgCmp),
 	}
 	for _, spec := range imports {
@@ -207,7 +208,18 @@ func newImportNames(imports []*ast.ImportSpec, opt options) importNames {
 		case pkgTestifyRequire, pkgGopkgTestifyRequire:
 			importNames.testifyRequire = identOrDefault(spec.Name, "require")
 		default:
-			if importedAs(spec, path.Base(pkgAssert)) {
+			pkgPath := strings.Trim(spec.Path.Value, `"`)
+
+			switch {
+			// v3/assert is already imported and has an alias
+			case pkgPath == pkgAssert:
+				if spec.Name != nil && spec.Name.Name != "" {
+					importNames.assert = spec.Name.Name
+				}
+				continue
+
+			// some other package is imported as assert
+			case importedAs(spec, path.Base(pkgAssert)) && importNames.assert == defaultAssertAlias:
 				importNames.assert = "gtyassert"
 			}
 		}

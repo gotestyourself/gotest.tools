@@ -299,3 +299,83 @@ func TestSomething(t *testing.T) {
 	assert.NilError(t, err)
 	assert.Assert(t, cmp.Equal(expected, string(actual)))
 }
+
+func TestMigrate_AssertAlreadyImported(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/require"
+	"gotest.tools/v3/assert"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Error(t, err, "this is the error")
+	require.Equal(t, []string{}, []string{}, "because")
+}
+`
+	migration := newMigrationFromSource(t, source)
+	migration.importNames.cmp = "is"
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	"gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	assert.Error(t, err, "this is the error")
+	assert.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
+}
+
+func TestMigrate_AssertAlreadyImportedWithAlias(t *testing.T) {
+	source := `
+package foo
+
+import (
+	"testing"
+	"github.com/stretchr/testify/require"
+	gtya "gotest.tools/v3/assert"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	gtya.Error(t, err, "this is the error")
+	require.Equal(t, []string{}, []string{}, "because")
+}
+`
+	migration := newMigrationFromSource(t, source)
+	migration.importNames.cmp = "is"
+	migrateFile(migration)
+
+	expected := `package foo
+
+import (
+	"testing"
+
+	gtya "gotest.tools/v3/assert"
+	is "gotest.tools/v3/assert/cmp"
+)
+
+func TestSomething(t *testing.T) {
+	var err error
+	gtya.Error(t, err, "this is the error")
+	gtya.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
+}
+`
+	actual, err := formatFile(migration)
+	assert.NilError(t, err)
+	assert.Assert(t, cmp.Equal(expected, string(actual)))
+}
