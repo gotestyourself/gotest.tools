@@ -8,7 +8,6 @@ import (
 	"path"
 
 	"golang.org/x/tools/go/ast/astutil"
-	"golang.org/x/tools/go/loader"
 )
 
 const (
@@ -36,7 +35,7 @@ type migration struct {
 	file        *ast.File
 	fileset     *token.FileSet
 	importNames importNames
-	pkgInfo     *loader.PackageInfo
+	pkgInfo     *types.Info
 }
 
 func migrateFile(migration migration) {

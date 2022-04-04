@@ -4,9 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"go/ast"
-	"go/build"
 	"go/format"
-	"go/parser"
 	"go/token"
 	"io/ioutil"
 	"log"
@@ -17,7 +15,7 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
 
@@ -87,18 +85,17 @@ func handleExitError(name string, err error) {
 }
 
 func run(opts options) error {
-	program, err := loadProgram(opts)
+	fset := token.NewFileSet()
+	pkgs, err := loadPackages(opts, fset)
 	if err != nil {
 		return errors.Wrapf(err, "failed to load program")
 	}
 
-	pkgs := program.InitialPackages()
 	debugf("package count: %d", len(pkgs))
-
-	fileset := program.Fset
 	for _, pkg := range pkgs {
-		for _, astFile := range pkg.Files {
-			absFilename := fileset.File(astFile.Pos()).Name()
+		debugf("file count for package %v: %d", pkg.PkgPath, len(pkg.Syntax))
+		for _, astFile := range pkg.Syntax {
+			absFilename := fset.File(astFile.Pos()).Name()
 			filename := relativePath(absFilename)
 			importNames := newImportNames(astFile.Imports, opts)
 			if !importNames.hasTestifyImports() {
@@ -109,9 +106,9 @@ func run(opts options) error {
 			debugf("migrating %s with imports: %#v", filename, importNames)
 			m := migration{
 				file:        astFile,
-				fileset:     fileset,
+				fileset:     fset,
 				importNames: importNames,
-				pkgInfo:     pkg,
+				pkgInfo:     pkg.TypesInfo,
 			}
 			migrateFile(m)
 			if opts.dryRun {
@@ -132,47 +129,32 @@ func run(opts options) error {
 	return nil
 }
 
-func loadProgram(opts options) (*loader.Program, error) {
-	fakeImporter, err := newFakeImporter()
+var loadMode = packages.NeedName |
+	packages.NeedFiles |
+	packages.NeedCompiledGoFiles |
+	packages.NeedDeps |
+	packages.NeedImports |
+	packages.NeedTypes |
+	packages.NeedTypesInfo |
+	packages.NeedTypesSizes |
+	packages.NeedSyntax
+
+func loadPackages(opts options, fset *token.FileSet) ([]*packages.Package, error) {
+	conf := &packages.Config{
+		Mode:  loadMode,
+		Fset:  fset,
+		Tests: true,
+		Logf:  debugf,
+	}
+
+	pkgs, err := packages.Load(conf, opts.pkgs...)
 	if err != nil {
 		return nil, err
 	}
-	defer fakeImporter.Close()
-
-	conf := loader.Config{
-		Fset:        token.NewFileSet(),
-		ParserMode:  parser.ParseComments,
-		Build:       buildContext(opts),
-		AllowErrors: true,
-		FindPackage: fakeImporter.Import,
-	}
-	for _, pkg := range opts.pkgs {
-		conf.ImportWithTests(pkg)
-	}
-	if !opts.showLoaderErrors {
-		conf.TypeChecker.Error = func(e error) {}
-	}
-	program, err := conf.Load()
 	if opts.showLoaderErrors {
-		for p, pkg := range program.AllPackages {
-			if len(pkg.Errors) > 0 {
-				fmt.Printf("Package %s loaded with some errors:\n", p.Name())
-				for _, err := range pkg.Errors {
-					fmt.Println("    ", err.Error())
-				}
-			}
-		}
+		packages.PrintErrors(pkgs)
 	}
-	return program, err
-}
-
-func buildContext(opts options) *build.Context {
-	c := build.Default
-	c.UseAllFiles = opts.useAllFiles
-	if val, ok := os.LookupEnv("GOPATH"); ok {
-		c.GOPATH = val
-	}
-	return &c
+	return pkgs, nil
 }
 
 func relativePath(p string) string {

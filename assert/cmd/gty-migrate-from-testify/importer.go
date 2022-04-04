@@ -23,6 +23,7 @@ var allTestingTPkgs = append(
 	pkgGopkgGocheck,
 )
 
+// TODO: remove
 func newFakeImporter() (*fakeImporter, error) {
 	tmpDir, err := ioutil.TempDir("", "gty-migrate-from-testify")
 	err = errors.Wrapf(err, "failed to create temporary directory")

@@ -1,13 +1,15 @@
 package main
 
 import (
-	"go/parser"
 	"go/token"
 	"testing"
 
-	"golang.org/x/tools/go/loader"
+	"golang.org/x/tools/go/packages"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/env"
+	"gotest.tools/v3/fs"
+	"gotest.tools/v3/icmd"
 )
 
 func TestMigrateFileReplacesTestingT(t *testing.T) {
@@ -21,10 +23,11 @@ import (
 )
 
 func TestSomething(t *testing.T) {
-	a := assert.TestingT
-	b := require.TestingT
+	a := assert.TestingT(t)
+	b := require.TestingT(t)
 	c := require.TestingT(t)
 	if a == b {}
+	_ = c
 }
 
 func do(t require.TestingT) {}
@@ -41,11 +44,12 @@ import (
 )
 
 func TestSomething(t *testing.T) {
-	a := assert.TestingT
-	b := assert.TestingT
+	a := assert.TestingT(t)
+	b := assert.TestingT(t)
 	c := assert.TestingT(t)
 	if a == b {
 	}
+	_ = c
 }
 
 func do(t assert.TestingT) {}
@@ -56,38 +60,33 @@ func do(t assert.TestingT) {}
 }
 
 func newMigrationFromSource(t *testing.T, source string) migration {
+	t.Helper()
+	goMod := `module example.com/foo
+
+require  github.com/stretchr/testify v1.7.1
+`
+
+	dir := fs.NewDir(t, t.Name(),
+		fs.WithFile("foo.go", source),
+		fs.WithFile("go.mod", goMod))
 	fileset := token.NewFileSet()
-	nodes, err := parser.ParseFile(
-		fileset,
-		"foo.go",
-		source,
-		parser.AllErrors|parser.ParseComments)
-	assert.NilError(t, err)
 
-	fakeImporter, err := newFakeImporter()
-	assert.NilError(t, err)
-	defer fakeImporter.Close()
+	env.ChangeWorkingDir(t, dir.Path())
+	icmd.RunCommand("go", "mod", "tidy").Assert(t, icmd.Success)
 
-	opts := options{}
-	conf := loader.Config{
-		Fset:        fileset,
-		ParserMode:  parser.ParseComments,
-		Build:       buildContext(opts),
-		AllowErrors: true,
-		FindPackage: fakeImporter.Import,
-	}
-	conf.TypeChecker.Error = func(e error) {}
-	conf.CreateFromFiles("foo.go", nodes)
-	prog, err := conf.Load()
+	opts := options{pkgs: []string{"./..."}}
+	pkgs, err := loadPackages(opts, fileset)
 	assert.NilError(t, err)
+	packages.PrintErrors(pkgs)
 
-	pkgInfo := prog.InitialPackages()[0]
+	pkg := pkgs[0]
+	assert.Assert(t, !pkg.IllTyped)
 
 	return migration{
-		file:        pkgInfo.Files[0],
+		file:        pkg.Syntax[0],
 		fileset:     fileset,
-		importNames: newImportNames(nodes.Imports, opts),
-		pkgInfo:     pkgInfo,
+		importNames: newImportNames(pkg.Syntax[0].Imports, opts),
+		pkgInfo:     pkg.TypesInfo,
 	}
 }
 
