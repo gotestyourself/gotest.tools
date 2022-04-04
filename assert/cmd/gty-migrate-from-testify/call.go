@@ -8,14 +8,16 @@ import (
 	"go/token"
 )
 
-// call wraps an testify assert ast.CallExpr and exposes properties of the
+// call wraps a testify/assert ast.CallExpr and exposes properties of the
 // expression to facilitate migrating the expression to a gotest.tools/assert
 type call struct {
 	fileset *token.FileSet
 	expr    *ast.CallExpr
 	xIdent  *ast.Ident
 	selExpr *ast.SelectorExpr
-	assert  string
+	// assert is Assert (if the testify package was require), or Check (if the
+	// testify package was assert).
+	assert string
 }
 
 func (c call) String() string {
