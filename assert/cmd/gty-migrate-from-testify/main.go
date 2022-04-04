@@ -25,7 +25,8 @@ type options struct {
 	debug            bool
 	cmpImportName    string
 	showLoaderErrors bool
-	useAllFiles      bool
+	buildFlags       []string
+	localImportPath  string
 }
 
 func main() {
@@ -60,8 +61,10 @@ func setupFlags(name string) (*pflag.FlagSet, *options) {
 		"import alias to use for the assert/cmp package")
 	flags.BoolVar(&opts.showLoaderErrors, "print-loader-errors", false,
 		"print errors from loading source")
-	flags.BoolVar(&opts.useAllFiles, "ignore-build-tags", false,
-		"migrate all files ignoring build tags")
+	flags.StringSliceVar(&opts.buildFlags, "build-tags", nil,
+		"build to pass to Go when loading source files")
+	flags.StringVar(&opts.localImportPath, "local-import-path", "",
+		"value to pass to 'goimports -local' flag for sorting local imports")
 	flags.Usage = func() {
 		fmt.Fprintf(os.Stderr, `Usage: %s [OPTIONS] PACKAGE [PACKAGE...]
 
@@ -85,6 +88,8 @@ func handleExitError(name string, err error) {
 }
 
 func run(opts options) error {
+	imports.LocalPrefix = opts.localImportPath
+
 	fset := token.NewFileSet()
 	pkgs, err := loadPackages(opts, fset)
 	if err != nil {
@@ -141,10 +146,11 @@ var loadMode = packages.NeedName |
 
 func loadPackages(opts options, fset *token.FileSet) ([]*packages.Package, error) {
 	conf := &packages.Config{
-		Mode:  loadMode,
-		Fset:  fset,
-		Tests: true,
-		Logf:  debugf,
+		Mode:       loadMode,
+		Fset:       fset,
+		Tests:      true,
+		Logf:       debugf,
+		BuildFlags: opts.buildFlags,
 	}
 
 	pkgs, err := packages.Load(conf, opts.pkgs...)
