@@ -266,12 +266,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type FooError struct{}
+func (FooError) Error() string { return "foo" }
+
 func TestSomething(t *testing.T) {
 	var err error
 	assert.Error(t, err, "this is a comment")
 	require.ErrorContains(t, err, "this in the error")
 	assert.Empty(t, nil, "more comment")
 	require.Equal(t, []string{}, []string{}, "because")
+	require.ErrorIs(t, err, FooError{}, "extra")
 }
 `
 	migration := newMigrationFromSource(t, source)
@@ -287,12 +291,17 @@ import (
 	is "gotest.tools/v3/assert/cmp"
 )
 
+type FooError struct{}
+
+func (FooError) Error() string { return "foo" }
+
 func TestSomething(t *testing.T) {
 	var err error
 	assert.Check(t, is.ErrorContains(err, ""), "this is a comment")
 	assert.ErrorContains(t, err, "this in the error")
 	assert.Check(t, is.Len(nil, 0), "more comment")
 	assert.Assert(t, is.DeepEqual([]string{}, []string{}), "because")
+	assert.ErrorIs(t, err, FooError{}, "extra")
 }
 `
 	actual, err := formatFile(migration)

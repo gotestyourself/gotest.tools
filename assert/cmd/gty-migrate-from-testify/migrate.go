@@ -165,7 +165,9 @@ func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 	case "Error", "Errorf":
 		return convertError(tcall, imports)
 	case "ErrorContains", "ErrorContainsf":
-		return convertErrorContains(tcall, imports)
+		return convertCallExpr(tcall, imports, "ErrorContains")
+	case "ErrorIs", "ErrorIsf":
+		return convertCallExpr(tcall, imports, "ErrorIs")
 	case "Empty", "Emptyf":
 		return convertEmpty(tcall, imports)
 	case "Nil", "Nilf":
@@ -314,14 +316,14 @@ func convertError(tcall call, imports importNames) ast.Node {
 			tcall.extraArgs(2)...))
 }
 
-func convertErrorContains(tcall call, imports importNames) ast.Node {
+func convertCallExpr(tcall call, imports importNames, name string) ast.Node {
 	return &ast.CallExpr{
 		Fun: &ast.SelectorExpr{
 			X: &ast.Ident{
 				Name:    imports.assert,
 				NamePos: tcall.xIdent.NamePos,
 			},
-			Sel: &ast.Ident{Name: "ErrorContains"},
+			Sel: &ast.Ident{Name: name},
 		},
 		Args: tcall.expr.Args,
 	}
