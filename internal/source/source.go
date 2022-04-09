@@ -8,6 +8,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path"
 	"runtime"
 	"strconv"
 	"strings"
@@ -39,33 +40,65 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	}
 	debug("call stack position: %s:%d", filename, lineNum)
 
-	node, err := getNodeAtLine(filename, lineNum)
+	source, err := getNodeAtLine(filename, lineNum)
 	if err != nil {
 		return nil, err
 	}
-	debug("found node: %s", debugFormatNode{node})
+	debug("found node: %s", debugFormatNode{source.Node})
 
-	return getCallExprArgs(node)
+	return getCallExprArgs(source)
 }
 
-func getNodeAtLine(filename string, lineNum int) (ast.Node, error) {
+type fileSource struct {
+	Node    ast.Node
+	Imports imports
+}
+
+type imports map[string]struct{}
+
+func newImports(specs []*ast.ImportSpec) imports {
+	result := make(imports)
+	for _, spec := range specs {
+		pkgPath := strings.Trim(spec.Path.Value, `"`)
+		if !strings.HasPrefix(pkgPath, `gotest.tools/`) {
+			continue
+		}
+		name := path.Base(pkgPath)
+		// Only two packages use internal/source right now.
+		// Don't include the others to reduce the chance of a false positive
+		// match on the name of some other package or type.
+		if name != "assert" && name != "skip" {
+			continue
+		}
+		if spec.Name != nil {
+			name = spec.Name.Name
+		}
+		result[name] = struct{}{}
+	}
+	return result
+}
+
+func getNodeAtLine(filename string, lineNum int) (fileSource, error) {
+	fs := fileSource{}
 	fileset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse source file: %s", filename)
+		return fs, errors.Wrapf(err, "failed to parse source file: %s", filename)
 	}
+	fs.Imports = newImports(astFile.Imports)
 
 	if node := scanToLine(fileset, astFile, lineNum); node != nil {
-		return node, nil
+		fs.Node = node
+		return fs, nil
 	}
 	if node := scanToDeferLine(fileset, astFile, lineNum); node != nil {
 		node, err := guessDefer(node)
 		if err != nil || node != nil {
-			return node, err
+			fs.Node = node
+			return fs, err
 		}
 	}
-	return nil, errors.Errorf(
-		"failed to find an expression on line %d in %s", lineNum, filename)
+	return fs, errors.Errorf("failed to find an expression on line %d in %s", lineNum, filename)
 }
 
 func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
@@ -122,9 +155,9 @@ func GoVersionLessThan(major, minor int64) bool {
 
 var goVersionBefore19 = GoVersionLessThan(1, 9)
 
-func getCallExprArgs(node ast.Node) ([]ast.Expr, error) {
-	visitor := &callExprVisitor{}
-	ast.Walk(visitor, node)
+func getCallExprArgs(source fileSource) ([]ast.Expr, error) {
+	visitor := &callExprVisitor{imports: source.Imports}
+	ast.Walk(visitor, source.Node)
 	if visitor.expr == nil {
 		return nil, errors.New("failed to find call expression")
 	}
@@ -133,7 +166,8 @@ func getCallExprArgs(node ast.Node) ([]ast.Expr, error) {
 }
 
 type callExprVisitor struct {
-	expr *ast.CallExpr
+	expr    *ast.CallExpr
+	imports imports
 }
 
 func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
@@ -144,6 +178,9 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 
 	switch typed := node.(type) {
 	case *ast.CallExpr:
+		if !isGoTestToolsCallExpr(typed, v.imports) {
+			return v
+		}
 		v.expr = typed
 		return nil
 	case *ast.DeferStmt:
@@ -151,6 +188,31 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 		return nil
 	}
 	return v
+}
+
+func isGoTestToolsCallExpr(ce *ast.CallExpr, imports imports) bool {
+	debug("call expr function: (%T), %v", ce.Fun, ce.Fun)
+	se, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+	ident, ok := se.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	switch {
+	case imports.isGoTestToolsPackageSelector(ident.Name):
+		return true
+	case ident.Name == "gotestToolsTestShim":
+		// gotestToolsTestShim is used by tests of this package.
+		return true
+	}
+	return false
+}
+
+func (i imports) isGoTestToolsPackageSelector(name string) bool {
+	_, ok := i[name]
+	return ok
 }
 
 // FormatNode using go/format.Node and return the result as a string

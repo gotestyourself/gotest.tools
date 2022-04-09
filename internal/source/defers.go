@@ -29,13 +29,12 @@ func guessDefer(node ast.Node) (ast.Node, error) {
 	defers := collectDefers(node)
 	switch len(defers) {
 	case 0:
-		return nil, errors.New("failed to expression in defer")
+		return nil, errors.New("failed to find expression in defer")
 	case 1:
 		return defers[0].Call, nil
 	default:
-		return nil, errors.Errorf(
-			"ambiguous call expression: multiple (%d) defers in call block",
-			len(defers))
+		msg := "ambiguous call expression: multiple (%d) defers in call block"
+		return nil, errors.Errorf(msg, len(defers))
 	}
 }
 
