@@ -1,16 +1,10 @@
 /*Package assert provides assertions for comparing expected values to actual
-values. When an assertion fails a helpful error message is printed.
-
-Assert and Check
-
-Assert() and Check() both accept a Comparison, and fail the test when the
-comparison fails. The one difference is that Assert() will end the test execution
-immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail()),
-return the value of the comparison, then proceed with the rest of the test case.
+values in tests. When an assertion fails a helpful error message is printed.
 
 Example usage
 
-The example below shows assert used with some common types.
+The example below shows assert used with some common types and the failure
+messages it produces.
 
 
 	import (
@@ -23,29 +17,52 @@ The example below shows assert used with some common types.
 	func TestEverything(t *testing.T) {
 	    // booleans
 	    assert.Assert(t, ok)
+	    // assertion failed: ok is false
 	    assert.Assert(t, !missing)
+	    // assertion failed: missing is true
 
 	    // primitives
 	    assert.Equal(t, count, 1)
+	    // assertion failed: 0 (count int) != 1 (int)
 	    assert.Equal(t, msg, "the message")
-	    assert.Assert(t, total != 10) // NotEqual
+	    // assertion failed: my message (msg string) != the message (string)
+	    assert.Assert(t, total != 10) // use Assert for NotEqual
+	    // assertion failed: total is 10
+	    assert.Assert(t, count > 20, "count=%v", count)
+	    // assertion failed: count is <= 20: count=1
 
 	    // errors
 	    assert.NilError(t, closer.Close())
+	    // assertion failed: error is not nil: close /file: errno 11
 	    assert.Error(t, err, "the exact error message")
+	    // assertion failed: expected error "the exact error message", got "oops"
 	    assert.ErrorContains(t, err, "includes this")
-	    assert.ErrorType(t, err, os.IsNotExist)
+	    // assertion failed: expected error to contain "includes this", got "oops"
+	    assert.ErrorIs(t, err, os.ErrNotExist)
+	    // assertion failed: error is "oops" (err *errors.errorString), not "file does not exist" (os.ErrNotExist *errors.errorString)
 
 	    // complex types
 	    assert.DeepEqual(t, result, myStruct{Name: "title"})
 	    assert.Assert(t, is.Len(items, 3))
-	    assert.Assert(t, len(sequence) != 0) // NotEmpty
+	    // assertion failed: expected [] (length 0) to have length 3
+	    assert.Assert(t, len(sequence) != 0) // use Assert for NotEmpty
+	    // assertion failed: len(sequence) is 0
 	    assert.Assert(t, is.Contains(mapping, "key"))
+	    // assertion failed: map[other:1] does not contain key
 
 	    // pointers and interface
-	    assert.Assert(t, is.Nil(ref))
-	    assert.Assert(t, ref != nil) // NotNil
+	    assert.Assert(t, ref == nil)
+	    // assertion failed: ref is not nil
+	    assert.Assert(t, ref != nil) // use Assert for NotNil
+	    // assertion failed: ref is nil
 	}
+
+Assert and Check
+
+Assert() and Check() both accept a Comparison, and fail the test when the
+comparison fails. The one difference is that Assert() will end the test execution
+immediately (using t.FailNow()) whereas Check() will fail the test (using t.Fail()),
+return the value of the comparison, then proceed with the rest of the test case.
 
 Comparisons
 
