@@ -39,7 +39,7 @@ messages it produces.
 	    assert.ErrorContains(t, err, "includes this")
 	    // assertion failed: expected error to contain "includes this", got "oops"
 	    assert.ErrorIs(t, err, os.ErrNotExist)
-	    // assertion failed: error is "oops" (err *errors.errorString), not "file does not exist" (os.ErrNotExist *errors.errorString)
+	    // assertion failed: error is "oops", not "file does not exist" (os.ErrNotExist)
 
 	    // complex types
 	    assert.DeepEqual(t, result, myStruct{Name: "title"})

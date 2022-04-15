@@ -450,7 +450,7 @@ func TestErrorIs(t *testing.T) {
 
 		var err error
 		ErrorIs(fakeT, err, os.ErrNotExist)
-		expected := `assertion failed: error is nil, not "file does not exist" (os.ErrNotExist *errors.errorString)`
+		expected := `assertion failed: error is nil, not "file does not exist" (os.ErrNotExist)`
 		expectFailNowed(t, fakeT, expected)
 	})
 	t.Run("different error", func(t *testing.T) {
@@ -458,7 +458,7 @@ func TestErrorIs(t *testing.T) {
 
 		err := fmt.Errorf("the actual error")
 		ErrorIs(fakeT, err, os.ErrNotExist)
-		expected := `assertion failed: error is "the actual error" (err *errors.errorString), not "file does not exist" (os.ErrNotExist *errors.errorString)`
+		expected := `assertion failed: error is "the actual error", not "file does not exist" (os.ErrNotExist)`
 		expectFailNowed(t, fakeT, expected)
 	})
 	t.Run("same error", func(t *testing.T) {
