@@ -3,8 +3,19 @@ values in tests. When an assertion fails a helpful error message is printed.
 
 Example usage
 
+All the assertions in this package use testing.T.Helper to mark themselves as
+test helpers. This allows the testing package to print the filename and line
+number of the file function that failed.
+
+	assert.NilError(t, err)
+	// filename_test.go:212: assertion failed: error is not nil: file not found
+
+If any assertion is called from a helper function, make sure to call t.Helper
+from the helper function so that the filename and line number remain correct.
+
 The examples below show assert used with some common types and the failure
-messages it produces.
+messages it produces. The filename and line number portion of the failure
+message is omitted from these examples for brevity.
 
 	// booleans
 
@@ -171,7 +182,7 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 // values.
 //
 //   assert.Equal(t, actual, expected)
-//   // assertion failed: 1 (actual int) != 21 (expected int32)
+//   // main_test.go:41: assertion failed: 1 (actual int) != 21 (expected int32)
 //
 // If either x or y are a multi-line string the failure message will include a
 // unified diff of the two values. If the values only differ by whitespace
