@@ -23,7 +23,6 @@ type helperT interface {
 const failureMessage = "assertion failed: "
 
 // Eval the comparison and print a failure messages if the comparison has failed.
-// nolint: gocyclo
 func Eval(
 	t LogT,
 	argSelector argSelector,

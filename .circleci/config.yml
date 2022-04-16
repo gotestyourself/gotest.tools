@@ -1,7 +1,7 @@
 version: 2.1
 
 orbs:
-  go: gotest/tools@0.0.13
+  go: gotest/tools@0.0.14
 
 workflows:
   ci:
@@ -49,13 +49,15 @@ executors:
 jobs:
 
   lint:
-    executor: go/golang
+    executor:
+      name: go/golang
+      tag:  1.18-alpine
     steps:
     - checkout
     - go/install-golangci-lint:
-        prefix: v2
-        version: 1.21.0
+        prefix: v1.45.2
+        version: 1.45.2
+    - go/install: {package: git}
     - run:
         name: Lint
-        command: |
-          golangci-lint run -v --concurrency 2
+        command: golangci-lint run -v --concurrency 2

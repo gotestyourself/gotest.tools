@@ -203,7 +203,7 @@ func setupGoldenFileWithDir(t *testing.T, dirname, content string) (string, func
 	_ = os.MkdirAll(filepath.Join("testdata", dirname), 0755)
 	f, err := ioutil.TempFile(dirpath, t.Name()+"-")
 	assert.NilError(t, err, "fail to create test golden file")
-	defer f.Close() // nolint: errcheck
+	defer f.Close()
 
 	_, err = f.Write([]byte(content))
 	assert.NilError(t, err)
@@ -218,7 +218,7 @@ func setupGoldenFile(t *testing.T, content string) (string, func()) {
 	_ = os.Mkdir("testdata", 0755)
 	f, err := ioutil.TempFile("testdata", t.Name()+"-")
 	assert.NilError(t, err, "fail to create test golden file")
-	defer f.Close() // nolint: errcheck
+	defer f.Close()
 
 	_, err = f.Write([]byte(content))
 	assert.NilError(t, err)

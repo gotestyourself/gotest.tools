@@ -166,7 +166,7 @@ func Contains(collection interface{}, item interface{}) Comparison {
 	return func() Result {
 		colValue := reflect.ValueOf(collection)
 		if !colValue.IsValid() {
-			return ResultFailure(fmt.Sprintf("nil does not contain items"))
+			return ResultFailure("nil does not contain items")
 		}
 		msg := fmt.Sprintf("%v does not contain %v", collection, item)
 
@@ -248,6 +248,7 @@ type causer interface {
 }
 
 func formatErrorMessage(err error) string {
+	// nolint: errorlint // unwrapping is not appropriate here
 	if _, ok := err.(causer); ok {
 		return fmt.Sprintf("%q\n%+v", err, err)
 	}
@@ -308,7 +309,7 @@ func ErrorType(err error, expected interface{}) Comparison {
 			}
 			return cmpErrorTypeEqualType(err, expectedType)
 		case nil:
-			return ResultFailure(fmt.Sprintf("invalid type for expected: nil"))
+			return ResultFailure("invalid type for expected: nil")
 		}
 
 		expectedType := reflect.TypeOf(expected)

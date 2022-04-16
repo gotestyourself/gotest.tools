@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -78,7 +79,7 @@ func handleExitError(name string, err error) {
 	switch {
 	case err == nil:
 		return
-	case err == pflag.ErrHelp:
+	case errors.Is(err, pflag.ErrHelp):
 		os.Exit(0)
 	default:
 		log.Println(name + ": Error: " + err.Error())
