@@ -1,9 +1,9 @@
 package icmd
 
 import (
+	"fmt"
 	"syscall"
 
-	"github.com/pkg/errors"
 	exec "golang.org/x/sys/execabs"
 )
 
@@ -15,7 +15,7 @@ func getExitCode(err error) (int, error) {
 			return procExit.ExitStatus(), nil
 		}
 	}
-	return 0, errors.Wrap(err, "failed to get exit code")
+	return 0, fmt.Errorf("failed to get exit code: %w", err)
 }
 
 func processExitCode(err error) (exitCode int) {

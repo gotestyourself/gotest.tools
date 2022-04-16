@@ -13,7 +13,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/pkg/errors"
 	"github.com/spf13/pflag"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
@@ -93,7 +92,7 @@ func run(opts options) error {
 	fset := token.NewFileSet()
 	pkgs, err := loadPackages(opts, fset)
 	if err != nil {
-		return errors.Wrapf(err, "failed to load program")
+		return fmt.Errorf("failed to load program: %w", err)
 	}
 
 	debugf("package count: %d", len(pkgs))
@@ -122,11 +121,11 @@ func run(opts options) error {
 
 			raw, err := formatFile(m)
 			if err != nil {
-				return errors.Wrapf(err, "failed to format %s", filename)
+				return fmt.Errorf("failed to format %s: %w", filename, err)
 			}
 
 			if err := ioutil.WriteFile(absFilename, raw, 0); err != nil {
-				return errors.Wrapf(err, "failed to write file %s", filename)
+				return fmt.Errorf("failed to write file %s: %w", filename, err)
 			}
 		}
 	}
