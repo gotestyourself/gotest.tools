@@ -1,6 +1,7 @@
 package cmp
 
 import (
+	"errors"
 	"fmt"
 	"go/ast"
 	"io"
@@ -11,7 +12,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 )
 
 func TestDeepEqual(t *testing.T) {
@@ -315,16 +315,46 @@ func TestEqual_PointersNotEqual(t *testing.T) {
 	assertFailureTemplate(t, res, args, expected)
 }
 
+// errorWithCause mimics the error formatting of github.com/pkg/errors
+type errorWithCause struct {
+	msg   string
+	cause error
+}
+
+func (e errorWithCause) Error() string {
+	return fmt.Sprintf("%v with cause: %v", e.msg, e.cause)
+}
+
+func (e errorWithCause) Cause() error {
+	return e.cause
+}
+
+func (e errorWithCause) Format(s fmt.State, verb rune) {
+	switch verb {
+	case 'v':
+		if s.Flag('+') {
+			fmt.Fprintf(s, "%+v", e.Cause())
+			fmt.Fprint(s, "\nstack trace")
+			return
+		}
+		fallthrough
+	case 's':
+		io.WriteString(s, e.Error())
+	case 'q':
+		fmt.Fprintf(s, "%q", e.Error())
+	}
+}
+
 func TestError(t *testing.T) {
 	result := Error(nil, "the error message")()
 	assertFailure(t, result, "expected an error, got nil")
 
 	// A Wrapped error also includes the stack
-	result = Error(errors.Wrap(errors.New("other"), "wrapped"), "the error message")()
+	result = Error(errorWithCause{cause: errors.New("other"), msg: "wrapped"}, "the error message")()
 	assertFailureHasPrefix(t, result,
-		`expected error "the error message", got "wrapped: other"
+		`expected error "the error message", got "wrapped with cause: other"
 other
-gotest.tools`)
+stack trace`)
 
 	msg := "the message"
 	result = Error(errors.New(msg), msg)()

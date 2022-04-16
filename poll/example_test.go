@@ -1,9 +1,9 @@
 package poll_test
 
 import (
+	"fmt"
 	"time"
 
-	"github.com/pkg/errors"
 	"gotest.tools/v3/poll"
 )
 
@@ -19,7 +19,7 @@ func ExampleWaitOn() {
 	check := func(t poll.LogT) poll.Result {
 		actual, err := numOfProcesses()
 		if err != nil {
-			return poll.Error(errors.Wrap(err, "failed to get number of processes"))
+			return poll.Error(fmt.Errorf("failed to get number of processes: %w", err))
 		}
 		if actual == desired {
 			return poll.Success()

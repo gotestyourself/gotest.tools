@@ -5,7 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/pkg/errors"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
@@ -67,7 +66,7 @@ func TestWaitOnWithCheckError(t *testing.T) {
 	fakeT := &fakeT{}
 
 	check := func(t LogT) Result {
-		return Error(errors.New("broke"))
+		return Error(fmt.Errorf("broke"))
 	}
 
 	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check) }))
