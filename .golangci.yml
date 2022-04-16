@@ -1,11 +1,11 @@
 linters-settings:
-  gocyclo:
-    min-complexity: 10
   goconst:
     min-len: 5
     min-occurrences: 10
   lll:
     line-length: 100
+  maintidx:
+    under: 40
 
 issues:
   exclude-use-default: false
@@ -15,7 +15,7 @@ issues:
     - text: 'always receives'
       linters: [unparam]
     - path: _test\.go
-      linters: [errcheck, staticcheck, lll]
+      linters: [errcheck, staticcheck, lll, maintidx]
     - path: internal/difflib/difflib\.go
       text: .
     - text: 'return value of .*Close` is not checked'
@@ -36,9 +36,10 @@ linters:
     - depguard
     - dogsled
     - errcheck
+    - errorlint
+    - exportloopref
     - gocognit
     - goconst
-    - gocyclo
     - gofmt
     - goimports
     - golint
@@ -47,8 +48,13 @@ linters:
     - ineffassign
     - interfacer
     - lll
+    - maintidx
     - misspell
     - nakedret
+    - nestif
+    - nilerr
+    - nilnil
+    - nolintlint
     - prealloc
     - staticcheck
     - structcheck
@@ -58,4 +64,5 @@ linters:
     - unparam
     - unused
     - varcheck
+    - wastedassign
     - whitespace

@@ -441,7 +441,6 @@ func assertFailureHasPrefix(t testingT, res Result, prefix string) {
 	}
 }
 
-// nolint: unparam
 func assertFailureTemplate(t testingT, res Result, args []ast.Expr, expected string) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()

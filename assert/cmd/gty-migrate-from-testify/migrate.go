@@ -141,7 +141,7 @@ func convertTestifySingleArgCall(tcall call) ast.Node {
 	}
 }
 
-// nolint: gocyclo
+// nolint: maintidx
 func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 	imports := migration.importNames
 

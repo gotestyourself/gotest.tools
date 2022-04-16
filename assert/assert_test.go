@@ -337,7 +337,6 @@ func expectFailNowed(t testingT, fakeT *fakeTestingT, expected string) {
 	}
 }
 
-// nolint: unparam
 func expectFailed(t testingT, fakeT *fakeTestingT, expected string) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
