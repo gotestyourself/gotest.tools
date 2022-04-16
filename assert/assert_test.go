@@ -29,11 +29,46 @@ func (f *fakeTestingT) Log(args ...interface{}) {
 
 func (f *fakeTestingT) Helper() {}
 
-func TestAssertWithBoolFailure(t *testing.T) {
+func TestAssert_WithBinaryExpression_Failures(t *testing.T) {
+	t.Run("equal", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, 1 == 6)
+		expectFailNowed(t, fakeT, "assertion failed: 1 is not 6")
+	})
+	t.Run("not equal", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		a := 1
+		Assert(fakeT, a != 1)
+		expectFailNowed(t, fakeT, "assertion failed: a is 1")
+	})
+	t.Run("greater than", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, 1 > 5)
+		expectFailNowed(t, fakeT, "assertion failed: 1 is <= 5")
+	})
+	t.Run("less than", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, 5 < 1)
+		expectFailNowed(t, fakeT, "assertion failed: 5 is >= 1")
+	})
+	t.Run("greater than or equal", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, 1 >= 5)
+		expectFailNowed(t, fakeT, "assertion failed: 1 is less than 5")
+	})
+	t.Run("less than or equal", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, 6 <= 2)
+		expectFailNowed(t, fakeT, "assertion failed: 6 is greater than 2")
+	})
+}
+
+func TestAssertWithBoolIdent(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
-	Assert(fakeT, 1 == 6)
-	expectFailNowed(t, fakeT, "assertion failed: expression is false: 1 == 6")
+	var ok bool
+	Assert(fakeT, ok)
+	expectFailNowed(t, fakeT, "assertion failed: ok is false")
 }
 
 func TestAssertWithBoolFailureNotEqual(t *testing.T) {
@@ -56,8 +91,7 @@ func TestAssertWithBoolFailureAndExtraMessage(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
 	Assert(fakeT, 1 > 5, "sometimes things fail")
-	expectFailNowed(t, fakeT,
-		"assertion failed: expression is false: 1 > 5: sometimes things fail")
+	expectFailNowed(t, fakeT, "assertion failed: 1 is <= 5: sometimes things fail")
 }
 
 func TestAssertWithBoolSuccess(t *testing.T) {
@@ -187,7 +221,7 @@ func TestCheckFailure(t *testing.T) {
 	if Check(fakeT, 1 == 2) {
 		t.Error("expected check to return false on failure")
 	}
-	expectFailed(t, fakeT, "assertion failed: expression is false: 1 == 2")
+	expectFailed(t, fakeT, "assertion failed: 1 is not 2")
 }
 
 func TestCheckSuccess(t *testing.T) {
@@ -407,5 +441,31 @@ func TestErrorTypeFailure(t *testing.T) {
 		ErrorType(fakeT, err, os.IsNotExist)
 		expected := `assertion failed: error is the actual error (*errors.errorString), not os.IsNotExist`
 		expectFailNowed(t, fakeT, expected)
+	})
+}
+
+func TestErrorIs(t *testing.T) {
+	t.Run("nil error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		var err error
+		ErrorIs(fakeT, err, os.ErrNotExist)
+		expected := `assertion failed: error is nil, not "file does not exist" (os.ErrNotExist)`
+		expectFailNowed(t, fakeT, expected)
+	})
+	t.Run("different error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		err := fmt.Errorf("the actual error")
+		ErrorIs(fakeT, err, os.ErrNotExist)
+		expected := `assertion failed: error is "the actual error", not "file does not exist" (os.ErrNotExist)`
+		expectFailNowed(t, fakeT, expected)
+	})
+	t.Run("same error", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+
+		err := fmt.Errorf("some wrapping: %w", os.ErrNotExist)
+		ErrorIs(fakeT, err, os.ErrNotExist)
+		expectSuccess(t, fakeT)
 	})
 }

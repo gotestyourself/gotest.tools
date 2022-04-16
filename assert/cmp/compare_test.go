@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"go/ast"
 	"io"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -592,4 +593,59 @@ func TestErrorTypeWithFunc(t *testing.T) {
 	assertFailureTemplate(t, result,
 		[]ast.Expr{nil, &ast.Ident{Name: "isErrorOfTypeNotStub"}},
 		"error is stub error (cmp.stubError), not isErrorOfTypeNotStub")
+}
+
+func TestErrorIs(t *testing.T) {
+	t.Run("equal", func(t *testing.T) {
+		result := ErrorIs(stubError{}, stubError{})()
+		assertSuccess(t, result)
+	})
+	t.Run("actual is nil, not stdlib error", func(t *testing.T) {
+		result := ErrorIs(nil, stubError{})()
+		args := []ast.Expr{
+			&ast.Ident{Name: "err"},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "mypkg"},
+				Sel: &ast.Ident{Name: "StubError"},
+			},
+		}
+		expected := `error is nil, not "stub error" (mypkg.StubError cmp.stubError)`
+		assertFailureTemplate(t, result, args, expected)
+	})
+	t.Run("not equal, not stdlib error", func(t *testing.T) {
+		result := ErrorIs(notStubError{}, stubError{})()
+		args := []ast.Expr{
+			&ast.Ident{Name: "err"},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "mypkg"},
+				Sel: &ast.Ident{Name: "StubError"},
+			},
+		}
+		expected := `error is "not stub error" (cmp.notStubError), not "stub error" (mypkg.StubError cmp.stubError)`
+		assertFailureTemplate(t, result, args, expected)
+	})
+	t.Run("actual is nil, stdlib error", func(t *testing.T) {
+		result := ErrorIs(nil, os.ErrClosed)()
+		args := []ast.Expr{
+			&ast.Ident{Name: "err"},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "os"},
+				Sel: &ast.Ident{Name: "ErrClosed"},
+			},
+		}
+		expected := `error is nil, not "file already closed" (os.ErrClosed)`
+		assertFailureTemplate(t, result, args, expected)
+	})
+	t.Run("not equal, stdlib error", func(t *testing.T) {
+		result := ErrorIs(fmt.Errorf("foo"), os.ErrClosed)()
+		args := []ast.Expr{
+			&ast.Ident{Name: "err"},
+			&ast.SelectorExpr{
+				X:   &ast.Ident{Name: "os"},
+				Sel: &ast.Ident{Name: "ErrClosed"},
+			},
+		}
+		expected := `error is "foo", not "file already closed" (os.ErrClosed)`
+		assertFailureTemplate(t, result, args, expected)
+	})
 }

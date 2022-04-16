@@ -2,6 +2,7 @@
 package cmp // import "gotest.tools/v3/assert/cmp"
 
 import (
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -362,4 +363,31 @@ func isPtrToInterface(typ reflect.Type) bool {
 
 func isPtrToStruct(typ reflect.Type) bool {
 	return typ.Kind() == reflect.Ptr && typ.Elem().Kind() == reflect.Struct
+}
+
+var (
+	stdlibErrorNewType = reflect.TypeOf(errors.New(""))
+	stdlibFmtErrorType = reflect.TypeOf(fmt.Errorf("%w", fmt.Errorf("")))
+)
+
+// ErrorIs succeeds if errors.Is(actual, expected) returns true. See
+// https://golang.org/pkg/errors/#Is for accepted argument values.
+func ErrorIs(actual error, expected error) Comparison {
+	return func() Result {
+		if errors.Is(actual, expected) {
+			return ResultSuccess
+		}
+
+		// The type of stdlib errors is excluded because the type is not relevant
+		// in those cases. The type is only important when it is a user defined
+		// custom error type.
+		return ResultFailureTemplate(`error is
+			{{- if not .Data.a }} nil,{{ else }}
+				{{- printf " \"%v\"" .Data.a }}
+				{{- if notStdlibErrorType .Data.a }} ({{ printf "%T" .Data.a }}){{ end }},
+			{{- end }} not {{ printf "\"%v\"" .Data.x }} (
+			{{- with callArg 1 }}{{ formatNode . }}{{ end }}
+			{{- if notStdlibErrorType .Data.x }}{{ printf " %T" .Data.x }}{{ end }})`,
+			map[string]interface{}{"a": actual, "x": expected})
+	}
 }
