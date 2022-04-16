@@ -3,59 +3,55 @@ values in tests. When an assertion fails a helpful error message is printed.
 
 Example usage
 
-The example below shows assert used with some common types and the failure
+The examples below show assert used with some common types and the failure
 messages it produces.
 
+	// booleans
 
-	import (
-	    "testing"
+	assert.Assert(t, ok)
+	// assertion failed: ok is false
+	assert.Assert(t, !missing)
+	// assertion failed: missing is true
 
-	    "gotest.tools/v3/assert"
-	    is "gotest.tools/v3/assert/cmp"
-	)
+	// primitives
 
-	func TestEverything(t *testing.T) {
-	    // booleans
-	    assert.Assert(t, ok)
-	    // assertion failed: ok is false
-	    assert.Assert(t, !missing)
-	    // assertion failed: missing is true
+	assert.Equal(t, count, 1)
+	// assertion failed: 0 (count int) != 1 (int)
+	assert.Equal(t, msg, "the message")
+	// assertion failed: my message (msg string) != the message (string)
+	assert.Assert(t, total != 10) // use Assert for NotEqual
+	// assertion failed: total is 10
+	assert.Assert(t, count > 20, "count=%v", count)
+	// assertion failed: count is <= 20: count=1
 
-	    // primitives
-	    assert.Equal(t, count, 1)
-	    // assertion failed: 0 (count int) != 1 (int)
-	    assert.Equal(t, msg, "the message")
-	    // assertion failed: my message (msg string) != the message (string)
-	    assert.Assert(t, total != 10) // use Assert for NotEqual
-	    // assertion failed: total is 10
-	    assert.Assert(t, count > 20, "count=%v", count)
-	    // assertion failed: count is <= 20: count=1
+	// errors
 
-	    // errors
-	    assert.NilError(t, closer.Close())
-	    // assertion failed: error is not nil: close /file: errno 11
-	    assert.Error(t, err, "the exact error message")
-	    // assertion failed: expected error "the exact error message", got "oops"
-	    assert.ErrorContains(t, err, "includes this")
-	    // assertion failed: expected error to contain "includes this", got "oops"
-	    assert.ErrorIs(t, err, os.ErrNotExist)
-	    // assertion failed: error is "oops", not "file does not exist" (os.ErrNotExist)
+	assert.NilError(t, closer.Close())
+	// assertion failed: error is not nil: close /file: errno 11
+	assert.Error(t, err, "the exact error message")
+	// assertion failed: expected error "the exact error message", got "oops"
+	assert.ErrorContains(t, err, "includes this")
+	// assertion failed: expected error to contain "includes this", got "oops"
+	assert.ErrorIs(t, err, os.ErrNotExist)
+	// assertion failed: error is "oops", not "file does not exist" (os.ErrNotExist)
 
-	    // complex types
-	    assert.DeepEqual(t, result, myStruct{Name: "title"})
-	    assert.Assert(t, is.Len(items, 3))
-	    // assertion failed: expected [] (length 0) to have length 3
-	    assert.Assert(t, len(sequence) != 0) // use Assert for NotEmpty
-	    // assertion failed: len(sequence) is 0
-	    assert.Assert(t, is.Contains(mapping, "key"))
-	    // assertion failed: map[other:1] does not contain key
+	// complex types
 
-	    // pointers and interface
-	    assert.Assert(t, ref == nil)
-	    // assertion failed: ref is not nil
-	    assert.Assert(t, ref != nil) // use Assert for NotNil
-	    // assertion failed: ref is nil
-	}
+	assert.DeepEqual(t, result, myStruct{Name: "title"})
+	// assertion failed: ... (diff of the two structs)
+	assert.Assert(t, is.Len(items, 3))
+	// assertion failed: expected [] (length 0) to have length 3
+	assert.Assert(t, len(sequence) != 0) // use Assert for NotEmpty
+	// assertion failed: len(sequence) is 0
+	assert.Assert(t, is.Contains(mapping, "key"))
+	// assertion failed: map[other:1] does not contain key
+
+	// pointers and interface
+
+	assert.Assert(t, ref == nil)
+	// assertion failed: ref is not nil
+	assert.Assert(t, ref != nil) // use Assert for NotNil
+	// assertion failed: ref is nil
 
 Assert and Check
 
@@ -259,16 +255,16 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 //   func(error) bool
 //     The function should return true if the error is the expected type.
 //
-//   type struct{} or type &struct{}
+//   struct{} or *struct{}
 //     A struct or a pointer to a struct. The assertion fails if the error is
 //     not of the same type.
 //
-//   type &interface{}
+//   *interface{}
 //     A pointer to an interface type. The assertion fails if err does not
 //     implement the interface.
 //
 //   reflect.Type
-//     The assertion fails if err does not implement the reflect.Type
+//     The assertion fails if err does not implement the reflect.Type.
 //
 // ErrorType uses t.FailNow to fail the test. Like t.FailNow, ErrorType
 // must be called from the goroutine running the test function, not from other
