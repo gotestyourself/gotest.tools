@@ -88,7 +88,8 @@ import (
 	"gotest.tools/v3/internal/assert"
 )
 
-// BoolOrComparison can be a bool, or cmp.Comparison. See Assert() for usage.
+// BoolOrComparison can be a bool, cmp.Comparison, or error. See Assert for
+// details about how this type is used.
 type BoolOrComparison interface{}
 
 // TestingT is the subset of testing.T used by the assert package.
@@ -119,6 +120,11 @@ type helperT interface {
 //   error
 //     A nil value is considered success, and a non-nil error is a failure.
 //     The return value of error.Error is used as the failure message.
+//
+//
+// Extra details can be added to the failure message using msgAndArgs. msgAndArgs
+// may be either a single string, or a format string and args that will be
+// passed to fmt.Sprintf.
 //
 // Assert uses t.FailNow to fail the test. Like t.FailNow, Assert must be called
 // from the goroutine running the test function, not from other

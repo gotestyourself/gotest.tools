@@ -36,8 +36,6 @@ module paths pin to version `v2.3.0`.
   execute binaries and test the output
 * [poll](http://pkg.go.dev/gotest.tools/v3/poll) -
   test asynchronous code by polling until a desired state is reached
-* [skip](http://pkg.go.dev/gotest.tools/v3/skip) -
-  skip a test and print the source code of the condition used to skip the test
 
 ## Related
 

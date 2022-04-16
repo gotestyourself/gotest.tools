@@ -9,7 +9,6 @@ import (
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/fs"
 	"gotest.tools/v3/internal/source"
-	"gotest.tools/v3/skip"
 )
 
 func TestPatchFromUnset(t *testing.T) {
@@ -23,7 +22,7 @@ func TestPatchFromUnset(t *testing.T) {
 }
 
 func TestPatch(t *testing.T) {
-	skip.If(t, os.Getenv("PATH") == "")
+	assert.SkipIf(t, os.Getenv("PATH") == "")
 	oldVal := os.Getenv("PATH")
 
 	key, value := "PATH", "NEWVALUE"
@@ -35,7 +34,7 @@ func TestPatch(t *testing.T) {
 }
 
 func TestPatch_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(1, 14))
+	assert.SkipIf(t, source.GoVersionLessThan(1, 14))
 
 	key := "totally_unique_env_var_key"
 	t.Run("cleanup in subtest", func(t *testing.T) {
@@ -67,7 +66,7 @@ func TestPatchAll(t *testing.T) {
 }
 
 func TestPatchAllWindows(t *testing.T) {
-	skip.If(t, runtime.GOOS != "windows")
+	assert.SkipIf(t, runtime.GOOS != "windows")
 	oldEnv := os.Environ()
 	newEnv := map[string]string{
 		"FIRST":  "STARS",
@@ -92,7 +91,7 @@ func sorted(source []string) []string {
 }
 
 func TestPatchAll_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(1, 14))
+	assert.SkipIf(t, source.GoVersionLessThan(1, 14))
 
 	key := "totally_unique_env_var_key"
 	t.Run("cleanup in subtest", func(t *testing.T) {
@@ -145,7 +144,7 @@ func TestChangeWorkingDir(t *testing.T) {
 }
 
 func TestChangeWorkingDir_IntegrationWithCleanup(t *testing.T) {
-	skip.If(t, source.GoVersionLessThan(1, 14))
+	assert.SkipIf(t, source.GoVersionLessThan(1, 14))
 
 	tmpDir := fs.NewDir(t, t.Name())
 	defer tmpDir.Remove()

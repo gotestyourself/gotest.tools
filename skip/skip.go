@@ -1,5 +1,6 @@
-/*Package skip provides functions for skipping a test and printing the source code
-of the condition used to skip the test.
+/*Package skip is deprecated.
+
+Deprecated: use assert.SkipIf
 */
 package skip // import "gotest.tools/v3/skip"
 
@@ -34,14 +35,7 @@ type BoolOrCheckFunc interface{}
 
 // If the condition expression evaluates to true, skip the test.
 //
-// The condition argument may be one of three types: bool, func() bool, or
-// func() SkipResult.
-// When called with a bool, the test will be skip if the condition evaluates to true.
-// When called with a func() bool, the test will be skip if the function returns true.
-// When called with a func() Result, the test will be skip if the Skip method
-// of the result returns true.
-// The skip message will contain the source code of the expression.
-// Extra message text can be passed as a format string with args.
+// Deprecated: use assert.SkipIf
 func If(t skipT, condition BoolOrCheckFunc, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
