@@ -3,10 +3,12 @@ package assert
 import (
 	"fmt"
 	"os"
+	"runtime"
 	"testing"
 
 	gocmp "github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/assert/cmp"
+	"gotest.tools/v3/skip"
 )
 
 type fakeTestingT struct {
@@ -270,6 +272,7 @@ func TestEqualFailure(t *testing.T) {
 }
 
 func TestEqualFailureTypes(t *testing.T) {
+	skip.If(t, runtime.Version() >= "go1.18")
 	fakeT := &fakeTestingT{}
 
 	Equal(fakeT, 3, uint(3))
