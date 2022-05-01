@@ -47,7 +47,7 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	return expr, nil
 }
 
-func getNodeAtLine(fileset *token.FileSet, astFile *ast.File, lineNum int) (ast.Node, error) {
+func getNodeAtLine(fileset *token.FileSet, astFile ast.Node, lineNum int) (ast.Node, error) {
 	if node := scanToLine(fileset, astFile, lineNum); node != nil {
 		return node, nil
 	}
