@@ -20,7 +20,12 @@ import (
 	"gotest.tools/v3/internal/format"
 )
 
-var flagUpdate = flag.Bool("test.update-golden", false, "update golden file")
+var flagUpdate bool
+
+func init() {
+	flag.BoolVar(&flagUpdate, "update", false, "update golden files")
+	flag.BoolVar(&flagUpdate, "test.update-golden", false, "deprecated flag")
+}
 
 type helperT interface {
 	Helper()
@@ -41,7 +46,7 @@ var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "fa
 
 // FlagUpdate returns true when the -test.update-golden flag has been set.
 func FlagUpdate() bool {
-	return *flagUpdate
+	return flagUpdate
 }
 
 // Open opens the file in ./testdata
@@ -175,7 +180,7 @@ func compare(actual []byte, filename string) (cmp.Result, []byte) {
 }
 
 func update(filename string, actual []byte) error {
-	if !*flagUpdate {
+	if !flagUpdate {
 		return nil
 	}
 	if dir := filepath.Dir(Path(filename)); dir != "." {
