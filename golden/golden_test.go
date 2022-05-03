@@ -96,8 +96,7 @@ func TestGoldenAssertInvalidContent(t *testing.T) {
 }
 
 func TestGoldenAssertInvalidContentUpdate(t *testing.T) {
-	undo := setUpdateFlag()
-	defer undo()
+	setUpdateFlag(t)
 	filename, clean := setupGoldenFile(t, "content")
 	defer clean()
 
@@ -132,8 +131,7 @@ func TestGoldenAssertInDir(t *testing.T) {
 func TestGoldenAssertInDir_UpdateGolden(t *testing.T) {
 	filename, clean := setupGoldenFileWithDir(t, "testdatasubdir", "foo")
 	defer clean()
-	unsetUpdateFlag := setUpdateFlag()
-	defer unsetUpdateFlag()
+	setUpdateFlag(t)
 
 	fakeT := new(fakeT)
 
@@ -167,8 +165,7 @@ func TestAssert_WithCarriageReturnInActual(t *testing.T) {
 func TestAssert_WithCarriageReturnInActual_UpdateGolden(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "")
 	defer clean()
-	unsetUpdateFlag := setUpdateFlag()
-	defer unsetUpdateFlag()
+	unsetUpdateFlag := setUpdateFlag(t)
 
 	fakeT := new(fakeT)
 	Assert(fakeT, "a\rfoo\r\nbar\r\n", filename)
@@ -192,10 +189,14 @@ func TestGoldenAssertBytes(t *testing.T) {
 	assert.Assert(t, !fakeT.Failed)
 }
 
-func setUpdateFlag() func() {
-	oldFlagUpdate := *flagUpdate
-	*flagUpdate = true
-	return func() { *flagUpdate = oldFlagUpdate }
+func setUpdateFlag(t *testing.T) func() {
+	orig := flagUpdate
+	flagUpdate = true
+	undo := func() {
+		flagUpdate = orig
+	}
+	t.Cleanup(undo)
+	return undo
 }
 
 func setupGoldenFileWithDir(t *testing.T, dirname, content string) (string, func()) {
@@ -260,14 +261,12 @@ func TestBytesFailure(t *testing.T) {
 
 func TestFlagUpdate(t *testing.T) {
 	assert.Assert(t, !FlagUpdate())
-	undo := setUpdateFlag()
-	defer undo()
+	setUpdateFlag(t)
 	assert.Assert(t, FlagUpdate())
 }
 
 func TestUpdate_CreatesPathsAndFile(t *testing.T) {
-	undo := setUpdateFlag()
-	defer undo()
+	setUpdateFlag(t)
 
 	dir := fs.NewDir(t, t.Name())
 
