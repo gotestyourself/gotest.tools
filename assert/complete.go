@@ -45,13 +45,13 @@ func Complete[T any](t FatalF, input Input[T]) {
 	if th, ok := t.(helperT); ok {
 		th.Helper()
 	}
-	origValue := func() reflect.Value {
+	origFn := func() reflect.Value {
 		return reflect.Indirect(reflect.ValueOf(input.Original()))
 	}
-	orig := origValue()
+	orig := origFn()
 
 	cfg := config{
-		origFn: origValue,
+		origFn: origFn,
 		op: func(modified reflect.Value) bool {
 			opFn := reflect.ValueOf(input.Operation)
 			return opFn.Call([]reflect.Value{orig, modified})[0].Bool()
@@ -62,8 +62,8 @@ func Complete[T any](t FatalF, input Input[T]) {
 		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
-		structType:       orig.Type(),
-		getValueForField: func(v reflect.Value) reflect.Value { return v },
+		structType: orig.Type(),
+		getValue:   func(v reflect.Value) reflect.Value { return v },
 	}
 	traverseStruct(t, cfg, pos)
 }
@@ -72,16 +72,18 @@ type FatalF interface {
 	Fatalf(format string, args ...interface{})
 }
 
+// config is the internal version of Input that is used by traverseStruct
 type config struct {
 	origFn  func() reflect.Value
 	op      func(v reflect.Value) bool
 	ignored map[string]struct{}
 }
 
+// position identifies the position in struct traversal.
 type position struct {
-	structType       reflect.Type
-	path             string
-	getValueForField lookup
+	structType reflect.Type
+	path       string
+	getValue   func(modified reflect.Value) reflect.Value
 }
 
 func (p position) fieldName(i int) string {
@@ -96,35 +98,29 @@ func traverseStruct(t FatalF, cfg config, pos position) {
 		if _, ok := cfg.ignored[pos.fieldName(i)]; ok {
 			continue
 		}
-		sample := cfg.origFn()
-		field := pos.getValueForField(sample).Field(i)
+		modified := cfg.origFn()
+		field := pos.getValue(modified).Field(i)
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
 			// TODO: limit max recurse
 
 			nextPos := position{
-				path:             pos.fieldName(i) + ".",
-				structType:       field.Type(),
-				getValueForField: getFieldFn(pos.getValueForField, i),
+				path:       pos.fieldName(i) + ".",
+				structType: field.Type(),
+				getValue: func(v reflect.Value) reflect.Value {
+					return pos.getValue(v).Field(i)
+				},
 			}
 			traverseStruct(t, cfg, nextPos)
 
 			// TODO: recurse for slice/array/map
 		default:
 			fillValue(field.Addr())
-			if !cfg.op(sample) {
+			if !cfg.op(modified) {
 				t.Fatalf("not complete: field %v is not included", pos.fieldName(i))
 			}
 		}
-	}
-}
-
-type lookup func(next reflect.Value) reflect.Value
-
-func getFieldFn(base lookup, index int) lookup {
-	return func(next reflect.Value) reflect.Value {
-		return base(next).Field(index)
 	}
 }
 
