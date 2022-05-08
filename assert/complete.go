@@ -5,6 +5,7 @@ import (
 	"math/rand"
 	"reflect"
 	"strings"
+	"time"
 )
 
 // Input are the settings used by Complete.
@@ -37,6 +38,12 @@ type Input[T any] struct {
 	//       }
 	//   }
 	IgnoreFields []string
+
+	// Seed is the value used to initialize the random source. Defaults to
+	// time.Time.UnixNano of the current time if unset. If a failure is only
+	// reproducing with a specific seed, you can set this value to reproduce
+	// the failure.
+	Seed int64
 }
 
 // Complete tests that the operation defined by input considers all the fields
@@ -45,12 +52,17 @@ func Complete[T any](t FatalF, input Input[T]) {
 	if th, ok := t.(helperT); ok {
 		th.Helper()
 	}
+	if input.Seed == 0 {
+		input.Seed = time.Now().UnixNano()
+	}
+	t.Log("using random seed ", input.Seed)
+
 	origFn := func() reflect.Value {
 		return reflect.Indirect(reflect.ValueOf(input.Original()))
 	}
 	orig := origFn()
-
 	cfg := config{
+		rand:   rand.New(rand.NewSource(input.Seed)),
 		origFn: origFn,
 		op: func(modified reflect.Value) bool {
 			opFn := reflect.ValueOf(input.Operation)
@@ -69,6 +81,7 @@ func Complete[T any](t FatalF, input Input[T]) {
 }
 
 type FatalF interface {
+	Log(args ...interface{})
 	Fatalf(format string, args ...interface{})
 }
 
@@ -77,6 +90,7 @@ type config struct {
 	origFn  func() reflect.Value
 	op      func(v reflect.Value) bool
 	ignored map[string]struct{}
+	rand    *rand.Rand
 }
 
 // position identifies the position in struct traversal.
@@ -103,7 +117,7 @@ func traverseStruct(t FatalF, cfg config, pos position) {
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
-			// TODO: limit max recurse
+			// TODO: limit depth
 
 			nextPos := position{
 				path:       pos.fieldName(i) + ".",
@@ -113,10 +127,8 @@ func traverseStruct(t FatalF, cfg config, pos position) {
 				},
 			}
 			traverseStruct(t, cfg, nextPos)
-
-			// TODO: recurse for slice/array/map
 		default:
-			fillValue(field.Addr())
+			fillValue(cfg.rand, field)
 			if !cfg.op(modified) {
 				t.Fatalf("not complete: field %v is not included", pos.fieldName(i))
 			}
@@ -124,70 +136,56 @@ func traverseStruct(t FatalF, cfg config, pos position) {
 	}
 }
 
-func fillValue(addr reflect.Value) {
-	if addr.Kind() != reflect.Ptr {
-		panic("must be a pointer")
-	}
-	v := addr.Elem()
+func fillValue(rand *rand.Rand, target reflect.Value) {
+	v := reflect.Indirect(target)
 
 	if !v.CanSet() || v.Kind() == reflect.Invalid {
 		panic(fmt.Sprintf("%v (%v) is not settable", v, v.Type()))
 	}
 
-	// TODO: support some way of setting the seed
-
 	switch v.Kind() {
 	case reflect.Bool:
 		v.SetBool(!v.Bool())
-	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-		for {
-			next := int64(rand.Int31n(120) + 1)
-			if next != v.Int() {
-				v.SetInt(next)
-				return
-			}
-		}
-
-	case reflect.Float32, reflect.Float64:
-		for {
-			next := float64(rand.Float32() + 1)
-			if next != v.Float() {
-				v.SetFloat(next)
-				return
-			}
-		}
-
-	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-		// TODO: new value
-		v.SetUint(uint64(rand.Uint32() + 1))
 	case reflect.String:
-		v.SetString(randString())
+		v.SetString(randString(rand))
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		for orig := v.Int(); orig == v.Int(); {
+			v.SetInt(rand.Int63())
+		}
+	case reflect.Float32, reflect.Float64:
+		for orig := v.Float(); orig == v.Float(); {
+			v.SetFloat(rand.Float64())
+		}
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		for orig := v.Uint(); orig == v.Uint(); {
+			v.SetUint(rand.Uint64())
+		}
+	case reflect.Complex64, reflect.Complex128:
+		for orig := v.Complex(); orig == v.Complex(); {
+			v.SetComplex(complex(rand.Float64(), rand.Float64()))
+		}
 	case reflect.Slice, reflect.Array:
 		// TODO:
 		panic("TODO: support slice and array")
 	case reflect.Map:
 		// TODO:
 		panic("TODO: support map")
-	case reflect.Interface:
-		// TODO:
-		panic("TODO: support interface")
 	case reflect.Struct:
 		panic("structs should be filled by individual field")
-	case reflect.Ptr:
-		fallthrough
-	case reflect.Complex64, reflect.Complex128:
+	case reflect.Ptr, reflect.Interface:
 		fallthrough
 	case reflect.Chan, reflect.Func, reflect.UnsafePointer:
-		panic(fmt.Sprintf("fill: not implemented for kind %v", v.Kind()))
+		panic(fmt.Sprintf("fill not implemented for kind %v", v.Kind()))
 	}
 }
 
-// TODO: unicode
-func randString() string {
-	chars := "abcdefghijklmnopqrstuvwxyz"
+var chars = []rune("你好欢迎abcdefghistuvwxyzABCDEFGHIJKLMNOμεταβλητόςпеременная")
+
+func randString(rand *rand.Rand) string {
+	length := rand.Intn(20) + 5
 	var out strings.Builder
-	for i := 0; i <= rand.Intn(20)+5; i++ {
-		out.WriteByte(chars[rand.Intn(len(chars))])
+	for i := 0; i <= length; i++ {
+		out.WriteRune(chars[rand.Intn(len(chars))])
 	}
 	return out.String()
 }
