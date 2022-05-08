@@ -85,6 +85,25 @@ func TestComplete_WithEqual(t *testing.T) {
 		Complete(fakeT, in)
 		expectFailNowed(t, fakeT, "not complete: field Count is not included")
 	})
+	t.Run("complete with ignore fields", func(t *testing.T) {
+		in := Input[exampleIncomplete]{
+			Original: func() *exampleIncomplete {
+				return &exampleIncomplete{
+					Field: "field-one",
+					Flag:  true,
+					Count: 3,
+				}
+			},
+			Operation: func(x, y exampleIncomplete) bool {
+				return !x.Equal(y)
+			},
+			IgnoreFields: []string{"Count"},
+		}
+		for i := 0; i < 200; i++ {
+			Complete(t, in)
+		}
+	})
+
 	// TODO: test pointer fields
 }
 
@@ -184,6 +203,28 @@ func TestComplete_Nested(t *testing.T) {
 		Complete(fakeT, in)
 		expectFailNowed(t, fakeT, "not complete: field Sub.Count is not included")
 	})
+	t.Run("complete with ignore fields", func(t *testing.T) {
+		in := Input[exampleNested]{
+			Original: func() *exampleNested {
+				return &exampleNested{
+					Sub: exampleIncomplete{
+						Field: "what",
+						Flag:  true,
+						Count: 23,
+					},
+					Top: 12,
+				}
+			},
+			Operation: func(x, y exampleNested) bool {
+				return !x.Equal(y)
+			},
+			IgnoreFields: []string{"Sub.Count"},
+		}
+		for i := 0; i < 200; i++ {
+			Complete(t, in)
+		}
+	})
+
 	// TODO: more test cases for nested (field as pointer to struct)
 	// TODO: test cases for embedded
 }

@@ -22,6 +22,21 @@ type Input[T any] struct {
 	//   * round tripping between two transformations
 	//   * building a hash or map key
 	Operation func(original T, modified T) bool
+
+	// IgnoreFields is a list of struct field paths that should be skipped. These
+	// fields are intentionally not part of the operation. Each value in the list
+	// is the path to a field, using dotted notation for nested fields.
+	//
+	// The example below demonstrates the value that would be used to ignore
+	// each of the fields on the struct.
+	//
+	//   type Request struct {
+	//       URL string            // "URL"
+	//       Meta struct {         // "Meta"
+	//           Label string      // "Meta.Label"
+	//       }
+	//   }
+	IgnoreFields []string
 }
 
 // Complete tests that the operation defined by input considers all the fields
@@ -41,6 +56,10 @@ func Complete[T any](t FatalF, input Input[T]) {
 			opFn := reflect.ValueOf(input.Operation)
 			return opFn.Call([]reflect.Value{orig, modified})[0].Bool()
 		},
+		ignored: make(map[string]struct{}, len(input.IgnoreFields)),
+	}
+	for _, k := range input.IgnoreFields {
+		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
 		structType:       orig.Type(),
@@ -54,8 +73,9 @@ type FatalF interface {
 }
 
 type config struct {
-	origFn func() reflect.Value
-	op     func(v reflect.Value) bool
+	origFn  func() reflect.Value
+	op      func(v reflect.Value) bool
+	ignored map[string]struct{}
 }
 
 type position struct {
@@ -73,6 +93,9 @@ func traverseStruct(t FatalF, cfg config, pos position) {
 		th.Helper()
 	}
 	for i := 0; i < pos.structType.NumField(); i++ {
+		if _, ok := cfg.ignored[pos.fieldName(i)]; ok {
+			continue
+		}
 		sample := cfg.origFn()
 		field := pos.getValueForField(sample).Field(i)
 
