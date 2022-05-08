@@ -1,4 +1,4 @@
-package assert
+package property
 
 import (
 	"fmt"
@@ -48,10 +48,8 @@ type Input[T any] struct {
 
 // Complete tests that the operation defined by input considers all the fields
 // in the type T. T must be a struct.
-func Complete[T any](t FatalF, input Input[T]) {
-	if th, ok := t.(helperT); ok {
-		th.Helper()
-	}
+func Complete[T any](t TestingT, input Input[T]) {
+	t.Helper()
 	if input.Seed == 0 {
 		input.Seed = time.Now().UnixNano()
 	}
@@ -80,9 +78,10 @@ func Complete[T any](t FatalF, input Input[T]) {
 	traverseStruct(t, cfg, pos)
 }
 
-type FatalF interface {
+type TestingT interface {
 	Log(args ...interface{})
 	Fatalf(format string, args ...interface{})
+	Helper()
 }
 
 // config is the internal version of Input that is used by traverseStruct
@@ -104,10 +103,8 @@ func (p position) fieldName(i int) string {
 	return p.path + p.structType.Field(i).Name
 }
 
-func traverseStruct(t FatalF, cfg config, pos position) {
-	if th, ok := t.(helperT); ok {
-		th.Helper()
-	}
+func traverseStruct(t TestingT, cfg config, pos position) {
+	t.Helper()
 	for i := 0; i < pos.structType.NumField(); i++ {
 		if _, ok := cfg.ignored[pos.fieldName(i)]; ok {
 			continue

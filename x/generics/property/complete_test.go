@@ -1,10 +1,13 @@
-package assert
+package property
 
 import (
 	"bytes"
 	"crypto/sha256"
+	"fmt"
 	"strconv"
 	"testing"
+
+	"gotest.tools/v3/assert"
 )
 
 type exampleComplete struct {
@@ -107,22 +110,13 @@ func TestComplete_WithEqual(t *testing.T) {
 	// TODO: test pointer fields
 }
 
-func expectCompleteFailure(t testingT, fakeT *fakeTestingT, expected string) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	if fakeT.failed {
-		t.Errorf("should not have failed, got messages %s", fakeT.msgs)
-	}
-	if !fakeT.failNowed {
-		t.Fatalf("should have failNowed with message %s", expected)
-	}
+func expectCompleteFailure(t *testing.T, fakeT *fakeTestingT, expected string) {
+	t.Helper()
+	assert.Assert(t, fakeT.failed, "should have failed")
 	if len(fakeT.msgs) < 2 {
-		t.Fatalf("exported at least 2 log messages: %v", fakeT.msgs)
+		t.Fatalf("expected at least 2 log messages: %v", fakeT.msgs)
 	}
-	if fakeT.msgs[1] != expected {
-		t.Fatalf("should have failure message %q, got %q", expected, fakeT.msgs[1])
-	}
+	assert.Equal(t, fakeT.msgs[1], expected, "wrong failure message")
 }
 
 func TestComplete_WithKey(t *testing.T) {
@@ -245,4 +239,20 @@ func TestComplete_Nested(t *testing.T) {
 
 	// TODO: more test cases for nested (field as pointer to struct)
 	// TODO: test cases for embedded
+}
+
+type fakeTestingT struct {
+	failed bool
+	msgs   []string
+}
+
+func (f *fakeTestingT) Log(args ...interface{}) {
+	f.msgs = append(f.msgs, fmt.Sprint(args...))
+}
+
+func (f *fakeTestingT) Helper() {}
+
+func (f *fakeTestingT) Fatalf(format string, args ...interface{}) {
+	f.failed = true
+	f.msgs = append(f.msgs, fmt.Sprintf(format, args...))
 }
