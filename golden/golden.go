@@ -2,7 +2,7 @@
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
 Golden files can be automatically updated to match new values by running
-`go test pkgname -test.update-golden`. To ensure the update is correct
+`go test pkgname -update`. To ensure the update is correct
 compare the diff of the old expected value to the new expected value.
 */
 package golden // import "gotest.tools/v3/golden"
@@ -33,7 +33,7 @@ type helperT interface {
 
 // NormalizeCRLFToLF enables end-of-line normalization for actual values passed
 // to Assert and String, as well as the values saved to golden files with
-// -test.update-golden.
+// -update.
 //
 // Defaults to true. If you use the core.autocrlf=true git setting on windows
 // you will need to set this to false.
@@ -44,7 +44,7 @@ type helperT interface {
 // The default value may change in a future major release.
 var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "false"
 
-// FlagUpdate returns true when the -test.update-golden flag has been set.
+// FlagUpdate returns true when the -update flag has been set.
 func FlagUpdate() bool {
 	return flagUpdate
 }
@@ -86,7 +86,7 @@ func removeCarriageReturn(in []byte) []byte {
 
 // Assert compares actual to the expected value in the golden file.
 //
-// Running `go test pkgname -test.update-golden` will write the value of actual
+// Running `go test pkgname -update` will write the value of actual
 // to the golden file.
 //
 // This is equivalent to assert.Assert(t, String(actual, filename))
@@ -100,7 +100,7 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 // String compares actual to the contents of filename and returns success
 // if the strings are equal.
 //
-// Running `go test pkgname -test.update-golden` will write the value of actual
+// Running `go test pkgname -update` will write the value of actual
 // to the golden file.
 //
 // Any \r\n substrings in actual are converted to a single \n character
@@ -127,13 +127,13 @@ func String(actual string, filename string) cmp.Comparison {
 func failurePostamble(filename string) string {
 	return fmt.Sprintf(`
 
-You can run 'go test . -test.update-golden' to automatically update %s to the new expected value.'
+You can run 'go test . -update' to automatically update %s to the new expected value.'
 `, Path(filename))
 }
 
 // AssertBytes compares actual to the expected value in the golden.
 //
-// Running `go test pkgname -test.update-golden` will write the value of actual
+// Running `go test pkgname -update` will write the value of actual
 // to the golden file.
 //
 // This is equivalent to assert.Assert(t, Bytes(actual, filename))
@@ -152,7 +152,7 @@ func AssertBytes(
 // Bytes compares actual to the contents of filename and returns success
 // if the bytes are equal.
 //
-// Running `go test pkgname -test.update-golden` will write the value of actual
+// Running `go test pkgname -update` will write the value of actual
 // to the golden file.
 func Bytes(actual []byte, filename string) cmp.Comparison {
 	return func() cmp.Result {
