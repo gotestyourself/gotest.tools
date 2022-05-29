@@ -43,8 +43,6 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 		return fmt.Errorf("failed to parse source file %s: %w", filename, err)
 	}
 
-	debug("before modification: %v", debugFormatNode{astFile})
-
 	expr, err := getCallExprArgs(fileset, astFile, line)
 	if err != nil {
 		return fmt.Errorf("call from %s:%d: %w", filename, line, err)
@@ -68,6 +66,23 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 		value = y
 	}
 
+	strValue, ok := value.(string)
+	if !ok {
+		debug("value must be type string, got %T", value)
+		return ErrNotFound
+	}
+	return UpdateVariable(filename, fileset, astFile, varName, strValue)
+}
+
+// UpdateVariable writes to filename the contents of astFile with the value of
+// the variable updated to value.
+func UpdateVariable(
+	filename string,
+	fileset *token.FileSet,
+	astFile *ast.File,
+	varName string,
+	value string,
+) error {
 	obj := astFile.Scope.Objects[varName]
 	if obj == nil {
 		return ErrNotFound
@@ -87,14 +102,10 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 		return ErrNotFound
 	}
 
-	// TODO: allow a function to wrap the string literal
 	spec.Values[0] = &ast.BasicLit{
-		Kind: token.STRING,
-		// TODO: safer
-		Value: "`" + value.(string) + "`",
+		Kind:  token.STRING,
+		Value: "`" + value + "`",
 	}
-
-	debug("after modification: %v", debugFormatNode{astFile})
 
 	var buf bytes.Buffer
 	if err := format.Node(&buf, fileset, astFile); err != nil {

@@ -75,7 +75,7 @@ func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
 	return matchedNode
 }
 
-func getCallExprArgs(fileset *token.FileSet, astFile *ast.File, line int) ([]ast.Expr, error) {
+func getCallExprArgs(fileset *token.FileSet, astFile ast.Node, line int) ([]ast.Expr, error) {
 	node, err := getNodeAtLine(fileset, astFile, line)
 	switch {
 	case err != nil:
