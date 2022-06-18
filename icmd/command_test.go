@@ -12,7 +12,6 @@ import (
 	exec "golang.org/x/sys/execabs"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/fs"
-	"gotest.tools/v3/golden"
 	"gotest.tools/v3/internal/maint"
 )
 
@@ -120,8 +119,21 @@ func TestResult_Match_NotMatched(t *testing.T) {
 	}
 	err := result.match(exp)
 	assert.ErrorContains(t, err, "Failures")
-	golden.Assert(t, err.Error(), "result-match-no-match.golden")
+	assert.Equal(t, err.Error(), expectedMatch)
 }
+
+var expectedMatch = `
+Command:  binary arg1
+ExitCode: 99 (timeout)
+Error:    exit code 99
+Stdout:   the output
+Stderr:   the stderr
+
+Failures:
+ExitCode was 99 expected 101
+Expected command to finish, but it hit the timeout
+Expected stdout to contain "Something else"
+Expected stderr to contain "[NOTHING]"`
 
 func newLockedBuffer(s string) *lockedBuffer {
 	return &lockedBuffer{buf: *bytes.NewBufferString(s)}
@@ -140,8 +152,19 @@ func TestResult_Match_NotMatchedNoError(t *testing.T) {
 	}
 	err := result.match(exp)
 	assert.ErrorContains(t, err, "Failures")
-	golden.Assert(t, err.Error(), "result-match-no-match-no-error.golden")
+	assert.Equal(t, err.Error(), expectedResultMatchNoMatch)
 }
+
+var expectedResultMatchNoMatch = `
+Command:  binary arg1
+ExitCode: 0
+Stdout:   the output
+Stderr:   the stderr
+
+Failures:
+ExitCode was 0 expected 101
+Expected stdout to contain "Something else"
+Expected stderr to contain "[NOTHING]"`
 
 func TestResult_Match_Match(t *testing.T) {
 	result := &Result{
