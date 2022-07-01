@@ -11,7 +11,6 @@ import (
 
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/internal/source"
-	"gotest.tools/v3/skip"
 )
 
 func TestFormattedCallExprArg_SingleLine(t *testing.T) {
@@ -46,7 +45,7 @@ func shim(_, _, _ string) (string, error) {
 }
 
 func TestFormattedCallExprArg_InDefer(t *testing.T) {
-	skip.If(t, isGoVersion18)
+	assert.SkipIf(t, isGoVersion18)
 	cap := &capture{}
 	func() {
 		defer cap.shim("first", "second")
@@ -82,7 +81,7 @@ func TestFormattedCallExprArg_InAnonymousDefer(t *testing.T) {
 }
 
 func TestFormattedCallExprArg_InDeferMultipleDefers(t *testing.T) {
-	skip.If(t, isGoVersion18)
+	assert.SkipIf(t, isGoVersion18)
 	cap := &capture{}
 	func() {
 		fmt.Println()
