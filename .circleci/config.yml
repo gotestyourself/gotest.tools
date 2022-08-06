@@ -55,8 +55,8 @@ jobs:
     steps:
     - checkout
     - go/install-golangci-lint:
-        prefix: v1.45.2
-        version: 1.45.2
+        prefix: v1.48.0
+        version: 1.48.0
     - go/install: {package: git}
     - run:
         name: Lint
