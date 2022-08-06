@@ -8,11 +8,6 @@ workflows:
     jobs:
       - lint
       - go/test:
-          name: test-golang-1.15
-          executor:
-            name: go/golang
-            tag:  1.15-alpine
-      - go/test:
           name: test-golang-1.16
           executor:
             name: go/golang
@@ -27,6 +22,11 @@ workflows:
           executor:
             name: go/golang
             tag:  1.18-alpine
+      - go/test:
+          name: test-golang-1.19
+          executor:
+            name: go/golang
+            tag:  1.19-alpine
       - go/test:
           name: test-windows
           executor: windows
@@ -51,12 +51,12 @@ jobs:
   lint:
     executor:
       name: go/golang
-      tag:  1.18-alpine
+      tag:  1.19-alpine
     steps:
     - checkout
     - go/install-golangci-lint:
-        prefix: v1.45.2
-        version: 1.45.2
+        prefix: v1.48.0
+        version: 1.48.0
     - go/install: {package: git}
     - run:
         name: Lint

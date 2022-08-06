@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"go/ast"
 	"go/format"
@@ -14,7 +15,6 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/pflag"
 	"golang.org/x/tools/go/packages"
 	"golang.org/x/tools/imports"
 )
@@ -51,9 +51,9 @@ func debugf(msg string, args ...interface{}) {
 	}
 }
 
-func setupFlags(name string) (*pflag.FlagSet, *options) {
+func setupFlags(name string) (*flag.FlagSet, *options) {
 	opts := options{}
-	flags := pflag.NewFlagSet(name, pflag.ContinueOnError)
+	flags := flag.NewFlagSet(name, flag.ContinueOnError)
 	flags.BoolVar(&opts.dryRun, "dry-run", false,
 		"don't write changes to file")
 	flags.BoolVar(&opts.debug, "debug", false, "enable debug logging")
@@ -61,8 +61,8 @@ func setupFlags(name string) (*pflag.FlagSet, *options) {
 		"import alias to use for the assert/cmp package")
 	flags.BoolVar(&opts.showLoaderErrors, "print-loader-errors", false,
 		"print errors from loading source")
-	flags.StringSliceVar(&opts.buildFlags, "build-tags", nil,
-		"build to pass to Go when loading source files")
+	flags.Var((*stringSliceValue)(&opts.buildFlags), "build-flags",
+		"build flags to pass to Go when loading source files")
 	flags.StringVar(&opts.localImportPath, "local-import-path", "",
 		"value to pass to 'goimports -local' flag for sorting local imports")
 	flags.Usage = func() {
@@ -70,7 +70,8 @@ func setupFlags(name string) (*pflag.FlagSet, *options) {
 
 Migrate calls from testify/{assert|require} to gotest.tools/v3/assert.
 
-%s`, name, flags.FlagUsages())
+`, name)
+		flags.PrintDefaults()
 	}
 	return flags, &opts
 }
@@ -79,7 +80,7 @@ func handleExitError(name string, err error) {
 	switch {
 	case err == nil:
 		return
-	case errors.Is(err, pflag.ErrHelp):
+	case errors.Is(err, flag.ErrHelp):
 		os.Exit(0)
 	default:
 		log.Println(name + ": Error: " + err.Error())

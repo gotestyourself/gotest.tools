@@ -1,4 +1,5 @@
-/*Package golden provides tools for comparing large mutli-line strings.
+/*
+Package golden provides tools for comparing large mutli-line strings.
 
 Golden files are files in the ./testdata/ subdirectory of the package under test.
 Golden files can be automatically updated to match new values by running

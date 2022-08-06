@@ -1,4 +1,5 @@
-/*Package fs provides tools for creating temporary files, and testing the
+/*
+Package fs provides tools for creating temporary files, and testing the
 contents and structure of a directory.
 */
 package fs // import "gotest.tools/v3/fs"
@@ -71,7 +72,7 @@ func (f *File) Path() string {
 
 // Remove the file
 func (f *File) Remove() {
-	// nolint: errcheck
+	//nolint: errcheck
 	os.Remove(f.path)
 }
 
@@ -105,7 +106,7 @@ func (d *Dir) Path() string {
 
 // Remove the directory
 func (d *Dir) Remove() {
-	// nolint: errcheck
+	//nolint: errcheck
 	os.RemoveAll(d.path)
 }
 
