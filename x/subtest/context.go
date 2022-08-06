@@ -1,9 +1,10 @@
-/*Package subtest provides a TestContext to subtests which handles cleanup, and
+/*
+Package subtest provides a TestContext to subtests which handles cleanup, and
 provides a testing.TB, and context.Context.
 
 This package was inspired by github.com/frankban/quicktest.
 
-DEPRECATED
+# DEPRECATED
 
 With the addition of T.Cleanup() in go1.14 this package provides very
 little value. A context.Context can be managed by tests that need it with
