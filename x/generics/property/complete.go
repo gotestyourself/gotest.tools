@@ -8,20 +8,35 @@ import (
 	"time"
 )
 
-// Input are the settings used by Complete.
-type Input[T any] struct {
-	// Original must be set to a function that returns a copy to a pointer of
-	// the struct accepted by the complete operation. Original will be called
-	// for each field in the struct, and passed as the first argument to Operation.
-	Original func() *T
+// CompleteOptions are the settings used by Complete.
+type CompleteOptions[T any] struct {
+	// New is a function that returns a pointer to a struct type used by Operation.
+	// New must return a pointer to a different instance each time it is called,
+	// (it must be return a different pointer on every call).
+	//
+	// New must always return a struct with the same values, otherwise the
+	// assertion will fail. Generally New will return a struct literal populated
+	// with hardcoded values.
+	//
+	// If the operation being tested is Empty (IsZero, IsEmpty, etc.) then New
+	// should return the zero value of the struct. For other operations New
+	// can set the fields to any value.
+	//
+	// The value returned by New will be used in two ways:
+	//
+	//   * the first value returned by New will be used as the first argument
+	//     in every call to Operation.
+	//   * the value returned by other calls to New will be modified and used as
+	//     the second argument to Operation.
+	//
+	New func() *T
 
-	// Operation accepts two values of the same type and returns true if the
-	// operation was successful, and false otherwise.
-	// Common operations that may be tested using Complete include:
-	//   * equal
-	//   * empty
-	//   * round tripping between two transformations
-	//   * building a hash or map key
+	// Operation should return true if the operation was successful, and false
+	// otherwise. If Operation returns false, the test will be marked as failed
+	// and the failure message will indicate which field of T was not used in
+	// the operation.
+	//
+	// Operation should call the function being tested.
 	Operation func(original T, modified T) bool
 
 	// IgnoreFields is a list of struct field paths that should be skipped. These
@@ -46,29 +61,36 @@ type Input[T any] struct {
 	Seed int64
 }
 
-// Complete tests that the operation defined by input considers all the fields
-// in the type T. T must be a struct.
-func Complete[T any](t TestingT, input Input[T]) {
+// Complete tests that opt.Operation uses all the fields of struct T. See
+// CompleteOptions for details about how to use Complete.
+//
+// Common operations that can be tested using Complete include:
+//
+//   - equal
+//   - empty or isZero
+//   - round tripping between two transformations
+//   - building a hash from struct fields or map key for a struct
+func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 	t.Helper()
-	if input.Seed == 0 {
-		input.Seed = time.Now().UnixNano()
+	if opt.Seed == 0 {
+		opt.Seed = time.Now().UnixNano()
 	}
-	t.Log("using random seed ", input.Seed)
+	t.Log("using random seed ", opt.Seed)
 
 	origFn := func() reflect.Value {
-		return reflect.Indirect(reflect.ValueOf(input.Original()))
+		return reflect.Indirect(reflect.ValueOf(opt.New()))
 	}
 	orig := origFn()
 	cfg := config{
-		rand:   rand.New(rand.NewSource(input.Seed)),
+		rand:   rand.New(rand.NewSource(opt.Seed)),
 		origFn: origFn,
 		op: func(modified reflect.Value) bool {
-			opFn := reflect.ValueOf(input.Operation)
+			opFn := reflect.ValueOf(opt.Operation)
 			return opFn.Call([]reflect.Value{orig, modified})[0].Bool()
 		},
-		ignored: make(map[string]struct{}, len(input.IgnoreFields)),
+		ignored: make(map[string]struct{}, len(opt.IgnoreFields)),
 	}
-	for _, k := range input.IgnoreFields {
+	for _, k := range opt.IgnoreFields {
 		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
@@ -78,13 +100,14 @@ func Complete[T any](t TestingT, input Input[T]) {
 	traverseStruct(t, cfg, pos)
 }
 
+// TestingT is the subset of testing.T used by functions in this package.
 type TestingT interface {
 	Log(args ...interface{})
 	Fatalf(format string, args ...interface{})
 	Helper()
 }
 
-// config is the internal version of Input that is used by traverseStruct
+// config is the internal version of CompleteOptions that is used by traverseStruct
 type config struct {
 	origFn  func() reflect.Value
 	op      func(v reflect.Value) bool
