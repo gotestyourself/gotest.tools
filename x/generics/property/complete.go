@@ -137,7 +137,7 @@ func traverseStruct(t TestingT, cfg config, pos position) {
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
-			// TODO: limit depth
+			// TODO: limit traversal depth to prevent infinite recursion
 
 			nextPos := position{
 				path:       pos.fieldName(i) + ".",
@@ -156,11 +156,14 @@ func traverseStruct(t TestingT, cfg config, pos position) {
 	}
 }
 
-func fillValue(rand *rand.Rand, target reflect.Value) {
-	v := reflect.Indirect(target)
+func fillValue(rand *rand.Rand, v reflect.Value) { //nolint:maintidx
+	if v.Kind() == reflect.Pointer {
+		v.Set(reflect.New(v.Type().Elem()))
+		v = v.Elem()
+	}
 
 	if !v.CanSet() || v.Kind() == reflect.Invalid {
-		panic(fmt.Sprintf("%v (%v) is not settable", v, v.Type()))
+		panic(fmt.Sprintf("%v is not settable", v))
 	}
 
 	switch v.Kind() {
@@ -184,12 +187,24 @@ func fillValue(rand *rand.Rand, target reflect.Value) {
 		for orig := v.Complex(); orig == v.Complex(); {
 			v.SetComplex(complex(rand.Float64(), rand.Float64()))
 		}
-	case reflect.Slice, reflect.Array:
-		// TODO:
-		panic("TODO: support slice and array")
+	case reflect.Slice:
+		if v.Cap() == 0 || v.Len() == 0 {
+			v.Set(reflect.MakeSlice(v.Type(), 1, 1))
+		}
+		fillValue(rand, v.Index(0))
+	case reflect.Array:
+		if v.Cap() > 0 {
+			fillValue(rand, v.Index(0))
+		}
 	case reflect.Map:
-		// TODO:
-		panic("TODO: support map")
+		if v.Len() == 0 {
+			v.Set(reflect.MakeMapWithSize(v.Type(), 1))
+		}
+		keyV := reflect.New(v.Type().Key()).Elem()
+		fillValue(rand, keyV)
+		valueV := reflect.New(v.Type().Elem()).Elem()
+		fillValue(rand, valueV)
+		v.SetMapIndex(keyV, valueV)
 	case reflect.Struct:
 		panic("structs should be filled by individual field")
 	case reflect.Ptr, reflect.Interface:

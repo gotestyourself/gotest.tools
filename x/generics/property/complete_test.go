@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"fmt"
+	"reflect"
 	"strconv"
 	"testing"
 
@@ -14,14 +15,36 @@ type exampleComplete struct {
 	Field string
 	Flag  bool
 	Count int32
+	Maybe *string
+	Array [2]int
+	Seq   []byte
+	Assoc map[int]string
 }
 
 func (s exampleComplete) Equal(o exampleComplete) bool {
-	return s.Field == o.Field && s.Flag == o.Flag && s.Count == o.Count
+	if s.Array != o.Array {
+		return false
+	}
+	if !bytes.Equal(s.Seq, o.Seq) {
+		return false
+	}
+	if !reflect.DeepEqual(s.Assoc, o.Assoc) {
+		return false
+	}
+	return s.Field == o.Field && s.Flag == o.Flag && s.Count == o.Count && s.Maybe == o.Maybe
 }
 
 func (s exampleComplete) Empty() bool {
-	return s.Count == 0 && !s.Flag && s.Field == ""
+	if s.Array != [2]int{0, 0} {
+		return false
+	}
+	if len(s.Seq) != 0 {
+		return false
+	}
+	if len(s.Assoc) != 0 {
+		return false
+	}
+	return s.Count == 0 && !s.Flag && s.Field == "" && s.Maybe == nil
 }
 
 func (s exampleComplete) Key() []byte {
@@ -29,6 +52,17 @@ func (s exampleComplete) Key() []byte {
 	h.Write([]byte(s.Field))
 	h.Write([]byte(strconv.Itoa(int(s.Count))))
 	h.Write([]byte(strconv.FormatBool(s.Flag)))
+	if s.Maybe != nil {
+		h.Write([]byte(*s.Maybe))
+	}
+	for _, item := range s.Array {
+		h.Write([]byte(strconv.Itoa(item)))
+	}
+	h.Write(s.Seq)
+	for k, v := range s.Assoc {
+		h.Write([]byte(strconv.Itoa(k)))
+		h.Write([]byte(v))
+	}
 	return h.Sum(nil)
 }
 
@@ -61,6 +95,7 @@ func TestComplete_WithEqual(t *testing.T) {
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
+					Array: [2]int{1, 2},
 				}
 			},
 			Operation: func(x, y exampleComplete) bool {
@@ -106,8 +141,6 @@ func TestComplete_WithEqual(t *testing.T) {
 			Complete(t, in)
 		}
 	})
-
-	// TODO: test pointer fields
 }
 
 func expectCompleteFailure(t *testing.T, fakeT *fakeTestingT, expected string) {
