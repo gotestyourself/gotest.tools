@@ -10,27 +10,6 @@ import (
 
 // CompleteOptions are the settings used by Complete.
 type CompleteOptions[T any] struct {
-	// New is a function that returns a pointer to a struct type used by Operation.
-	// New must return a pointer to a different instance each time it is called,
-	// (it must be return a different pointer on every call).
-	//
-	// New must always return a struct with the same values, otherwise the
-	// assertion will fail. Generally New will return a struct literal populated
-	// with hardcoded values.
-	//
-	// If the operation being tested is Empty (IsZero, IsEmpty, etc.) then New
-	// should return the zero value of the struct. For other operations New
-	// can set the fields to any value.
-	//
-	// The value returned by New will be used in two ways:
-	//
-	//   * the first value returned by New will be used as the first argument
-	//     in every call to Operation.
-	//   * the value returned by other calls to New will be modified and used as
-	//     the second argument to Operation.
-	//
-	New func() *T
-
 	// Operation should return true if the operation was successful, and false
 	// otherwise. If Operation returns false, the test will be marked as failed
 	// and the failure message will indicate which field of T was not used in
@@ -53,6 +32,28 @@ type CompleteOptions[T any] struct {
 	//       }
 	//   }
 	IgnoreFields []string
+
+	// New is a function that returns a pointer to a struct type used by Operation.
+	// If New is nil, the zero value of T will be used.
+	//
+	// New must return a pointer to a different instance each time it is called,
+	// (it must be return a different pointer on every call).
+	// New must always return a struct with the same values, otherwise the
+	// assertion will fail. Generally New will return a struct literal populated
+	// with hardcoded values.
+	//
+	// If the operation being tested is Empty (IsZero, IsEmpty, etc.) then New
+	// should return the zero value of the struct. For other operations New
+	// can set the fields to any value.
+	//
+	// The value returned by New will be used in two ways:
+	//
+	//   * the first value returned by New will be used as the first argument
+	//     in every call to Operation.
+	//   * the value returned by other calls to New will be modified and used as
+	//     the second argument to Operation.
+	//
+	New func() T
 
 	// Seed is the value used to initialize the random source. Defaults to
 	// time.Time.UnixNano of the current time if unset. If a failure is only
@@ -77,16 +78,18 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 	}
 	t.Log("using random seed ", opt.Seed)
 
-	origFn := func() reflect.Value {
-		return reflect.Indirect(reflect.ValueOf(opt.New()))
+	newT := func() T {
+		if opt.New == nil {
+			return *new(T)
+		}
+		return opt.New()
 	}
-	orig := origFn()
-	cfg := config{
-		rand:   rand.New(rand.NewSource(opt.Seed)),
-		origFn: origFn,
-		op: func(modified reflect.Value) bool {
-			opFn := reflect.ValueOf(opt.Operation)
-			return opFn.Call([]reflect.Value{orig, modified})[0].Bool()
+	orig := newT()
+	cfg := config[T]{
+		rand: rand.New(rand.NewSource(opt.Seed)),
+		newT: newT,
+		op: func(modified T) bool {
+			return opt.Operation(orig, modified)
 		},
 		ignored: make(map[string]struct{}, len(opt.IgnoreFields)),
 	}
@@ -94,8 +97,8 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
-		structType: orig.Type(),
-		getValue:   func(v reflect.Value) reflect.Value { return v },
+		structType:   reflect.TypeOf(orig),
+		getNextField: func(v reflect.Value) reflect.Value { return v },
 	}
 	traverseStruct(t, cfg, pos)
 }
@@ -108,32 +111,32 @@ type TestingT interface {
 }
 
 // config is the internal version of CompleteOptions that is used by traverseStruct
-type config struct {
-	origFn  func() reflect.Value
-	op      func(v reflect.Value) bool
+type config[T any] struct {
+	newT    func() T
+	op      func(modified T) bool
 	ignored map[string]struct{}
 	rand    *rand.Rand
 }
 
 // position identifies the position in struct traversal.
 type position struct {
-	structType reflect.Type
-	path       string
-	getValue   func(modified reflect.Value) reflect.Value
+	structType   reflect.Type
+	path         string
+	getNextField func(modified reflect.Value) reflect.Value
 }
 
 func (p position) fieldName(i int) string {
 	return p.path + p.structType.Field(i).Name
 }
 
-func traverseStruct(t TestingT, cfg config, pos position) {
+func traverseStruct[T any](t TestingT, cfg config[T], pos position) {
 	t.Helper()
 	for i := 0; i < pos.structType.NumField(); i++ {
 		if _, ok := cfg.ignored[pos.fieldName(i)]; ok {
 			continue
 		}
-		modified := cfg.origFn()
-		field := pos.getValue(modified).Field(i)
+		modified := cfg.newT()
+		field := pos.getNextField(reflect.ValueOf(&modified).Elem()).Field(i)
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
@@ -142,8 +145,8 @@ func traverseStruct(t TestingT, cfg config, pos position) {
 			nextPos := position{
 				path:       pos.fieldName(i) + ".",
 				structType: field.Type(),
-				getValue: func(v reflect.Value) reflect.Value {
-					return pos.getValue(v).Field(i)
+				getNextField: func(v reflect.Value) reflect.Value {
+					return pos.getNextField(v).Field(i)
 				},
 			}
 			traverseStruct(t, cfg, nextPos)
@@ -206,7 +209,8 @@ func fillValue(rand *rand.Rand, v reflect.Value) { //nolint:maintidx
 		fillValue(rand, valueV)
 		v.SetMapIndex(keyV, valueV)
 	case reflect.Struct:
-		panic("structs should be filled by individual field")
+		// TODO:
+		panic("TODO: support struct in slice/map/array")
 	case reflect.Ptr, reflect.Interface:
 		fallthrough
 	case reflect.Chan, reflect.Func, reflect.UnsafePointer:

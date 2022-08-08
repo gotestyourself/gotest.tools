@@ -16,7 +16,7 @@ func (f FoodRequest) Equal(o FoodRequest) bool {
 }
 
 func (f FoodRequest) IsZero() bool {
-	return f.Kind == "" && f.Quantity == 0
+	return f.Equal(FoodRequest{})
 }
 
 func ExampleComplete() {
@@ -26,11 +26,9 @@ func ExampleComplete() {
 	// and forgets to change the Equal method to include the field.
 	t.Run("Equal is complete", func(t *testing.T) {
 		property.Complete(t, property.CompleteOptions[FoodRequest]{
-			New: func() *FoodRequest {
-				return &FoodRequest{Kind: "apple", Quantity: 3}
-			},
 			Operation: func(x, y FoodRequest) bool {
-				return x.Equal(y)
+				// when any field is changed, the two values should not be equal
+				return !x.Equal(y)
 			},
 		})
 	})
@@ -39,11 +37,10 @@ func ExampleComplete() {
 	// and forgets to change the IsZero method to include the field.
 	t.Run("IsZero is complete", func(t *testing.T) {
 		property.Complete(t, property.CompleteOptions[FoodRequest]{
-			New: func() *FoodRequest {
-				return &FoodRequest{}
-			},
-			Operation: func(_, y FoodRequest) bool {
-				return !y.IsZero()
+			Operation: func(_, modified FoodRequest) bool {
+				// when any field is changed, the modified value should no longer
+				// be the zero value.
+				return !modified.IsZero()
 			},
 		})
 	})

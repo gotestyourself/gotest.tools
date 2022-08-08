@@ -35,16 +35,7 @@ func (s exampleComplete) Equal(o exampleComplete) bool {
 }
 
 func (s exampleComplete) Empty() bool {
-	if s.Array != [2]int{0, 0} {
-		return false
-	}
-	if len(s.Seq) != 0 {
-		return false
-	}
-	if len(s.Assoc) != 0 {
-		return false
-	}
-	return s.Count == 0 && !s.Flag && s.Field == "" && s.Maybe == nil
+	return s.Equal(exampleComplete{})
 }
 
 func (s exampleComplete) Key() []byte {
@@ -90,8 +81,8 @@ func (s exampleIncomplete) Key() []byte {
 func TestComplete_WithEqual(t *testing.T) {
 	t.Run("complete", func(t *testing.T) {
 		in := CompleteOptions[exampleComplete]{
-			New: func() *exampleComplete {
-				return &exampleComplete{
+			New: func() exampleComplete {
+				return exampleComplete{
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
@@ -108,8 +99,8 @@ func TestComplete_WithEqual(t *testing.T) {
 	})
 	t.Run("incomplete", func(t *testing.T) {
 		in := CompleteOptions[exampleIncomplete]{
-			New: func() *exampleIncomplete {
-				return &exampleIncomplete{
+			New: func() exampleIncomplete {
+				return exampleIncomplete{
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
@@ -125,8 +116,8 @@ func TestComplete_WithEqual(t *testing.T) {
 	})
 	t.Run("complete with ignore fields", func(t *testing.T) {
 		in := CompleteOptions[exampleIncomplete]{
-			New: func() *exampleIncomplete {
-				return &exampleIncomplete{
+			New: func() exampleIncomplete {
+				return exampleIncomplete{
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
@@ -140,6 +131,26 @@ func TestComplete_WithEqual(t *testing.T) {
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
 		}
+	})
+	t.Run("complete with default new", func(t *testing.T) {
+		in := CompleteOptions[exampleComplete]{
+			Operation: func(x, y exampleComplete) bool {
+				return !x.Equal(y)
+			},
+		}
+		for i := 0; i < 200; i++ {
+			Complete(t, in)
+		}
+	})
+	t.Run("incomplete with default new", func(t *testing.T) {
+		in := CompleteOptions[exampleIncomplete]{
+			Operation: func(x, y exampleIncomplete) bool {
+				return !x.Equal(y)
+			},
+		}
+		fakeT := &fakeTestingT{}
+		Complete(fakeT, in)
+		expectCompleteFailure(t, fakeT, "not complete: field Count is not included")
 	})
 }
 
@@ -155,8 +166,8 @@ func expectCompleteFailure(t *testing.T, fakeT *fakeTestingT, expected string) {
 func TestComplete_WithKey(t *testing.T) {
 	t.Run("complete", func(t *testing.T) {
 		in := CompleteOptions[exampleComplete]{
-			New: func() *exampleComplete {
-				return &exampleComplete{
+			New: func() exampleComplete {
+				return exampleComplete{
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
@@ -172,8 +183,8 @@ func TestComplete_WithKey(t *testing.T) {
 	})
 	t.Run("incomplete", func(t *testing.T) {
 		in := CompleteOptions[exampleIncomplete]{
-			New: func() *exampleIncomplete {
-				return &exampleIncomplete{
+			New: func() exampleIncomplete {
+				return exampleIncomplete{
 					Field: "field-one",
 					Flag:  true,
 					Count: 3,
@@ -192,8 +203,8 @@ func TestComplete_WithKey(t *testing.T) {
 func TestComplete_WithEmpty(t *testing.T) {
 	t.Run("complete", func(t *testing.T) {
 		in := CompleteOptions[exampleComplete]{
-			New: func() *exampleComplete {
-				return &exampleComplete{}
+			New: func() exampleComplete {
+				return exampleComplete{}
 			},
 			Operation: func(_, x exampleComplete) bool {
 				return !x.Empty()
@@ -205,8 +216,8 @@ func TestComplete_WithEmpty(t *testing.T) {
 	})
 	t.Run("incomplete", func(t *testing.T) {
 		in := CompleteOptions[exampleIncomplete]{
-			New: func() *exampleIncomplete {
-				return &exampleIncomplete{}
+			New: func() exampleIncomplete {
+				return exampleIncomplete{}
 			},
 			Operation: func(_, x exampleIncomplete) bool {
 				return !x.Empty()
@@ -230,8 +241,8 @@ func (s exampleNested) Equal(o exampleNested) bool {
 func TestComplete_Nested(t *testing.T) {
 	t.Run("incomplete", func(t *testing.T) {
 		in := CompleteOptions[exampleNested]{
-			New: func() *exampleNested {
-				return &exampleNested{
+			New: func() exampleNested {
+				return exampleNested{
 					Sub: exampleIncomplete{
 						Field: "what",
 						Flag:  true,
@@ -250,8 +261,8 @@ func TestComplete_Nested(t *testing.T) {
 	})
 	t.Run("complete with ignore fields", func(t *testing.T) {
 		in := CompleteOptions[exampleNested]{
-			New: func() *exampleNested {
-				return &exampleNested{
+			New: func() exampleNested {
+				return exampleNested{
 					Sub: exampleIncomplete{
 						Field: "what",
 						Flag:  true,
