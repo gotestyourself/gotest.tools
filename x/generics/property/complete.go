@@ -97,8 +97,8 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
-		structType:   reflect.TypeOf(orig),
-		getNextField: func(v reflect.Value) reflect.Value { return v },
+		structType:     reflect.TypeOf(orig),
+		getStructValue: func(v reflect.Value) reflect.Value { return v },
 	}
 	traverseStruct(t, cfg, pos)
 }
@@ -120,40 +120,46 @@ type config[T any] struct {
 
 // position identifies the position in struct traversal.
 type position struct {
-	structType   reflect.Type
-	path         string
-	getNextField func(modified reflect.Value) reflect.Value
-}
-
-func (p position) fieldName(i int) string {
-	return p.path + p.structType.Field(i).Name
+	// path is the string representation of the position, used to compare to
+	// keys in config.ignored, and as part of the failure message.
+	path string
+	// structType is the reflect.Type of struct at this position. The type is
+	// used to lookup fields of the struct.
+	structType reflect.Type
+	// getStructValue is a function that receives a fresh copy of config.T from
+	// config.newT, that is about to be modified. It returns the reflect.Value
+	// for the struct at this position, which will be used to receive a random
+	// value for the fields of the struct.
+	getStructValue func(modified reflect.Value) reflect.Value
 }
 
 func traverseStruct[T any](t TestingT, cfg config[T], pos position) {
 	t.Helper()
 	for i := 0; i < pos.structType.NumField(); i++ {
-		if _, ok := cfg.ignored[pos.fieldName(i)]; ok {
+		fieldType := pos.structType.Field(i)
+		fieldPath := pos.path + fieldType.Name
+		if _, ok := cfg.ignored[fieldPath]; ok {
 			continue
 		}
 		modified := cfg.newT()
-		field := pos.getNextField(reflect.ValueOf(&modified).Elem()).Field(i)
+		field := pos.getStructValue(reflect.ValueOf(&modified).Elem()).Field(i)
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
 			// TODO: limit traversal depth to prevent infinite recursion
 
 			nextPos := position{
-				path:       pos.fieldName(i) + ".",
+				path:       fieldPath + ".",
 				structType: field.Type(),
-				getNextField: func(v reflect.Value) reflect.Value {
-					return pos.getNextField(v).Field(i)
+				getStructValue: func(v reflect.Value) reflect.Value {
+					return pos.getStructValue(v).Field(i)
 				},
 			}
 			traverseStruct(t, cfg, nextPos)
 		default:
 			fillValue(cfg.rand, field)
 			if !cfg.op(modified) {
-				t.Fatalf("not complete: field %v is not included", pos.fieldName(i))
+				t.Fatalf("not complete: field %v is not included", fieldPath)
 			}
 		}
 	}
