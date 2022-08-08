@@ -86,8 +86,9 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 	}
 	orig := newT()
 	cfg := config[T]{
-		rand: rand.New(rand.NewSource(opt.Seed)),
-		newT: newT,
+		testingT: t,
+		rand:     rand.New(rand.NewSource(opt.Seed)),
+		newT:     newT,
 		op: func(modified T) bool {
 			return opt.Operation(orig, modified)
 		},
@@ -97,10 +98,10 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 		cfg.ignored[k] = struct{}{}
 	}
 	pos := position{
-		structType:     reflect.TypeOf(orig),
-		getStructValue: func(v reflect.Value) reflect.Value { return v },
+		structType:      reflect.TypeOf(orig),
+		getReflectValue: func(emptyT reflect.Value) reflect.Value { return emptyT },
 	}
-	traverseStruct(t, cfg, pos)
+	traverseStruct(cfg, pos)
 }
 
 // TestingT is the subset of testing.T used by functions in this package.
@@ -112,10 +113,11 @@ type TestingT interface {
 
 // config is the internal version of CompleteOptions that is used by traverseStruct
 type config[T any] struct {
-	newT    func() T
-	op      func(modified T) bool
-	ignored map[string]struct{}
-	rand    *rand.Rand
+	newT     func() T
+	op       func(modified T) bool
+	ignored  map[string]struct{}
+	rand     *rand.Rand
+	testingT TestingT
 }
 
 // position identifies the position in struct traversal.
@@ -126,15 +128,15 @@ type position struct {
 	// structType is the reflect.Type of struct at this position. The type is
 	// used to lookup fields of the struct.
 	structType reflect.Type
-	// getStructValue is a function that receives a fresh copy of config.T from
+	// getReflectValue is a function that receives a fresh copy of config.T from
 	// config.newT, that is about to be modified. It returns the reflect.Value
-	// for the struct at this position, which will be used to receive a random
-	// value for the fields of the struct.
-	getStructValue func(modified reflect.Value) reflect.Value
+	// for the field at this position. It will receive a random value and passed
+	// as the argument to config.op.
+	getReflectValue func(emptyT reflect.Value) reflect.Value
 }
 
-func traverseStruct[T any](t TestingT, cfg config[T], pos position) {
-	t.Helper()
+func traverseStruct[T any](cfg config[T], pos position) {
+	cfg.testingT.Helper()
 	for i := 0; i < pos.structType.NumField(); i++ {
 		fieldType := pos.structType.Field(i)
 		fieldPath := pos.path + fieldType.Name
@@ -142,30 +144,32 @@ func traverseStruct[T any](t TestingT, cfg config[T], pos position) {
 			continue
 		}
 		modified := cfg.newT()
-		field := pos.getStructValue(reflect.ValueOf(&modified).Elem()).Field(i)
+		field := pos.getReflectValue(reflect.ValueOf(&modified).Elem()).Field(i)
+
+		nextPos := position{
+			path: fieldPath + ".",
+			getReflectValue: func(emptyT reflect.Value) reflect.Value {
+				return pos.getReflectValue(emptyT).Field(i)
+			},
+		}
 
 		switch f := reflect.Indirect(field); f.Kind() {
 		case reflect.Struct:
 			// TODO: limit traversal depth to prevent infinite recursion
 
-			nextPos := position{
-				path:       fieldPath + ".",
-				structType: field.Type(),
-				getStructValue: func(v reflect.Value) reflect.Value {
-					return pos.getStructValue(v).Field(i)
-				},
-			}
-			traverseStruct(t, cfg, nextPos)
+			nextPos.structType = field.Type()
+			traverseStruct(cfg, nextPos)
 		default:
-			fillValue(cfg.rand, field)
+			fillValue(cfg, nextPos, field)
 			if !cfg.op(modified) {
-				t.Fatalf("not complete: field %v is not included", fieldPath)
+				cfg.testingT.Fatalf("not complete: field %v is not included", fieldPath)
 			}
 		}
 	}
 }
 
-func fillValue(rand *rand.Rand, v reflect.Value) { //nolint:maintidx
+func fillValue[T any](cfg config[T], pos position, v reflect.Value) { //nolint:maintidx
+	cfg.testingT.Helper()
 	if v.Kind() == reflect.Pointer {
 		v.Set(reflect.New(v.Type().Elem()))
 		v = v.Elem()
@@ -179,44 +183,69 @@ func fillValue(rand *rand.Rand, v reflect.Value) { //nolint:maintidx
 	case reflect.Bool:
 		v.SetBool(!v.Bool())
 	case reflect.String:
-		v.SetString(randString(rand))
+		v.SetString(randString(cfg.rand))
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
 		for orig := v.Int(); orig == v.Int(); {
-			v.SetInt(rand.Int63())
+			v.SetInt(cfg.rand.Int63())
 		}
 	case reflect.Float32, reflect.Float64:
 		for orig := v.Float(); orig == v.Float(); {
-			v.SetFloat(rand.Float64())
+			v.SetFloat(cfg.rand.Float64())
 		}
 	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 		for orig := v.Uint(); orig == v.Uint(); {
-			v.SetUint(rand.Uint64())
+			v.SetUint(cfg.rand.Uint64())
 		}
 	case reflect.Complex64, reflect.Complex128:
 		for orig := v.Complex(); orig == v.Complex(); {
-			v.SetComplex(complex(rand.Float64(), rand.Float64()))
+			v.SetComplex(complex(cfg.rand.Float64(), cfg.rand.Float64()))
 		}
 	case reflect.Slice:
 		if v.Cap() == 0 || v.Len() == 0 {
 			v.Set(reflect.MakeSlice(v.Type(), 1, 1))
 		}
-		fillValue(rand, v.Index(0))
+		nextPos := pos
+		nextPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
+			// TODO: any way to avoid this duplication with above?
+			s := pos.getReflectValue(emptyT)
+			s.Set(reflect.MakeSlice(s.Type(), 1, 1))
+			return s.Index(0)
+		}
+		fillValue(cfg, nextPos, v.Index(0))
 	case reflect.Array:
 		if v.Cap() > 0 {
-			fillValue(rand, v.Index(0))
+			nextPos := pos
+			nextPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
+				return pos.getReflectValue(emptyT).Index(0)
+			}
+			fillValue(cfg, nextPos, v.Index(0))
 		}
 	case reflect.Map:
 		if v.Len() == 0 {
 			v.Set(reflect.MakeMapWithSize(v.Type(), 1))
 		}
+		// TODO: needs similar approach to slice
+		keyPos := pos
+		keyPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
+			// TODO: is there any other way to do this?
+			iter := pos.getReflectValue(emptyT).MapRange()
+			iter.Next()
+			return iter.Key()
+		}
 		keyV := reflect.New(v.Type().Key()).Elem()
-		fillValue(rand, keyV)
+		fillValue(cfg, keyPos, keyV)
+
+		valPos := pos
+		valPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
+			return pos.getReflectValue(emptyT).MapIndex(keyV)
+		}
 		valueV := reflect.New(v.Type().Elem()).Elem()
-		fillValue(rand, valueV)
+		fillValue(cfg, valPos, valueV)
 		v.SetMapIndex(keyV, valueV)
 	case reflect.Struct:
-		// TODO:
-		panic("TODO: support struct in slice/map/array")
+		nextPos := pos
+		nextPos.structType = v.Type()
+		traverseStruct(cfg, nextPos)
 	case reflect.Ptr, reflect.Interface:
 		fallthrough
 	case reflect.Chan, reflect.Func, reflect.UnsafePointer:

@@ -232,10 +232,35 @@ func TestComplete_WithEmpty(t *testing.T) {
 type exampleNested struct {
 	Sub exampleIncomplete
 	Top int8
+	//Assoc map[exampleKey]exampleValue
+	Seq []exampleValue
+
+	exampleValue
 }
 
 func (s exampleNested) Equal(o exampleNested) bool {
-	return s.Top == o.Top && s.Sub.Equal(o.Sub)
+	if s.Top != o.Top || !s.Sub.Equal(o.Sub) {
+		return false
+	}
+	for i := range s.Seq {
+		if len(o.Seq) <= i || s.Seq[i] != o.Seq[i] {
+			return false
+		}
+	}
+	if len(s.Seq) != len(o.Seq) {
+		return false
+	}
+	return s.exampleValue.One == o.exampleValue.One
+}
+
+type exampleKey struct {
+	Pre   string
+	Index int
+}
+
+type exampleValue struct {
+	One int
+	Ok  bool
 }
 
 func TestComplete_Nested(t *testing.T) {
@@ -274,7 +299,7 @@ func TestComplete_Nested(t *testing.T) {
 			Operation: func(x, y exampleNested) bool {
 				return !x.Equal(y)
 			},
-			IgnoreFields: []string{"Sub.Count"},
+			IgnoreFields: []string{"Sub.Count", "exampleValue.Ok"},
 		}
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
