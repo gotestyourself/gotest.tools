@@ -90,7 +90,7 @@ testify assertions to the assertions provided by this package.
 
 See http://pkg.go.dev/gotest.tools/v3/assert/cmd/gty-migrate-from-testify.
 */
-package assert // import "gotest.tools/v3/assert"
+package assert
 
 import (
 	gocmp "github.com/google/go-cmp/cmp"

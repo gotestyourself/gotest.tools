@@ -2,7 +2,7 @@
 Package env provides functions to test code that read environment variables
 or the current working directory.
 */
-package env // import "gotest.tools/v3/env"
+package env
 
 import (
 	"os"
