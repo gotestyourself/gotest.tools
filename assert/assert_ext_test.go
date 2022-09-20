@@ -1,6 +1,7 @@
 package assert_test
 
 import (
+	"go/ast"
 	"go/parser"
 	"go/token"
 	"io/ioutil"
@@ -56,6 +57,48 @@ expected value
 		expected := "const expectedTwo = `this is the new\nexpected value\n`"
 		assert.Assert(t, strings.Contains(string(raw), expected), "actual=%v", string(raw))
 	})
+
+	t.Run("var inside function is updated when -update=true", func(t *testing.T) {
+		patchUpdate(t)
+		t.Cleanup(func() {
+			resetVariable(t, "expectedInsideFunc", "")
+		})
+
+		actual := `this is the new
+expected value
+for var inside function
+`
+		expectedInsideFunc := ``
+
+		assert.Equal(t, actual, expectedInsideFunc)
+
+		raw, err := ioutil.ReadFile(fileName(t))
+		assert.NilError(t, err)
+
+		expected := "expectedInsideFunc := `this is the new\nexpected value\nfor var inside function\n`"
+		assert.Assert(t, strings.Contains(string(raw), expected), "actual=%v", string(raw))
+	})
+
+	t.Run("const inside function is updated when -update=true", func(t *testing.T) {
+		patchUpdate(t)
+		t.Cleanup(func() {
+			resetVariable(t, "expectedConstInsideFunc", "")
+		})
+
+		actual := `this is the new
+expected value
+for const inside function
+`
+		const expectedConstInsideFunc = ``
+
+		assert.Equal(t, actual, expectedConstInsideFunc)
+
+		raw, err := ioutil.ReadFile(fileName(t))
+		assert.NilError(t, err)
+
+		expected := "const expectedConstInsideFunc = `this is the new\nexpected value\nfor const inside function\n`"
+		assert.Assert(t, strings.Contains(string(raw), expected), "actual=%v", string(raw))
+	})
 }
 
 // expectedOne is updated by running the tests with -update
@@ -87,7 +130,33 @@ func resetVariable(t *testing.T, varName string, value string) {
 	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors|parser.ParseComments)
 	assert.NilError(t, err)
 
-	err = source.UpdateVariable(filename, fileset, astFile, varName, value)
+	var ident *ast.Ident
+	ast.Inspect(astFile, func(n ast.Node) bool {
+		switch v := n.(type) {
+		case *ast.AssignStmt:
+			if len(v.Lhs) == 1 {
+				if id, ok := v.Lhs[0].(*ast.Ident); ok {
+					if id.Name == varName {
+						ident = id
+						return false
+					}
+				}
+			}
+
+		case *ast.ValueSpec:
+			for _, id := range v.Names {
+				if id.Name == varName {
+					ident = id
+					return false
+				}
+			}
+		}
+
+		return true
+	})
+	assert.Assert(t, ident != nil, "failed to get ident for %s", varName)
+
+	err = source.UpdateVariable(filename, fileset, astFile, ident, value)
 	assert.NilError(t, err, "failed to reset file")
 }
 
