@@ -54,7 +54,7 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 		return ErrNotFound
 	}
 
-	argIndex, ident := getVarNameForExpectedValueArg(expr)
+	argIndex, ident := getIdentForExpectedValueArg(expr)
 	if argIndex < 0 || ident == nil {
 		debug("no arguments started with the word 'expected': %v",
 			debugFormatNode{Node: &ast.CallExpr{Args: expr}})
@@ -138,7 +138,7 @@ func UpdateVariable(
 	return nil
 }
 
-func getVarNameForExpectedValueArg(expr []ast.Expr) (int, *ast.Ident) {
+func getIdentForExpectedValueArg(expr []ast.Expr) (int, *ast.Ident) {
 	for i := 1; i < 3; i++ {
 		switch e := expr[i].(type) {
 		case *ast.Ident:

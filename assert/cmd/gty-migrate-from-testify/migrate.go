@@ -141,7 +141,7 @@ func convertTestifySingleArgCall(tcall call) ast.Node {
 	}
 }
 
-func convertTestifyAssertion(tcall call, migration migration) ast.Node { //nolint:maintidx
+func convertTestifyAssertion(tcall call, migration migration) ast.Node {
 	imports := migration.importNames
 
 	switch tcall.selExpr.Sel.Name {
