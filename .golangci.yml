@@ -5,7 +5,7 @@ linters-settings:
   lll:
     line-length: 100
   maintidx:
-    under: 40
+    under: 35
 
 issues:
   exclude-use-default: false
