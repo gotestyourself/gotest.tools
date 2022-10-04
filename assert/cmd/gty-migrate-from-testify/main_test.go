@@ -1,7 +1,7 @@
 package main
 
 import (
-	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -25,7 +25,7 @@ func TestRun(t *testing.T) {
 	})
 	assert.NilError(t, err)
 
-	raw, err := ioutil.ReadFile(dir.Join("src/example.com/example/some_test.go"))
+	raw, err := os.ReadFile(dir.Join("src/example.com/example/some_test.go"))
 	assert.NilError(t, err)
 	golden.Assert(t, string(raw), "full-expected/some_test.go")
 }

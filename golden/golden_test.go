@@ -1,7 +1,6 @@
 package golden
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -203,7 +202,7 @@ func setUpdateFlag(t *testing.T) func() {
 func setupGoldenFileWithDir(t *testing.T, dirname, content string) (string, func()) {
 	dirpath := filepath.Join("testdata", dirname)
 	_ = os.MkdirAll(filepath.Join("testdata", dirname), 0755)
-	f, err := ioutil.TempFile(dirpath, t.Name()+"-")
+	f, err := os.CreateTemp(dirpath, t.Name()+"-")
 	assert.NilError(t, err, "fail to create test golden file")
 	defer f.Close()
 
@@ -218,7 +217,7 @@ func setupGoldenFileWithDir(t *testing.T, dirname, content string) (string, func
 
 func setupGoldenFile(t *testing.T, content string) (string, func()) {
 	_ = os.Mkdir("testdata", 0755)
-	f, err := ioutil.TempFile("testdata", t.Name()+"-")
+	f, err := os.CreateTemp("testdata", t.Name()+"-")
 	assert.NilError(t, err, "fail to create test golden file")
 	defer f.Close()
 

@@ -5,7 +5,6 @@ contents and structure of a directory.
 package fs // import "gotest.tools/v3/fs"
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -46,7 +45,7 @@ func NewFile(t assert.TestingT, prefix string, ops ...PathOp) *File {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	tempfile, err := ioutil.TempFile("", cleanPrefix(prefix)+"-")
+	tempfile, err := os.CreateTemp("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
 
 	file := &File{path: tempfile.Name()}
@@ -89,7 +88,7 @@ func NewDir(t assert.TestingT, prefix string, ops ...PathOp) *Dir {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	path, err := ioutil.TempDir("", cleanPrefix(prefix)+"-")
+	path, err := os.MkdirTemp("", cleanPrefix(prefix)+"-")
 	assert.NilError(t, err)
 	dir := &Dir{path: path}
 	cleanup.Cleanup(t, dir.Remove)
