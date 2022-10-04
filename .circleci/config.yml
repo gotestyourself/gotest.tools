@@ -8,11 +8,6 @@ workflows:
     jobs:
       - lint
       - go/test:
-          name: test-golang-1.16
-          executor:
-            name: go/golang
-            tag:  1.16-alpine
-      - go/test:
           name: test-golang-1.17
           executor:
             name: go/golang
