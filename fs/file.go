@@ -72,8 +72,7 @@ func (f *File) Path() string {
 
 // Remove the file
 func (f *File) Remove() {
-	//nolint: errcheck
-	os.Remove(f.path)
+	_ = os.Remove(f.path)
 }
 
 // Dir is a temporary directory
@@ -106,8 +105,7 @@ func (d *Dir) Path() string {
 
 // Remove the directory
 func (d *Dir) Remove() {
-	//nolint: errcheck
-	os.RemoveAll(d.path)
+	_ = os.RemoveAll(d.path)
 }
 
 // Join returns a new path with this directory as the base of the path
