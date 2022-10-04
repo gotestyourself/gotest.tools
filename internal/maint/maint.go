@@ -1,3 +1,5 @@
+// Package maint implements assert.TestingT for uses outside of test cases,
+// for example, in a TestMain.
 package maint // import "gotest.tools/v3/internal/maint"
 
 import (

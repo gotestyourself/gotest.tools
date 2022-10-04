@@ -1,3 +1,4 @@
+// Package main produces a test-binary used in tests.
 package main
 
 import (
