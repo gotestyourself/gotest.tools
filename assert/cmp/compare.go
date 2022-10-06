@@ -249,7 +249,7 @@ type causer interface {
 }
 
 func formatErrorMessage(err error) string {
-	//nolint: errorlint // unwrapping is not appropriate here
+	//nolint:errorlint // unwrapping is not appropriate here
 	if _, ok := err.(causer); ok {
 		return fmt.Sprintf("%q\n%+v", err, err)
 	}

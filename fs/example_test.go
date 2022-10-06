@@ -1,7 +1,6 @@
 package fs_test
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -18,7 +17,7 @@ func ExampleNewDir() {
 	dir := fs.NewDir(t, "test-name", fs.WithFile("file1", "content\n"))
 	defer dir.Remove()
 
-	files, err := ioutil.ReadDir(dir.Path())
+	files, err := os.ReadDir(dir.Path())
 	assert.NilError(t, err)
 	assert.Assert(t, cmp.Len(files, 0))
 }
@@ -28,7 +27,7 @@ func ExampleNewFile() {
 	file := fs.NewFile(t, "test-name", fs.WithContent("content\n"), fs.AsUser(0, 0))
 	defer file.Remove()
 
-	content, err := ioutil.ReadFile(file.Path())
+	content, err := os.ReadFile(file.Path())
 	assert.NilError(t, err)
 	assert.Equal(t, "content\n", content)
 }

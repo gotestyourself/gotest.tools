@@ -3,7 +3,6 @@ package fs
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -92,12 +91,12 @@ var cmpManifest = cmp.Options{
 		if x == nil || y == nil {
 			return x == y
 		}
-		xContent, err := ioutil.ReadAll(x)
+		xContent, err := io.ReadAll(x)
 		if err != nil {
 			return false
 		}
 
-		yContent, err := ioutil.ReadAll(y)
+		yContent, err := io.ReadAll(y)
 		if err != nil {
 			return false
 		}
@@ -106,5 +105,5 @@ var cmpManifest = cmp.Options{
 }
 
 func readCloser(s string) io.ReadCloser {
-	return ioutil.NopCloser(strings.NewReader(s))
+	return io.NopCloser(strings.NewReader(s))
 }

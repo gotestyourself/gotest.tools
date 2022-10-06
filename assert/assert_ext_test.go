@@ -4,7 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
+	"os"
 	"runtime"
 	"strings"
 	"testing"
@@ -33,7 +33,7 @@ that we are testing
 `
 		assert.Equal(t, actual, expectedOne)
 
-		raw, err := ioutil.ReadFile(fileName(t))
+		raw, err := os.ReadFile(fileName(t))
 		assert.NilError(t, err)
 
 		expected := "var expectedOne = `this is the\nactual value\nthat we are testing\n`"
@@ -51,7 +51,7 @@ expected value
 `
 		assert.Equal(t, actual, expectedTwo)
 
-		raw, err := ioutil.ReadFile(fileName(t))
+		raw, err := os.ReadFile(fileName(t))
 		assert.NilError(t, err)
 
 		expected := "const expectedTwo = `this is the new\nexpected value\n`"
@@ -72,7 +72,7 @@ for var inside function
 
 		assert.Equal(t, actual, expectedInsideFunc)
 
-		raw, err := ioutil.ReadFile(fileName(t))
+		raw, err := os.ReadFile(fileName(t))
 		assert.NilError(t, err)
 
 		expected := "expectedInsideFunc := `this is the new\nexpected value\nfor var inside function\n`"
@@ -93,7 +93,7 @@ for const inside function
 
 		assert.Equal(t, actual, expectedConstInsideFunc)
 
-		raw, err := ioutil.ReadFile(fileName(t))
+		raw, err := os.ReadFile(fileName(t))
 		assert.NilError(t, err)
 
 		expected := "const expectedConstInsideFunc = `this is the new\nexpected value\nfor const inside function\n`"

@@ -8,7 +8,6 @@ import (
 	"go/ast"
 	"go/format"
 	"go/token"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -126,7 +125,7 @@ func run(opts options) error {
 				return fmt.Errorf("failed to format %s: %w", filename, err)
 			}
 
-			if err := ioutil.WriteFile(absFilename, raw, 0); err != nil {
+			if err := os.WriteFile(absFilename, raw, 0); err != nil {
 				return fmt.Errorf("failed to write file %s: %w", filename, err)
 			}
 		}

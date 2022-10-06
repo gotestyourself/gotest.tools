@@ -1,7 +1,6 @@
 package fs_test
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -71,7 +70,7 @@ func TestApply(t *testing.T) {
 		tmpFile := fs.NewFile(t, "test-update-file", fs.WithContent("contenta"))
 		defer tmpFile.Remove()
 		fs.Apply(t, tmpFile, fs.WithContent("contentb"))
-		content, err := ioutil.ReadFile(tmpFile.Path())
+		content, err := os.ReadFile(tmpFile.Path())
 		assert.NilError(t, err)
 		assert.Equal(t, string(content), "contentb")
 	})
