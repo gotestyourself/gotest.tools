@@ -3,7 +3,9 @@ package property
 import (
 	"fmt"
 	"math/rand"
+	"os"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -33,13 +35,12 @@ type CompleteOptions[T any] struct {
 	//   }
 	IgnoreFields []string
 
-	// New is a function that returns a pointer to a struct type used by Operation.
+	// New is a function that returns a value of the struct type used by Operation.
 	// If New is nil, the zero value of T will be used.
 	//
-	// New must return a pointer to a different instance each time it is called,
-	// (it must be return a different pointer on every call).
-	// New must always return a struct with the same values, otherwise the
-	// assertion will fail. Generally New will return a struct literal populated
+	// Every call to New must return a full copy of the struct, with the same values.
+	// If New returns a shallow copy, or returns different values the assertion
+	// will fail. Generally New will return a struct literal populated
 	// with hardcoded values.
 	//
 	// If the operation being tested is Empty (IsZero, IsEmpty, etc.) then New
@@ -54,12 +55,6 @@ type CompleteOptions[T any] struct {
 	//     the second argument to Operation.
 	//
 	New func() T
-
-	// Seed is the value used to initialize the random source. Defaults to
-	// time.Time.UnixNano of the current time if unset. If a failure is only
-	// reproducing with a specific seed, you can set this value to reproduce
-	// the failure.
-	Seed int64
 }
 
 // Complete tests that opt.Operation uses all the fields of struct T. See
@@ -71,12 +66,18 @@ type CompleteOptions[T any] struct {
 //   - empty or isZero
 //   - round tripping between two transformations
 //   - building a hash from struct fields or map key for a struct
+//
+// By default the random values use a seed of time.Now(). To reproduce a failure
+// that only occurs with a specific seed, set the TEST_SEED environment
+// variable to the seed number.
 func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 	t.Helper()
-	if opt.Seed == 0 {
-		opt.Seed = time.Now().UnixNano()
+
+	seed := time.Now().UnixNano()
+	if v, ok := os.LookupEnv("TEST_SEED"); ok {
+		seed, _ = strconv.ParseInt(v, 10, 64)
 	}
-	t.Log("using random seed ", opt.Seed)
+	t.Log("using random seed ", seed)
 
 	newT := func() T {
 		if opt.New == nil {
@@ -87,7 +88,7 @@ func Complete[T any](t TestingT, opt CompleteOptions[T]) {
 	orig := newT()
 	cfg := config[T]{
 		testingT: t,
-		rand:     rand.New(rand.NewSource(opt.Seed)),
+		rand:     rand.New(rand.NewSource(seed)),
 		newT:     newT,
 		op: func(modified T) bool {
 			return opt.Operation(orig, modified)
