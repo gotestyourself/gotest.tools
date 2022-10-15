@@ -169,7 +169,7 @@ func traverseStruct[T any](cfg config[T], pos position) {
 	}
 }
 
-func fillValue[T any](cfg config[T], pos position, v reflect.Value) { //nolint:maintidx
+func fillValue[T any](cfg config[T], pos position, v reflect.Value) {
 	cfg.testingT.Helper()
 	if v.Kind() == reflect.Pointer {
 		v.Set(reflect.New(v.Type().Elem()))
@@ -221,36 +221,12 @@ func fillValue[T any](cfg config[T], pos position, v reflect.Value) { //nolint:m
 			}
 			fillValue(cfg, nextPos, v.Index(0))
 		}
-	case reflect.Map:
-		if v.Len() == 0 {
-			v.Set(reflect.MakeMapWithSize(v.Type(), 1))
-		}
-		// TODO: needs similar approach to slice
-		keyPos := pos
-		keyPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
-			// TODO: is there any other way to do this?
-			iter := pos.getReflectValue(emptyT).MapRange()
-			iter.Next()
-			return iter.Key()
-		}
-		keyV := reflect.New(v.Type().Key()).Elem()
-		fillValue(cfg, keyPos, keyV)
-
-		valPos := pos
-		valPos.getReflectValue = func(emptyT reflect.Value) reflect.Value {
-			return pos.getReflectValue(emptyT).MapIndex(keyV)
-		}
-		valueV := reflect.New(v.Type().Elem()).Elem()
-		fillValue(cfg, valPos, valueV)
-		v.SetMapIndex(keyV, valueV)
 	case reflect.Struct:
 		nextPos := pos
 		nextPos.structType = v.Type()
 		traverseStruct(cfg, nextPos)
-	case reflect.Ptr, reflect.Interface:
-		fallthrough
-	case reflect.Chan, reflect.Func, reflect.UnsafePointer:
-		panic(fmt.Sprintf("fill not implemented for kind %v", v.Kind()))
+	default:
+		panic(fmt.Sprintf("kind %v is not supported, maybe use IgnoreFields", v.Kind()))
 	}
 }
 

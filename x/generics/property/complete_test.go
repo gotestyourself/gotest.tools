@@ -92,6 +92,7 @@ func TestComplete_WithEqual(t *testing.T) {
 			Operation: func(x, y exampleComplete) bool {
 				return !x.Equal(y)
 			},
+			IgnoreFields: []string{"Assoc"},
 		}
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
@@ -137,6 +138,7 @@ func TestComplete_WithEqual(t *testing.T) {
 			Operation: func(x, y exampleComplete) bool {
 				return !x.Equal(y)
 			},
+			IgnoreFields: []string{"Count", "Assoc"},
 		}
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
@@ -176,6 +178,7 @@ func TestComplete_WithKey(t *testing.T) {
 			Operation: func(x, y exampleComplete) bool {
 				return !bytes.Equal(x.Key(), y.Key())
 			},
+			IgnoreFields: []string{"Assoc"},
 		}
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
@@ -209,6 +212,7 @@ func TestComplete_WithEmpty(t *testing.T) {
 			Operation: func(_, x exampleComplete) bool {
 				return !x.Empty()
 			},
+			IgnoreFields: []string{"Assoc"},
 		}
 		for i := 0; i < 200; i++ {
 			Complete(t, in)
@@ -251,11 +255,6 @@ func (s exampleNested) Equal(o exampleNested) bool {
 		return false
 	}
 	return s.exampleValue.One == o.exampleValue.One
-}
-
-type exampleKey struct {
-	Pre   string
-	Index int
 }
 
 type exampleValue struct {
@@ -307,7 +306,6 @@ func TestComplete_Nested(t *testing.T) {
 	})
 
 	// TODO: more test cases for nested (field as pointer to struct)
-	// TODO: test cases for embedded
 }
 
 type fakeTestingT struct {
