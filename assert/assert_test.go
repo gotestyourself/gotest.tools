@@ -24,7 +24,7 @@ func (f *fakeTestingT) Fail() {
 }
 
 func (f *fakeTestingT) Log(args ...interface{}) {
-	f.msgs = append(f.msgs, args[0].(string))
+	f.msgs = append(f.msgs, fmt.Sprint(args...))
 }
 
 func (f *fakeTestingT) Helper() {}
