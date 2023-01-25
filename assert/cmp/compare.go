@@ -413,7 +413,7 @@ func isEmpty(val interface{}) bool {
 	case uint, uint16, uint32, uint64, uint8:
 		return v == 0
 	case float32, float64:
-		return v == 0
+		return v == 0.0
 	case bool:
 		return !v
 	default:
