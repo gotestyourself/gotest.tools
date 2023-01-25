@@ -310,3 +310,18 @@ func ErrorIs(t TestingT, err error, expected error, msgAndArgs ...interface{}) {
 		t.FailNow()
 	}
 }
+
+// Empty fails the test if the provided value is not empty.
+//
+// Empty uses t.FailNow to fail the test. Like t.FailNow, Empty must be
+// called from the goroutine running the test function, not from other
+// goroutines created during the test. Use Check with cmp.Empty from other
+// goroutines.
+func Empty(t TestingT, object interface{}, msgAndArgs ...interface{}) {
+	if ht, ok := t.(helperT); ok {
+		ht.Helper()
+	}
+	if !assert.Eval(t, assert.ArgsAfterT, cmp.IsEmpty(object), msgAndArgs...) {
+		t.FailNow()
+	}
+}

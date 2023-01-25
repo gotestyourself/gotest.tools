@@ -401,3 +401,43 @@ func ErrorIs(actual error, expected error) Comparison {
 			map[string]interface{}{"a": actual, "x": expected})
 	}
 }
+
+func isEmpty(val interface{}) bool {
+	switch val.(type) {
+	case string:
+		return val.(string) == ""
+	case []string:
+		return len(val.([]string)) == 0
+	case int, int16, int32, int64, int8:
+		return val.(int) == 0
+	case uint, uint16, uint32, uint64, uint8:
+		return val.(uint) == 0
+	case float32, float64:
+		return val.(float64) == 0
+	case bool:
+		return val.(bool) == false
+	default:
+		v := reflect.ValueOf(val)
+		switch v.Kind() {
+		case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+			return v.Len() == 0
+		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Ptr:
+			return v.IsNil()
+		case reflect.Struct:
+			return v.IsZero()
+		default:
+			return false
+		}
+	}
+}
+
+// IsEmpty succeeds if val is empty.
+func IsEmpty(val interface{}) Comparison {
+	return func() Result {
+		if isEmpty(val) {
+			return ResultSuccess
+		}
+
+		return ResultFailure(fmt.Sprintf("%#v is not empty", val))
+	}
+}
