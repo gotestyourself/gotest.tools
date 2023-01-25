@@ -403,28 +403,28 @@ func ErrorIs(actual error, expected error) Comparison {
 }
 
 func isEmpty(val interface{}) bool {
-	switch val.(type) {
+	switch v := val.(type) {
 	case string:
-		return val.(string) == ""
+		return v == ""
 	case []string:
-		return len(val.([]string)) == 0
+		return len(v) == 0
 	case int, int16, int32, int64, int8:
-		return val.(int) == 0
+		return v == 0
 	case uint, uint16, uint32, uint64, uint8:
-		return val.(uint) == 0
+		return v == 0
 	case float32, float64:
-		return val.(float64) == 0
+		return v == 0
 	case bool:
-		return val.(bool) == false
+		return !v
 	default:
-		v := reflect.ValueOf(val)
-		switch v.Kind() {
+		reflectVal := reflect.ValueOf(val)
+		switch reflectVal.Kind() {
 		case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
-			return v.Len() == 0
+			return reflectVal.Len() == 0
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Ptr:
-			return v.IsNil()
+			return reflectVal.IsNil()
 		case reflect.Struct:
-			return v.IsZero()
+			return reflectVal.IsZero()
 		default:
 			return false
 		}
