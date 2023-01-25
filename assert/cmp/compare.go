@@ -406,8 +406,6 @@ func isEmpty(val interface{}) bool {
 	switch v := val.(type) {
 	case string:
 		return v == ""
-	case []string:
-		return len(v) == 0
 	case int, int16, int32, int64, int8:
 		return v == 0
 	case uint, uint16, uint32, uint64, uint8:
@@ -419,7 +417,7 @@ func isEmpty(val interface{}) bool {
 	default:
 		reflectVal := reflect.ValueOf(val)
 		switch reflectVal.Kind() {
-		case reflect.Array, reflect.Map, reflect.Slice, reflect.String:
+		case reflect.Array, reflect.Map, reflect.Slice:
 			return reflectVal.Len() == 0
 		case reflect.Chan, reflect.Func, reflect.Interface, reflect.Ptr:
 			return reflectVal.IsNil()
