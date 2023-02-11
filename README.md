@@ -44,9 +44,9 @@ module paths pin to version `v2.3.0`.
 * [gotest.tools/gotestsum](https://github.com/gotestyourself/gotestsum) -
   go test runner with custom output
 * [go testing patterns](https://github.com/gotestyourself/gotest.tools/wiki/Go-Testing-Patterns) -
-  zero-depedency patterns for organizing test cases
+  zero-dependency patterns for organizing test cases
 * [test doubles and patching](https://github.com/gotestyourself/gotest.tools/wiki/Test-Doubles-And-Patching) -
-  zero-depdency test doubles (fakes, spies, stubs, and mocks) and monkey patching patterns
+  zero-dependency test doubles (fakes, spies, stubs, and mocks) and monkey patching patterns
 
 ## Contributing
 
