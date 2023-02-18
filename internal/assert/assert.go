@@ -27,8 +27,8 @@ const failureMessage = "assertion failed: "
 func Eval(
 	t LogT,
 	argSelector argSelector,
-	comparison interface{},
-	msgAndArgs ...interface{},
+	comparison any,
+	msgAndArgs ...any,
 ) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()

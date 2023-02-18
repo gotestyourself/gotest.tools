@@ -100,7 +100,9 @@ import (
 
 // BoolOrComparison can be a bool, cmp.Comparison, or error. See Assert for
 // details about how this type is used.
-type BoolOrComparison interface{}
+type BoolOrComparison interface {
+	bool | func() (bool, string) | ~func() cmp.Result
+}
 
 // TestingT is the subset of testing.T used by the assert package.
 type TestingT interface {
@@ -138,7 +140,7 @@ type helperT interface {
 // Assert uses t.FailNow to fail the test. Like t.FailNow, Assert must be called
 // from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check from other goroutines.
-func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) {
+func Assert[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -152,7 +154,7 @@ func Assert(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) 
 // is successful Check returns true. Check may be called from any goroutine.
 //
 // See Assert for details about the comparison arg and failure messages.
-func Check(t TestingT, comparison BoolOrComparison, msgAndArgs ...interface{}) bool {
+func Check[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interface{}) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}

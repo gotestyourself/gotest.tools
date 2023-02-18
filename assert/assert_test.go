@@ -125,28 +125,42 @@ func (c exampleComparison) Compare() (bool, string) {
 	return c.success, c.message
 }
 
-func TestAssertWithComparisonSuccess(t *testing.T) {
-	fakeT := &fakeTestingT{}
+func TestAssert_ArgumentTypes(t *testing.T) {
+	t.Run("compare function success", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		cmp := exampleComparison{success: true}
+		Assert(fakeT, cmp.Compare)
+		expectSuccess(t, fakeT)
+	})
+	t.Run("compare function failure", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		cmp := exampleComparison{message: "oops, not good"}
+		Assert(fakeT, cmp.Compare)
+		expectFailNowed(t, fakeT, "assertion failed: oops, not good")
+	})
+	t.Run("compare function failure with extra message", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		cmp := exampleComparison{message: "oops, not good"}
+		Assert(fakeT, cmp.Compare, "extra stuff %v", true)
+		expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
+	})
 
-	cmp := exampleComparison{success: true}
-	Assert(fakeT, cmp.Compare)
-	expectSuccess(t, fakeT)
-}
+	t.Run("bool", func(t *testing.T) {
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, true)
+		expectSuccess(t, fakeT)
+		Assert(fakeT, false)
+		expectFailNowed(t, fakeT, "assertion failed: false is false")
+	})
 
-func TestAssertWithComparisonFailure(t *testing.T) {
-	fakeT := &fakeTestingT{}
-
-	cmp := exampleComparison{message: "oops, not good"}
-	Assert(fakeT, cmp.Compare)
-	expectFailNowed(t, fakeT, "assertion failed: oops, not good")
-}
-
-func TestAssertWithComparisonAndExtraMessage(t *testing.T) {
-	fakeT := &fakeTestingT{}
-
-	cmp := exampleComparison{message: "oops, not good"}
-	Assert(fakeT, cmp.Compare, "extra stuff %v", true)
-	expectFailNowed(t, fakeT, "assertion failed: oops, not good: extra stuff true")
+	t.Run("result function", func(t *testing.T) {
+		fn := func() cmp.Result {
+			return cmp.ResultSuccess
+		}
+		fakeT := &fakeTestingT{}
+		Assert(fakeT, fn)
+		expectSuccess(t, fakeT)
+	})
 }
 
 type customError struct {
