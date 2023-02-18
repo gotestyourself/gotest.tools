@@ -108,7 +108,7 @@ type BoolOrComparison interface {
 type TestingT interface {
 	FailNow()
 	Fail()
-	Log(args ...interface{})
+	Log(args ...any)
 }
 
 type helperT interface {
@@ -140,7 +140,7 @@ type helperT interface {
 // Assert uses t.FailNow to fail the test. Like t.FailNow, Assert must be called
 // from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check from other goroutines.
-func Assert[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interface{}) {
+func Assert[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -154,7 +154,7 @@ func Assert[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interfac
 // is successful Check returns true. Check may be called from any goroutine.
 //
 // See Assert for details about the comparison arg and failure messages.
-func Check[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interface{}) bool {
+func Check[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...any) bool {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -171,7 +171,7 @@ func Check[C BoolOrComparison](t TestingT, comparison C, msgAndArgs ...interface
 // NilError uses t.FailNow to fail the test. Like t.FailNow, NilError must be
 // called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check from other goroutines.
-func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
+func NilError(t TestingT, err error, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -199,7 +199,7 @@ func NilError(t TestingT, err error, msgAndArgs ...interface{}) {
 // called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.Equal from other
 // goroutines.
-func Equal(t TestingT, x, y interface{}, msgAndArgs ...interface{}) {
+func Equal(t TestingT, x, y interface{}, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -237,7 +237,7 @@ func DeepEqual(t TestingT, x, y interface{}, opts ...gocmp.Option) {
 // called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.Error from other
 // goroutines.
-func Error(t TestingT, err error, expected string, msgAndArgs ...interface{}) {
+func Error(t TestingT, err error, expected string, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -254,7 +254,7 @@ func Error(t TestingT, err error, expected string, msgAndArgs ...interface{}) {
 // must be called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.ErrorContains from other
 // goroutines.
-func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interface{}) {
+func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -288,7 +288,7 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 // goroutines.
 //
 // Deprecated: Use ErrorIs
-func ErrorType(t TestingT, err error, expected interface{}, msgAndArgs ...interface{}) {
+func ErrorType(t TestingT, err error, expected any, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -305,7 +305,7 @@ func ErrorType(t TestingT, err error, expected interface{}, msgAndArgs ...interf
 // must be called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.ErrorIs from other
 // goroutines.
-func ErrorIs(t TestingT, err error, expected error, msgAndArgs ...interface{}) {
+func ErrorIs(t TestingT, err error, expected error, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}

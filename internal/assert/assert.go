@@ -79,7 +79,7 @@ func runCompareFunc(
 	return true
 }
 
-func logFailureFromBool(t LogT, msgAndArgs ...interface{}) {
+func logFailureFromBool(t LogT, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}

@@ -1,9 +1,9 @@
-package format // import "gotest.tools/v3/internal/format"
+package format
 
 import "fmt"
 
 // Message accepts a msgAndArgs varargs and formats it using fmt.Sprintf
-func Message(msgAndArgs ...interface{}) string {
+func Message(msgAndArgs ...any) string {
 	switch len(msgAndArgs) {
 	case 0:
 		return ""
@@ -15,7 +15,7 @@ func Message(msgAndArgs ...interface{}) string {
 }
 
 // WithCustomMessage accepts one or two messages and formats them appropriately
-func WithCustomMessage(source string, msgAndArgs ...interface{}) string {
+func WithCustomMessage(source string, msgAndArgs ...any) string {
 	custom := Message(msgAndArgs...)
 	switch {
 	case custom == "":
