@@ -29,7 +29,7 @@ func ExampleNewFile() {
 
 	content, err := os.ReadFile(file.Path())
 	assert.NilError(t, err)
-	assert.Equal(t, "content\n", content)
+	assert.Equal(t, "content\n", string(content))
 }
 
 // Create a directory and subdirectory with files

@@ -283,13 +283,6 @@ func TestEqualFailure(t *testing.T) {
 	expectFailNowed(t, fakeT, "assertion failed: 1 (actual int) != 3 (expected int)")
 }
 
-func TestEqualFailureTypes(t *testing.T) {
-	fakeT := &fakeTestingT{}
-
-	Equal(fakeT, 3, uint(3))
-	expectFailNowed(t, fakeT, `assertion failed: 3 (int) != 3 (uint)`)
-}
-
 func TestEqualFailureWithSelectorArgument(t *testing.T) {
 	fakeT := &fakeTestingT{}
 

@@ -24,7 +24,7 @@ type Comparison func() Result
 // The comparison can be customized using comparison Options.
 // Package http://pkg.go.dev/gotest.tools/v3/assert/opt provides some additional
 // commonly used Options.
-func DeepEqual(x, y interface{}, opts ...cmp.Option) Comparison {
+func DeepEqual[ANY any](x, y ANY, opts ...cmp.Option) Comparison {
 	return func() (result Result) {
 		defer func() {
 			if panicmsg, handled := handleCmpPanic(recover()); handled {
@@ -63,7 +63,9 @@ func toResult(success bool, msg string) Result {
 
 // RegexOrPattern may be either a *regexp.Regexp or a string that is a valid
 // regexp pattern.
-type RegexOrPattern interface{}
+type RegexOrPattern interface {
+	~string | *regexp.Regexp
+}
 
 // Regexp succeeds if value v matches regular expression re.
 //
@@ -72,7 +74,7 @@ type RegexOrPattern interface{}
 //	assert.Assert(t, cmp.Regexp("^[0-9a-f]{32}$", str))
 //	r := regexp.MustCompile("^[0-9a-f]{32}$")
 //	assert.Assert(t, cmp.Regexp(r, str))
-func Regexp(re RegexOrPattern, v string) Comparison {
+func Regexp[R RegexOrPattern](re R, v string) Comparison {
 	match := func(re *regexp.Regexp) Result {
 		return toResult(
 			re.MatchString(v),
@@ -80,7 +82,7 @@ func Regexp(re RegexOrPattern, v string) Comparison {
 	}
 
 	return func() Result {
-		switch regex := re.(type) {
+		switch regex := any(re).(type) {
 		case *regexp.Regexp:
 			return match(regex)
 		case string:
@@ -96,13 +98,13 @@ func Regexp(re RegexOrPattern, v string) Comparison {
 }
 
 // Equal succeeds if x == y. See assert.Equal for full documentation.
-func Equal(x, y interface{}) Comparison {
+func Equal[ANY any](x, y ANY) Comparison {
 	return func() Result {
 		switch {
-		case x == y:
+		case any(x) == any(y):
 			return ResultSuccess
 		case isMultiLineStringCompare(x, y):
-			diff := format.UnifiedDiff(format.DiffConfig{A: x.(string), B: y.(string)})
+			diff := format.UnifiedDiff(format.DiffConfig{A: any(x).(string), B: any(y).(string)})
 			return multiLineDiffResult(diff, x, y)
 		}
 		return ResultFailureTemplate(`
@@ -117,7 +119,7 @@ func Equal(x, y interface{}) Comparison {
 	}
 }
 
-func isMultiLineStringCompare(x, y interface{}) bool {
+func isMultiLineStringCompare(x, y any) bool {
 	strX, ok := x.(string)
 	if !ok {
 		return false
@@ -129,7 +131,7 @@ func isMultiLineStringCompare(x, y interface{}) bool {
 	return strings.Contains(strX, "\n") || strings.Contains(strY, "\n")
 }
 
-func multiLineDiffResult(diff string, x, y interface{}) Result {
+func multiLineDiffResult(diff string, x, y any) Result {
 	return ResultFailureTemplate(`
 --- {{ with callArg 0 }}{{ formatNode . }}{{else}}←{{end}}
 +++ {{ with callArg 1 }}{{ formatNode . }}{{else}}→{{end}}
@@ -138,7 +140,7 @@ func multiLineDiffResult(diff string, x, y interface{}) Result {
 }
 
 // Len succeeds if the sequence has the expected length.
-func Len(seq interface{}, expected int) Comparison {
+func Len(seq any, expected int) Comparison {
 	return func() (result Result) {
 		defer func() {
 			if e := recover(); e != nil {
@@ -163,7 +165,7 @@ func Len(seq interface{}, expected int) Comparison {
 // If collection is a Map, contains will succeed if item is a key in the map.
 // If collection is a slice or array, item is compared to each item in the
 // sequence using reflect.DeepEqual().
-func Contains(collection interface{}, item interface{}) Comparison {
+func Contains(collection any, item any) Comparison {
 	return func() Result {
 		colValue := reflect.ValueOf(collection)
 		if !colValue.IsValid() {
@@ -261,14 +263,14 @@ func formatErrorMessage(err error) string {
 //
 // Use NilError() for comparing errors. Use Len(obj, 0) for comparing slices,
 // maps, and channels.
-func Nil(obj interface{}) Comparison {
+func Nil(obj any) Comparison {
 	msgFunc := func(value reflect.Value) string {
 		return fmt.Sprintf("%v (type %s) is not nil", reflect.Indirect(value), value.Type())
 	}
 	return isNil(obj, msgFunc)
 }
 
-func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
+func isNil(obj any, msgFunc func(reflect.Value) string) Comparison {
 	return func() Result {
 		if obj == nil {
 			return ResultSuccess
@@ -309,7 +311,7 @@ func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 // Fails if err does not implement the reflect.Type.
 //
 // Deprecated: Use ErrorIs
-func ErrorType(err error, expected interface{}) Comparison {
+func ErrorType(err error, expected any) Comparison {
 	return func() Result {
 		switch expectedType := expected.(type) {
 		case func(error) bool:

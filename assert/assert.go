@@ -199,7 +199,7 @@ func NilError(t TestingT, err error, msgAndArgs ...any) {
 // called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.Equal from other
 // goroutines.
-func Equal(t TestingT, x, y interface{}, msgAndArgs ...any) {
+func Equal[ANY any](t TestingT, x, y ANY, msgAndArgs ...any) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
@@ -218,7 +218,7 @@ func Equal(t TestingT, x, y interface{}, msgAndArgs ...any) {
 // called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.DeepEqual from other
 // goroutines.
-func DeepEqual(t TestingT, x, y interface{}, opts ...gocmp.Option) {
+func DeepEqual[ANY any](t TestingT, x, y ANY, opts ...gocmp.Option) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
