@@ -51,7 +51,7 @@ func TestNewFile(t *testing.T) {
 
 		tmpFile.Remove()
 		_, err = os.Stat(tmpFile.Path())
-		assert.ErrorType(t, err, os.IsNotExist)
+		assert.ErrorIs(t, err, os.ErrNotExist)
 	})
 
 	t.Run(`with \ in name`, func(t *testing.T) {
@@ -61,7 +61,7 @@ func TestNewFile(t *testing.T) {
 
 		tmpFile.Remove()
 		_, err = os.Stat(tmpFile.Path())
-		assert.ErrorType(t, err, os.IsNotExist)
+		assert.ErrorIs(t, err, os.ErrNotExist)
 	})
 }
 
@@ -76,7 +76,7 @@ func TestNewFile_IntegrationWithCleanup(t *testing.T) {
 
 	t.Run("file has been removed", func(t *testing.T) {
 		_, err := os.Stat(tmpFile.Path())
-		assert.ErrorType(t, err, os.IsNotExist)
+		assert.ErrorIs(t, err, os.ErrNotExist)
 	})
 }
 
@@ -91,7 +91,7 @@ func TestNewDir_IntegrationWithCleanup(t *testing.T) {
 
 	t.Run("dir has been removed", func(t *testing.T) {
 		_, err := os.Stat(tmpFile.Path())
-		assert.ErrorType(t, err, os.IsNotExist)
+		assert.ErrorIs(t, err, os.ErrNotExist)
 	})
 }
 

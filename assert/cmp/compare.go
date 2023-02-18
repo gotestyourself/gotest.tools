@@ -306,7 +306,9 @@ func isNil(obj interface{}, msgFunc func(reflect.Value) string) Comparison {
 //
 //	reflect.Type
 //
-// Fails if err does not implement the reflect.Type
+// Fails if err does not implement the reflect.Type.
+//
+// Deprecated: Use ErrorIs
 func ErrorType(err error, expected interface{}) Comparison {
 	return func() Result {
 		switch expectedType := expected.(type) {
