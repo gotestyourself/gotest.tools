@@ -195,6 +195,7 @@ type Cmd struct {
 	Timeout    time.Duration
 	Stdin      io.Reader
 	Stdout     io.Writer
+	Stderr     io.Writer
 	Dir        string
 	Env        []string
 	ExtraFiles []*os.File
@@ -252,7 +253,11 @@ func buildCmd(cmd Cmd) *Result {
 	} else {
 		execCmd.Stdout = outBuffer
 	}
-	execCmd.Stderr = errBuffer
+	if cmd.Stderr != nil {
+		execCmd.Stderr = io.MultiWriter(errBuffer, cmd.Stderr)
+	} else {
+		execCmd.Stderr = errBuffer
+	}
 	execCmd.ExtraFiles = cmd.ExtraFiles
 
 	return &Result{
