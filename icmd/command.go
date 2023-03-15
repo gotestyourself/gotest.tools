@@ -207,7 +207,7 @@ func Command(command string, args ...string) Cmd {
 
 // RunCmd runs a command and returns a Result
 func RunCmd(cmd Cmd, cmdOperators ...CmdOp) *Result {
-	result := StartCmd(cmd, cmdOperators ...)
+	result := StartCmd(cmd, cmdOperators...)
 	if result.Error != nil {
 		return result
 	}
