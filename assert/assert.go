@@ -262,8 +262,7 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 }
 
 // ErrorType fails the test if err is nil, or err is not the expected type.
-// Most new code should use ErrorIs instead. ErrorType may be deprecated in the
-// future.
+// New code should use ErrorIs instead.
 //
 // Expected can be one of:
 //
@@ -285,6 +284,8 @@ func ErrorContains(t TestingT, err error, substring string, msgAndArgs ...interf
 // must be called from the goroutine running the test function, not from other
 // goroutines created during the test. Use Check with cmp.ErrorType from other
 // goroutines.
+//
+// Deprecated: Use ErrorIs
 func ErrorType(t TestingT, err error, expected interface{}, msgAndArgs ...interface{}) {
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
