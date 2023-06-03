@@ -45,13 +45,15 @@ func TestDeepEqualWithUnexported(t *testing.T) {
 }
 
 func TestRegexp(t *testing.T) {
-	var testcases = []struct {
+	type testCase struct {
 		name   string
-		regex  interface{}
+		regex  string
 		value  string
 		match  bool
 		expErr string
-	}{
+	}
+
+	var testcases = []testCase{
 		{
 			name:  "pattern string match",
 			regex: "^[0-9]+$",
@@ -71,22 +73,10 @@ func TestRegexp(t *testing.T) {
 			expErr: `value "2123423456" does not match regexp "^1"`,
 		},
 		{
-			name:  "regexp match",
-			regex: regexp.MustCompile("^d[0-9a-f]{8}$"),
-			value: "d1632beef",
-			match: true,
-		},
-		{
 			name:   "invalid regexp",
 			regex:  "^1(",
 			value:  "2",
 			expErr: "error parsing regexp: missing closing ): `^1(`",
-		},
-		{
-			name:   "invalid type",
-			regex:  struct{}{},
-			value:  "some string",
-			expErr: "invalid type struct {} for regex pattern",
 		},
 	}
 
@@ -100,6 +90,12 @@ func TestRegexp(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("regexp match", func(t *testing.T) {
+		regex := regexp.MustCompile("^d[0-9a-f]{8}$")
+		res := Regexp(regex, "d1632beef")()
+		assertSuccess(t, res)
+	})
 }
 
 func TestLen(t *testing.T) {
