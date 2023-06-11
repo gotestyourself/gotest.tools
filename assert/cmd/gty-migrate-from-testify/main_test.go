@@ -2,6 +2,7 @@ package main
 
 import (
 	"os"
+	"os/exec"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,6 +12,14 @@ import (
 	"gotest.tools/v3/golden"
 )
 
+func goGet(t *testing.T, pkg string) {
+	t.Log("go get", pkg)
+	cmd := exec.Command("go", "get", pkg)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestRun(t *testing.T) {
 	setupLogging(&options{})
 	dir := fs.NewDir(t, "test-run",
@@ -19,6 +28,13 @@ func TestRun(t *testing.T) {
 
 	defer env.Patch(t, "GO111MODULE", "off")()
 	defer env.Patch(t, "GOPATH", dir.Path())()
+
+	// Fetch dependencies in GOPATH mode
+	// Check list in testdata/full/some_test.go
+	goGet(t, "github.com/go-check/check")
+	goGet(t, "github.com/stretchr/testify/assert")
+	goGet(t, "github.com/stretchr/testify/require")
+
 	err := run(options{
 		pkgs:             []string{"example.com/example"},
 		showLoaderErrors: true,
