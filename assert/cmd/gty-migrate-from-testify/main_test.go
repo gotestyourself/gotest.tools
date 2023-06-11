@@ -31,7 +31,7 @@ func TestRun(t *testing.T) {
 
 	// Fetch dependencies in GOPATH mode
 	// Check list in testdata/full/some_test.go
-	goGet(t, "github.com/go-check/check")
+	goGet(t, "gopkg.in/check.v1")
 	goGet(t, "github.com/stretchr/testify/assert")
 	goGet(t, "github.com/stretchr/testify/require")
 

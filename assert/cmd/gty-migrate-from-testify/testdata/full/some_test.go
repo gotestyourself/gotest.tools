@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-check/check"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/check.v1"
 )
 
 type mystruct struct {

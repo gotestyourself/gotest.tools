@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-check/check"
+	"gopkg.in/check.v1"
 	"gotest.tools/v3/assert"
 	"gotest.tools/v3/assert/cmp"
 )
