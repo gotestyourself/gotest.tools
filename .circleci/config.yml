@@ -12,22 +12,27 @@ workflows:
           executor:
             name: go/golang
             tag:  1.18-alpine
-          post-steps: &xgenerics
+          post-steps: &othermods
             - run:
                 name: "test x/generics"
                 working_directory: ./x/generics
+                command: gotestsum -ftestname
+            - run:
+                name: "test cmd/migrate-from-testify"
+                working_directory: ./cmd/migrate-from-testify
                 command: gotestsum -ftestname
       - go/test:
           name: test-golang-1.19
           executor:
             name: go/golang
             tag:  1.19-alpine
-          post-steps: *xgenerics
+          post-steps: *othermods
       - go/test:
           name: test-golang-1.20
           executor:
             name: go/golang
             tag:  1.20-alpine
+          post-steps: *othermods
       - go/test:
           name: test-windows
           executor: windows
