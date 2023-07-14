@@ -6,7 +6,7 @@ Golden files can be automatically updated to match new values by running
 `go test pkgname -update`. To ensure the update is correct
 compare the diff of the old expected value to the new expected value.
 */
-package golden // import "gotest.tools/v3/golden"
+package golden
 
 import (
 	"bytes"
@@ -44,7 +44,7 @@ var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "fa
 
 // FlagUpdate returns true when the -update flag has been set.
 func FlagUpdate() bool {
-	return source.Update
+	return source.IsUpdate()
 }
 
 // Open opens the file in ./testdata
@@ -178,7 +178,7 @@ func compare(actual []byte, filename string) (cmp.Result, []byte) {
 }
 
 func update(filename string, actual []byte) error {
-	if !source.Update {
+	if !source.IsUpdate() {
 		return nil
 	}
 	if dir := filepath.Dir(Path(filename)); dir != "." {
