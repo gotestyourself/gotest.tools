@@ -19,7 +19,7 @@ type TestingT interface {
 //
 //	err := ScheduleWork()
 //	errV := &CustomErrorType{}
-//	assert.True(t, errors.As(err, &errType), err)
+//	assert.True(t, errors.As(err, &errV), err)
 //	// main_test.go:17: We wanted err := DoSomeWork() to be &CustomErrorType,
 //	// but it was fs.PathError with a value of: file not found.
 //
@@ -64,8 +64,8 @@ func True(t TestingT, expr bool, values ...any) bool {
 //
 //	err := os.RemoveAll(dir)
 //	assert.Nil(t, err)
-//	// main_Test.go:52: We wanted os.RemoveAll to not error, but it returned
-//	// and error of type os.PathError with value: "permission denied"
+//	// main_test.go:52: We wanted os.RemoveAll to not error, but it returned
+//	// an error of type os.PathError with value: "permission denied"
 func Nil(t TestingT, err error) bool {
 	if err == nil {
 		return true
@@ -99,6 +99,16 @@ func Empty[S Sequence[T, K], T any, K comparable](t TestingT, v S) bool {
 	}
 	t.Helper()
 	// TODO:
+	//1. Look at the ast for the string arg to `assert.Empty`
+	//2. If it's a function literal use it
+	//3. If it's a string variable, lookup the assignment express to find the function literal
+	//4. Examine the args passed to the `cmp.Diff` function literal,
+	//   to find one of: got, actual, expected, want, or a prefix of those
+	//5. use either got/actual, or the var that isn't want/expected, and find the assignment to
+	//   that variable
+	//6. if no variables match, or the assignment can't be looked up, use some generic failure message
+	//7. use the assignment to got/actual, and the variable names in the message
+	//8. lookup comments around the assert or variable assignments
 	t.Logf("Expression was false")
 	t.FailNow()
 	return false
