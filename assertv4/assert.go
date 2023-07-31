@@ -1,5 +1,12 @@
 package assertv4
 
+import (
+	"go/ast"
+	"runtime"
+
+	"gotest.tools/v3/internal/source"
+)
+
 type TestingT interface {
 	Helper()
 	FailNow()
@@ -93,15 +100,44 @@ type Sequence[T any, K comparable] interface {
 //	assert.Empty(t, cmp.Diff(want, got))
 //	// main_test.go:14: DoRPC(method, arg1) diff (-want +got):
 //	// ...(a very nice diff)
-func Empty[S Sequence[T, K], T any, K comparable](t TestingT, v S) bool {
+func Empty(t TestingT, v string) bool {
 	if len(v) == 0 {
 		return true
 	}
 	t.Helper()
+
+	_, filename, line, ok := runtime.Caller(1)
+	if !ok {
+		panic("failed to get call stack")
+	}
+
+	src, err := source.ReadFile(filename)
+	if err != nil {
+		return fail(t, "%s", err)
+	}
+
+	astArgs, err := source.GetCallExprArgs(src, line)
+	switch {
+	case err != nil:
+		return fail(t, "%s", err)
+	case len(astArgs) < 1:
+		// TODO: include raw source in default failure message
+		return fail(t, "wanted an empty value, got %v", v)
+	}
+
+	// Look at the ast for the string arg to `assert.Empty`
+	// - If it's a function call use it
+	// - If it's a string variable, lookup the assignment express to find the function literal
+	astValue := astArgs[1]
+	switch a := astValue.(type) {
+	case *ast.CallExpr:
+		node, _ := source.FormatNode(a)
+		// TODO: what if the call isn't cmp.Diff? Different message?
+		// TODO: use variable names instead of want, got
+		return fail(t, "%v diff (-want +got)\n%v", node, v)
+	}
+
 	// TODO:
-	//1. Look at the ast for the string arg to `assert.Empty`
-	//2. If it's a function literal use it
-	//3. If it's a string variable, lookup the assignment express to find the function literal
 	//4. Examine the args passed to the `cmp.Diff` function literal,
 	//   to find one of: got, actual, expected, want, or a prefix of those
 	//5. use either got/actual, or the var that isn't want/expected, and find the assignment to

@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"go/ast"
 	"go/format"
-	"go/parser"
 	"go/token"
 	"os"
 	"runtime"
@@ -37,13 +36,12 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 	}
 	debug("call stack position: %s:%d", filename, line)
 
-	fileset := token.NewFileSet()
-	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors|parser.ParseComments)
+	fs, err := ReadFile(filename)
 	if err != nil {
 		return fmt.Errorf("failed to parse source file %s: %w", filename, err)
 	}
 
-	expr, err := getCallExprArgs(fileset, astFile, line)
+	expr, err := GetCallExprArgs(fs, line)
 	if err != nil {
 		return fmt.Errorf("call from %s:%d: %w", filename, line, err)
 	}
@@ -71,7 +69,7 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 		debug("value must be type string, got %T", value)
 		return ErrNotFound
 	}
-	return UpdateVariable(filename, fileset, astFile, ident, strValue)
+	return UpdateVariable(filename, fs.FileSet, fs.AST, ident, strValue)
 }
 
 // UpdateVariable writes to filename the contents of astFile with the value of

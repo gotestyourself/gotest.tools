@@ -35,13 +35,12 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	}
 	debug("call stack position: %s:%d", filename, line)
 
-	fileset := token.NewFileSet()
-	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors)
+	fs, err := ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse source file %s: %w", filename, err)
 	}
 
-	expr, err := getCallExprArgs(fileset, astFile, line)
+	expr, err := GetCallExprArgs(fs, line)
 	if err != nil {
 		return nil, fmt.Errorf("call from %s:%d: %w", filename, line, err)
 	}
@@ -58,7 +57,7 @@ func getNodeAtLine(fileset *token.FileSet, astFile ast.Node, lineNum int) (ast.N
 			return node, err
 		}
 	}
-	return nil, nil
+	return nil, fmt.Errorf("failed to find an expression")
 }
 
 func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
@@ -76,17 +75,15 @@ func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
 	return matchedNode
 }
 
-func getCallExprArgs(fileset *token.FileSet, astFile ast.Node, line int) ([]ast.Expr, error) {
-	node, err := getNodeAtLine(fileset, astFile, line)
-	switch {
-	case err != nil:
+func GetCallExprArgs(src FileSource, line int) ([]ast.Expr, error) {
+	node, err := getNodeAtLine(src.FileSet, src.AST, line)
+	if err != nil {
 		return nil, err
-	case node == nil:
-		return nil, fmt.Errorf("failed to find an expression")
 	}
 
 	debug("found node: %s", debugFormatNode{node})
 
+	// use Walk instead of Inspect because recursion is required
 	visitor := &callExprVisitor{}
 	ast.Walk(visitor, node)
 	if visitor.expr == nil {
@@ -117,6 +114,21 @@ func (v *callExprVisitor) Visit(node ast.Node) ast.Visitor {
 	return v
 }
 
+type FileSource struct {
+	FileSet *token.FileSet
+	AST     *ast.File
+}
+
+// TODO: cache with sync.DoOnce
+func ReadFile(filename string) (FileSource, error) {
+	fileset := token.NewFileSet()
+	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors|parser.ParseComments)
+	if err != nil {
+		return FileSource{}, fmt.Errorf("failed to read source file %s: %w", filename, err)
+	}
+	return FileSource{FileSet: fileset, AST: astFile}, nil
+}
+
 // FormatNode using go/format.Node and return the result as a string
 func FormatNode(node ast.Node) (string, error) {
 	buf := new(bytes.Buffer)
@@ -124,10 +136,8 @@ func FormatNode(node ast.Node) (string, error) {
 	return buf.String(), err
 }
 
-var debugEnabled = os.Getenv("GOTESTTOOLS_DEBUG") != ""
-
 func debug(format string, args ...interface{}) {
-	if debugEnabled {
+	if os.Getenv("TEST_DEBUG") != "" {
 		fmt.Fprintf(os.Stderr, "DEBUG: "+format+"\n", args...)
 	}
 }
