@@ -1,7 +1,10 @@
 package poll
 
 import (
+	"context"
+	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -13,75 +16,74 @@ type fakeT struct {
 	failed string
 }
 
-func (t *fakeT) Fatalf(format string, args ...interface{}) {
-	t.failed = fmt.Sprintf(format, args...)
-	panic("exit wait on")
-}
+func (t *fakeT) Helper() {}
 
 func (t *fakeT) Log(args ...interface{}) {}
 
-func (t *fakeT) Logf(format string, args ...interface{}) {}
+func (t *fakeT) Logf(format string, args ...interface{}) {
+	t.failed = fmt.Sprintf(format, args...)
+}
+
+func (t *fakeT) FailNow() {
+	panic("exit wait on")
+
+}
 
 func TestWaitOn(t *testing.T) {
 	counter := 0
 	end := 4
-	check := func(t LogT) Result {
+	check := func(ctx context.Context, t LogT) error {
 		if counter == end {
-			return Success()
+			return nil
 		}
 		counter++
-		return Continue("counter is at %d not yet %d", counter-1, end)
+		return Continue(fmt.Errorf("counter is at %d not yet %d", counter-1, end))
 	}
 
-	WaitOn(t, check, WithDelay(0))
+	ctx := context.Background()
+	WaitOn(ctx, t, check)
 	assert.Equal(t, end, counter)
 }
 
 func TestWaitOnWithTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
-		return Continue("not done")
+	check := func(ctx context.Context, t LogT) error {
+		return Continue(errors.New("not done"))
 	}
 
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
 	assert.Assert(t, cmp.Panics(func() {
-		WaitOn(fakeT, check, WithTimeout(time.Millisecond))
+		WaitOn(ctx, fakeT, check)
 	}))
-	assert.Equal(t, "timeout hit after 1ms: not done", fakeT.failed)
+	assert.Assert(t, strings.Contains(fakeT.failed, "waited"))
+	assert.Assert(t, strings.Contains(fakeT.failed, ": not done"))
 }
 
 func TestWaitOnWithCheckTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
+	check := func(ctx context.Context, t LogT) error {
 		time.Sleep(1 * time.Second)
-		return Continue("not done")
+		return Continue(errors.New("not done"))
 	}
 
-	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check, WithTimeout(time.Millisecond)) }))
-	assert.Equal(t, "timeout hit after 1ms: first check never completed", fakeT.failed)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Millisecond)
+	defer cancel()
+	assert.Assert(t, cmp.Panics(func() { WaitOn(ctx, fakeT, check) }))
+	assert.Assert(t, strings.Contains(fakeT.failed, "waited"))
+	assert.Assert(t, strings.Contains(fakeT.failed, ": first check never completed"))
 }
 
 func TestWaitOnWithCheckError(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
-		return Error(fmt.Errorf("broke"))
+	check := func(ctx context.Context, t LogT) error {
+		return fmt.Errorf("broke")
 	}
 
-	assert.Assert(t, cmp.Panics(func() { WaitOn(fakeT, check) }))
-	assert.Equal(t, "polling check failed: broke", fakeT.failed)
-}
-
-func TestWaitOn_WithCompare(t *testing.T) {
-	fakeT := &fakeT{}
-
-	check := func(t LogT) Result {
-		return Compare(cmp.Equal(3, 4))
-	}
-
-	assert.Assert(t, cmp.Panics(func() {
-		WaitOn(fakeT, check, WithDelay(0), WithTimeout(10*time.Millisecond))
-	}))
-	assert.Assert(t, cmp.Contains(fakeT.failed, "assertion failed: 3 (int) != 4 (int)"))
+	ctx := context.Background()
+	assert.Assert(t, cmp.Panics(func() { WaitOn(ctx, fakeT, check) }))
+	assert.Equal(t, "check failed before timeout: broke", fakeT.failed)
 }

@@ -3,169 +3,110 @@
 package poll // import "gotest.tools/v3/poll"
 
 import (
-	"fmt"
-	"strings"
+	"context"
+	"errors"
 	"time"
-
-	"gotest.tools/v3/assert/cmp"
-	"gotest.tools/v3/internal/assert"
 )
 
 // TestingT is the subset of [testing.T] used by [WaitOn]
 type TestingT interface {
 	LogT
-	Fatalf(format string, args ...interface{})
+	FailNow()
 }
 
 // LogT is a logging interface that is passed to the [WaitOn] check function
 type LogT interface {
-	Log(args ...interface{})
+	Helper()
 	Logf(format string, args ...interface{})
 }
 
-type helperT interface {
-	Helper()
+type delayKeyType struct{}
+
+var delayKey = delayKeyType{}
+
+func WithDelay(ctx context.Context, delay time.Duration) context.Context {
+	return context.WithValue(ctx, delayKey, delay)
 }
 
-// Settings are used to configure the behaviour of [WaitOn]
-type Settings struct {
-	// Timeout is the maximum time to wait for the condition. Defaults to 10s.
-	Timeout time.Duration
-	// Delay is the time to sleep between checking the condition. Defaults to
-	// 100ms.
-	Delay time.Duration
-}
+// WaitOn calls check until it returns non-nil error that is not [Continue], or
+// the timeout has elapsed. WaitOn sleeps between each call.
+// A timeout can be set on the context, and a delay can be set with [WithDelay].
+// WaitOn defaults to a 10s timeout and 100ms delay.
+//
+// The test is failed with [t.FailNow] If WaitOn reaches the timeout, or a non-nil
+// error that is not [Continue] is returned by check.
+//
+// Check should return an error or message using [Continue] to continue waiting,
+// and return nil when WaitOn should stop with success.
+func WaitOn(ctx context.Context, t TestingT, check Check) {
+	t.Helper()
 
-func defaultConfig() *Settings {
-	return &Settings{Timeout: 10 * time.Second, Delay: 100 * time.Millisecond}
-}
-
-// SettingOp is a function which accepts and modifies Settings
-type SettingOp func(config *Settings)
-
-// WithDelay sets the delay to wait between polls
-func WithDelay(delay time.Duration) SettingOp {
-	return func(config *Settings) {
-		config.Delay = delay
-	}
-}
-
-// WithTimeout sets the timeout
-func WithTimeout(timeout time.Duration) SettingOp {
-	return func(config *Settings) {
-		config.Timeout = timeout
-	}
-}
-
-// Result of a check performed by [WaitOn]
-type Result interface {
-	// Error indicates that the check failed and polling should stop, and the
-	// the has failed
-	Error() error
-	// Done indicates that polling should stop, and the test should proceed
-	Done() bool
-	// Message provides the most recent state when polling has not completed
-	Message() string
-}
-
-type result struct {
-	done    bool
-	message string
-	err     error
-}
-
-func (r result) Done() bool {
-	return r.done
-}
-
-func (r result) Message() string {
-	return r.message
-}
-
-func (r result) Error() error {
-	return r.err
-}
-
-// Continue returns a [Result] that indicates to [WaitOn] that it should continue
-// polling. The message text will be used as the failure message if the timeout
-// is reached.
-func Continue(message string, args ...interface{}) Result {
-	return result{message: fmt.Sprintf(message, args...)}
-}
-
-// Success returns a [Result] where Done() returns true, which indicates to [WaitOn]
-// that it should stop polling and exit without an error.
-func Success() Result {
-	return result{done: true}
-}
-
-// Error returns a [Result] that indicates to [WaitOn] that it should fail the test
-// and stop polling.
-func Error(err error) Result {
-	return result{err: err}
-}
-
-// WaitOn a condition or until a timeout. Poll by calling check and exit when
-// check returns a done Result. To fail a test and exit polling with an error
-// return a error result.
-func WaitOn(t TestingT, check Check, pollOps ...SettingOp) {
-	if ht, ok := t.(helperT); ok {
-		ht.Helper()
-	}
-	config := defaultConfig()
-	for _, pollOp := range pollOps {
-		pollOp(config)
+	timeout := 10 * time.Second
+	if deadline, hasTimeout := ctx.Deadline(); !hasTimeout {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, timeout)
+		defer cancel()
+	} else {
+		timeout = time.Until(deadline)
 	}
 
-	var lastMessage string
-	after := time.After(config.Timeout)
-	chResult := make(chan Result)
+	delay, ok := ctx.Value(delayKey).(time.Duration)
+	if !ok {
+		delay = 100 * time.Millisecond
+	}
+
+	var lastErr error
+	chResult := make(chan error)
 	for {
+		// timeout reached
+		if ctx.Err() != nil {
+			if lastErr == nil {
+				lastErr = errors.New("first check never completed")
+			}
+			t.Logf("waited %s: %s", timeout, lastErr)
+			t.FailNow()
+		}
+
 		go func() {
-			chResult <- check(t)
+			chResult <- check(ctx, t)
 		}()
 		select {
-		case <-after:
-			if lastMessage == "" {
-				lastMessage = "first check never completed"
-			}
-			t.Fatalf("timeout hit after %s: %s", config.Timeout, lastMessage)
-		case result := <-chResult:
+		case <-ctx.Done():
+			continue
+		case err := <-chResult:
 			switch {
-			case result.Error() != nil:
-				t.Fatalf("polling check failed: %s", result.Error())
-			case result.Done():
-				return
+			case errors.As(err, &cont{}):
+				lastErr = err
+				select {
+				case <-time.After(delay):
+					continue
+				case <-ctx.Done():
+					continue
+				}
+			case err != nil: // error before timeout
+				t.Logf("check failed before timeout: %s", err)
+				t.FailNow()
+			default:
+				return // success
 			}
-			time.Sleep(config.Delay)
-			lastMessage = result.Message()
 		}
 	}
 }
 
-// Compare values using the [cmp.Comparison]. If the comparison fails return a
-// result which indicates to WaitOn that it should continue waiting.
-// If the comparison is successful then [WaitOn] stops polling.
-func Compare(compare cmp.Comparison) Result {
-	buf := new(logBuffer)
-	if assert.RunComparison(buf, assert.ArgsAtZeroIndex, compare) {
-		return Success()
-	}
-	return Continue(buf.String())
+type Check func(ctx context.Context, r LogT) error
+
+// Continue wraps an error to indicate to [WaitOn] that it should continue
+// waiting.
+// The last message returned to [WaitOn] will be used as the failure message
+// when [WaitOn] reaches the timeout.
+func Continue(err error) error {
+	return cont{error: err}
 }
 
-type logBuffer struct {
-	log [][]interface{}
+type cont struct {
+	error
 }
 
-func (c *logBuffer) Log(args ...interface{}) {
-	c.log = append(c.log, args)
-}
-
-func (c *logBuffer) String() string {
-	b := new(strings.Builder)
-	for _, item := range c.log {
-		b.WriteString(fmt.Sprint(item...) + " ")
-	}
-	return b.String()
+func (c cont) Unwrap() error {
+	return c.error
 }

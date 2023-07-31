@@ -1,6 +1,7 @@
 package poll_test
 
 import (
+	"context"
 	"fmt"
 	"time"
 
@@ -16,30 +17,36 @@ func numOfProcesses() (int, error) {
 func ExampleWaitOn() {
 	desired := 10
 
-	check := func(t poll.LogT) poll.Result {
+	check := func(ctx context.Context, t poll.LogT) error {
 		actual, err := numOfProcesses()
 		if err != nil {
-			return poll.Error(fmt.Errorf("failed to get number of processes: %w", err))
+			return fmt.Errorf("failed to get number of processes: %w", err)
 		}
 		if actual == desired {
-			return poll.Success()
+			return nil
 		}
 		t.Logf("waiting on process count to be %d...", desired)
-		return poll.Continue("number of processes is %d, not %d", actual, desired)
+		return poll.Continue(fmt.Errorf("number of processes is %d, not %d", actual, desired))
 	}
 
-	poll.WaitOn(t, check)
+	ctx := context.Background()
+	poll.WaitOn(ctx, t, check)
 }
 
 func isDesiredState() bool { return false }
 func getState() string     { return "" }
 
 func ExampleSettingOp() {
-	check := func(t poll.LogT) poll.Result {
+	check := func(ctx context.Context, t poll.LogT) error {
 		if isDesiredState() {
-			return poll.Success()
+			return nil
 		}
-		return poll.Continue("state is: %s", getState())
+		return poll.Continue(fmt.Errorf("state is: %s", getState()))
 	}
-	poll.WaitOn(t, check, poll.WithTimeout(30*time.Second), poll.WithDelay(15*time.Millisecond))
+
+	ctx := poll.WithDelay(context.Background(), 33*time.Millisecond)
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	poll.WaitOn(ctx, t, check)
 }
