@@ -40,6 +40,14 @@ type helperT interface {
 // in the environment before running tests.
 //
 // The default value may change in a future major release.
+//
+// This does not affect the contents of the golden files themselves. And depending on the
+// git settings on your system (or in github action platform default like windows), the
+// golden files may contain CRLF line endings.  You can avoid this by setting the
+// .gitattributes file in your repo to use LF line endings for all files, or just the golden files, by
+// adding the following line to your .gitattributes file:
+//
+// * text=auto eol=lf
 var NormalizeCRLFToLF = os.Getenv("GOTESTTOOLS_GOLDEN_NormalizeCRLFToLF") != "false"
 
 // FlagUpdate returns true when the -update flag has been set.
