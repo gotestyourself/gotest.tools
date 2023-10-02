@@ -73,9 +73,9 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 					"example:\n"+
 					"    go_test(\n"+
 					"        name = \"your_package_test\",\n"+
-					"	     srcs = [\"your_test.go\"],\n"+
-					"	     deps = [\"@tools_gotest_v3//assert\"],\n"+
-					"	     data = glob([\"*_test.go\"] # <====== test source files added as test data here!\n"+
+					"        srcs = [\"your_test.go\"],\n"+
+					"        deps = [\"@tools_gotest_v3//assert\"],\n"+
+					"        data = glob([\"*_test.go\"] # <====== test source files added as test data here!\n"+
 					"    )",
 				filename,
 				bazelTestTarget,
