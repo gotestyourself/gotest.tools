@@ -21,7 +21,7 @@ import (
 //
 // Due to Bazel's compilation and sandboxing strategy,
 // some care is required to handle resolving the original *.go source file.
-var inBazelTest bool = os.Getenv("BAZEL_TEST") == "1"
+var inBazelTest = os.Getenv("BAZEL_TEST") == "1"
 
 // The name of the target being tested (ex: //some_package:some_package_test)
 var bazelTestTarget = os.Getenv("TEST_TARGET")
