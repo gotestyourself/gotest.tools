@@ -81,7 +81,6 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 				bazelTestTarget,
 			)
 		}
-
 	}
 
 	fileset := token.NewFileSet()
