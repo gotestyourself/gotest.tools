@@ -14,24 +14,6 @@ import (
 	"runtime"
 )
 
-// These Bazel env vars are documented here:
-// https://bazel.build/reference/test-encyclopedia
-
-// Signifies test executable is being driven by `bazel test`.
-//
-// Due to Bazel's compilation and sandboxing strategy,
-// some care is required to handle resolving the original *.go source file.
-var inBazelTest = os.Getenv("BAZEL_TEST") == "1"
-
-// The name of the target being tested (ex: //some_package:some_package_test)
-var bazelTestTarget = os.Getenv("TEST_TARGET")
-
-// Absolute path to the base of the runfiles tree
-var bazelTestSrcdir = os.Getenv("TEST_SRCDIR")
-
-// The local repository's workspace name (ex: __main__)
-var bazelTestWorkspace = os.Getenv("TEST_WORKSPACE")
-
 // FormattedCallExprArg returns the argument from an ast.CallExpr at the
 // index in the call stack. The argument is formatted using FormatNode.
 func FormattedCallExprArg(stackIndex int, argPos int) (string, error) {
@@ -60,26 +42,10 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 	// (otherwise, since Bazel uses a random tmp dir for compile and sandboxing,
 	// the resulting binaries would change across compiles/test runs).
 	if inBazelTest && !filepath.IsAbs(filename) {
-		// Use the env vars to resolve the test source files,
-		// which must be provided as test data in the respective go_test target.
-		filename = filepath.Join(bazelTestSrcdir, bazelTestWorkspace, filename)
-
-		_, err := os.Stat(filename)
-		if os.IsNotExist(err) {
-			return nil, fmt.Errorf(
-				"the test source file does not exist: %s\n"+
-					"it appears that you are running this test under Bazel (target: %s);\n"+
-					"check that your test source files are added as test data in your go_test targets.\n"+
-					"example:\n"+
-					"    go_test(\n"+
-					"        name = \"your_package_test\",\n"+
-					"        srcs = [\"your_test.go\"],\n"+
-					"        deps = [\"@tools_gotest_v3//assert\"],\n"+
-					"        data = glob([\"*_test.go\"] # <====== test source files added as test data here!\n"+
-					"    )",
-				filename,
-				bazelTestTarget,
-			)
+		var err error
+		filename, err = bazelSourcePath(filename)
+		if err != nil {
+			return nil, err
 		}
 	}
 
