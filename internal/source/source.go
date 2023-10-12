@@ -10,6 +10,7 @@ import (
 	"go/parser"
 	"go/token"
 	"os"
+	"path/filepath"
 	"runtime"
 )
 
@@ -34,6 +35,19 @@ func CallExprArgs(stackIndex int) ([]ast.Expr, error) {
 		return nil, errors.New("failed to get call stack")
 	}
 	debug("call stack position: %s:%d", filename, line)
+
+	// Normally, `go` will compile programs with absolute paths in
+	// the debug metadata. However, in the name of reproducibility,
+	// Bazel uses a compilation strategy that results in relative paths
+	// (otherwise, since Bazel uses a random tmp dir for compile and sandboxing,
+	// the resulting binaries would change across compiles/test runs).
+	if inBazelTest && !filepath.IsAbs(filename) {
+		var err error
+		filename, err = bazelSourcePath(filename)
+		if err != nil {
+			return nil, err
+		}
+	}
 
 	fileset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors)
