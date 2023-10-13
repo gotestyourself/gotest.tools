@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/go-check/check"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"gopkg.in/check.v1"
 )
 
 type mystruct struct {
@@ -135,9 +135,13 @@ func TestTableTest(t *testing.T) {
 	}
 }
 
-func TestWithChecker(c *check.C) {
+type MySuite struct{}
+
+var _ = check.Suite(&MySuite{})
+
+func (s *MySuite) TestWithChecker(c *check.C) {
 	var err error
-	assert.NoError(c, err)
+	c.Assert(err, check.Equals, nil)
 }
 
 func HelperWithAssertTestingT(t assert.TestingT) {
