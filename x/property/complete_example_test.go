@@ -3,7 +3,7 @@ package property_test
 import (
 	"testing"
 
-	"gotest.tools/x/generics/property"
+	"gotest.tools/v3/x/property"
 )
 
 type FoodRequest struct {
