@@ -61,26 +61,35 @@ func Message(args ...any) string {
 func handleSingleArgError(err error, arg ast.Expr, src source.FileSource) string {
 	ident, ok := arg.(*ast.Ident)
 	if !ok {
-		// TODO: include details about args, and request for a bug report
-		n, _ := source.FormatNode(arg)
-		return fmt.Sprintf("%v: expected a variable as the argument, got %T:\n%v", vtMessageName, arg, n)
+		return msgUnexpectedAstNode(arg, "expected a variable as the argument")
 	}
 
 	switch v := ident.Obj.Decl.(type) {
 	case *ast.AssignStmt:
 		// TODO: handle multiple assignment
-		call, ok := v.Rhs[0].(*ast.CallExpr)
-		if !ok {
-			return fmt.Sprintf("%v: expected a function call for the variable declaration, got %v",
-				vtMessageName, v.Rhs[0])
-		}
-
-		// TODO: handle not an ident for the func
-		n, _ := source.FormatNode(call)
-		return fmt.Sprintf("%v returned an error: %v", n, err)
+		return msgErrorFromExpr(err, v.Rhs[0])
 
 	case *ast.ValueSpec:
 		// TODO: handle multiple declaration
+		return msgErrorFromExpr(err, v.Values[0])
+
 	}
-	return fmt.Sprintf(vtMessageName+"expected an assignment or a variable declaration for %v", ident.Name)
+	return msgUnexpectedAstNode(ident, "expected an assignment or a variable declaration")
+}
+
+func msgErrorFromExpr(err error, expr ast.Expr) string {
+	call, ok := expr.(*ast.CallExpr)
+	if !ok {
+		return msgUnexpectedAstNode(expr, "expected a function call for the variable declaration")
+	}
+
+	// TODO: handle not an ident for the func
+	n, _ := source.FormatNode(call)
+	return fmt.Sprintf("%v returned an error: %v", n, err)
+}
+
+func msgUnexpectedAstNode(node ast.Node, reason string) string {
+	// TODO: include details about args, and request for a bug report
+	n, _ := source.FormatNode(node)
+	return fmt.Sprintf("%v: %v, got %T:\n%v", vtMessageName, reason, node, n)
 }

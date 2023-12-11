@@ -19,22 +19,49 @@ func TestMessage(t *testing.T) {
 		}
 	}
 
-	errFunc := func(...any) error {
+	someFunc := func(...any) error {
 		return fmt.Errorf("failed to do something")
 	}
 
 	testCases := []testCase{
 		{
-			id: ID("err assigned from function"),
+			id: ID("err assigned from function in if block"),
 			fn: func(t *testing.T) string {
 				var got string
-				if err := errFunc("a", 1, nil); err != nil {
+				if err := someFunc("arga"); err != nil {
 					got = Message(err)
 				}
 				return got
 			},
-			want: `errFunc("a", 1, nil) returned an error: failed to do something`,
+			want: `someFunc("arga") returned an error: failed to do something`,
 		},
+		{
+			id: ID("err assigned from function"),
+			fn: func(t *testing.T) string {
+				var got string
+				err := someFunc("arga")
+				if err != nil {
+					got = Message(err)
+				}
+				return got
+			},
+			want: `someFunc("arga") returned an error: failed to do something`,
+		},
+		{
+			id: ID("err declared from function"),
+			fn: func(t *testing.T) string {
+				var got string
+				var err = someFunc("arga")
+				if err != nil {
+					got = Message(err)
+				}
+				return got
+			},
+			want: `someFunc("arga") returned an error: failed to do something`,
+		},
+
+		// TODO: cases for assignment from other expr? channel?
+		// TODO: cases for incorrect usage: errors.{Is,As}, err != errSentinel, etc
 	}
 	for _, tc := range testCases {
 		t.Run(tc.id.Name, func(t *testing.T) {
