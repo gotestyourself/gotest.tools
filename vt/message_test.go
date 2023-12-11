@@ -6,19 +6,40 @@ import (
 )
 
 func TestMessage(t *testing.T) {
-	someFunc := func(...any) error {
+	type testCase struct {
+		id   TestID
+		fn   func(t *testing.T) string
+		want string
+	}
+
+	run := func(t *testing.T, tc testCase) {
+		got := tc.fn(t)
+		if got != tc.want {
+			t.Fatalf("Message(...)\ngot:  %v\nwant: %v", got, tc.want)
+		}
+	}
+
+	errFunc := func(...any) error {
 		return fmt.Errorf("failed to do something")
 	}
 
-	t.Run("err: assignment from function", func(t *testing.T) {
-		var got string
-		if err := someFunc("a", 1, nil); err != nil {
-			got = Message(err)
-		}
-
-		want := `someFunc("a", 1, nil) returned an error: failed to do something`
-		if got != want {
-			t.Fatalf("Message(err)\ngot:  %v\nwant: %v", got, want)
-		}
-	})
+	testCases := []testCase{
+		{
+			id: ID("err assigned from function"),
+			fn: func(t *testing.T) string {
+				var got string
+				if err := errFunc("a", 1, nil); err != nil {
+					got = Message(err)
+				}
+				return got
+			},
+			want: `errFunc("a", 1, nil) returned an error: failed to do something`,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.id.Name, func(t *testing.T) {
+			tc.id.PrintPosition()
+			run(t, tc)
+		})
+	}
 }
