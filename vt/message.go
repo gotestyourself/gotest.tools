@@ -3,6 +3,7 @@ package vt
 import (
 	"fmt"
 	"go/ast"
+	"go/token"
 	"runtime"
 
 	"gotest.tools/v3/internal/source"
@@ -36,10 +37,14 @@ func Message(args ...any) string {
 		return fmt.Sprintf("failed to lookup source: %v", err)
 	}
 
-	astArgs, err := source.GetCallExprArgs(src, line)
+	callSource, err := getNodeAtLine(src, line)
 	if err != nil {
 		// TODO: include details about args, and request for a bug report
 		return fmt.Sprintf("failed to lookup call expression: %v", err)
+	}
+
+	if len(callSource.CallExpr.Args) != len(args) {
+		return msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
 
 	switch v := args[0].(type) {
@@ -48,7 +53,7 @@ func Message(args ...any) string {
 		// TODO:
 	case error:
 		// error from NilError
-		return handleSingleArgError(v, astArgs[0], src)
+		return handleSingleArgError(v, callSource)
 
 	default:
 		// TODO:
@@ -58,23 +63,85 @@ func Message(args ...any) string {
 	return "TODO"
 }
 
-func handleSingleArgError(err error, arg ast.Expr, src source.FileSource) string {
+func handleSingleArgError(err error, callSource messageCallSource) string {
+	arg := callSource.CallExpr.Args[0]
 	ident, ok := arg.(*ast.Ident)
 	if !ok {
 		return msgUnexpectedAstNode(arg, "expected a variable as the argument")
 	}
 
-	switch v := ident.Obj.Decl.(type) {
-	case *ast.AssignStmt:
-		// TODO: handle multiple assignment
-		return msgErrorFromExpr(err, v.Rhs[0])
+	if condIsErrNotNil(ident, callSource.IfStmt.Cond) {
+		switch v := ident.Obj.Decl.(type) {
+		case *ast.AssignStmt:
+			// TODO: handle multiple assignment
+			return msgErrorFromExpr(err, v.Rhs[0])
 
-	case *ast.ValueSpec:
-		// TODO: handle multiple declaration
-		return msgErrorFromExpr(err, v.Values[0])
+		case *ast.ValueSpec:
+			// TODO: handle multiple declaration
+			return msgErrorFromExpr(err, v.Values[0])
 
+		}
 	}
+
+	if condIsNotErrorsIs(ident, callSource.IfStmt.Cond) {
+		return "missing want"
+	}
+
 	return msgUnexpectedAstNode(ident, "expected an assignment or a variable declaration")
+}
+
+func condIsNotErrorsIs(ident *ast.Ident, cond ast.Expr) bool {
+	uExpr, ok := cond.(*ast.UnaryExpr)
+	if !ok {
+		return false
+	}
+	if uExpr.Op != token.NOT {
+		return false
+	}
+	ce, ok := uExpr.X.(*ast.CallExpr)
+	if !ok {
+		return false
+	}
+
+	se, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return false
+	}
+
+	x, ok := se.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if x.Name != "errors" {
+		return false
+	}
+	if se.Sel.Name != "Is" {
+		return false
+	}
+	// TODO: check args and get name of want
+	return true
+}
+
+func condIsErrNotNil(errArg *ast.Ident, cond ast.Expr) bool {
+	bExpr, ok := cond.(*ast.BinaryExpr)
+	if !ok {
+		return false
+	}
+	if bExpr.Op != token.NEQ {
+		return false
+	}
+	xIdent, ok := bExpr.X.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	if xIdent.Name != errArg.Name {
+		return false
+	}
+	yIdent, ok := bExpr.Y.(*ast.Ident)
+	if !ok {
+		return false
+	}
+	return yIdent.Name == "nil"
 }
 
 func msgErrorFromExpr(err error, expr ast.Expr) string {
@@ -84,6 +151,7 @@ func msgErrorFromExpr(err error, expr ast.Expr) string {
 	}
 
 	// TODO: handle not an ident for the func
+	// TODO: remove args if longer than x.
 	n, _ := source.FormatNode(call)
 	return fmt.Sprintf("%v returned an error: %v", n, err)
 }

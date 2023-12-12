@@ -1,6 +1,7 @@
 package vt
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 )
@@ -58,6 +59,20 @@ func TestMessage(t *testing.T) {
 				return got
 			},
 			want: `someFunc("arga") returned an error: failed to do something`,
+		},
+		{
+			id: ID("err incorrectly used without want"),
+			fn: func(t *testing.T) string {
+				var errSentinel = fmt.Errorf("sentinel")
+
+				var got string
+				var err = someFunc("arga")
+				if !errors.Is(err, errSentinel) {
+					got = Message(err)
+				}
+				return got
+			},
+			want: `someFunc("arga") returned an error: failed to do something, wanted errSentinel`,
 		},
 
 		// TODO: cases for assignment from other expr? channel?
