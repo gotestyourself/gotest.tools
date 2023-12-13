@@ -74,52 +74,73 @@ func handleSingleArgError(err error, callSource messageCallSource) string {
 		switch v := ident.Obj.Decl.(type) {
 		case *ast.AssignStmt:
 			// TODO: handle multiple assignment
-			return msgErrorFromExpr(err, v.Rhs[0])
+			return msgErrorFromExpr(err, v.Rhs[0], nil)
 
 		case *ast.ValueSpec:
 			// TODO: handle multiple declaration
-			return msgErrorFromExpr(err, v.Values[0])
+			return msgErrorFromExpr(err, v.Values[0], nil)
 
 		}
 	}
 
-	if condIsNotErrorsIs(ident, callSource.IfStmt.Cond) {
-		return "missing want"
+	if wantExpr, ok := condIsNotErrorsIs(ident, callSource.IfStmt.Cond); ok {
+		switch v := ident.Obj.Decl.(type) {
+		case *ast.AssignStmt:
+			// TODO: handle multiple assignment
+			return msgErrorFromExpr(err, v.Rhs[0], wantExpr)
+
+		case *ast.ValueSpec:
+			// TODO: handle multiple declaration
+			return msgErrorFromExpr(err, v.Values[0], wantExpr)
+
+		}
 	}
 
 	return msgUnexpectedAstNode(ident, "expected an assignment or a variable declaration")
 }
 
-func condIsNotErrorsIs(ident *ast.Ident, cond ast.Expr) bool {
+func condIsNotErrorsIs(errArg *ast.Ident, cond ast.Expr) (ast.Expr, bool) {
 	uExpr, ok := cond.(*ast.UnaryExpr)
 	if !ok {
-		return false
+		return nil, false
 	}
 	if uExpr.Op != token.NOT {
-		return false
+		return nil, false
 	}
 	ce, ok := uExpr.X.(*ast.CallExpr)
 	if !ok {
-		return false
+		return nil, false
 	}
 
 	se, ok := ce.Fun.(*ast.SelectorExpr)
 	if !ok {
-		return false
+		return nil, false
 	}
 
 	x, ok := se.X.(*ast.Ident)
 	if !ok {
-		return false
+		return nil, false
 	}
 	if x.Name != "errors" {
-		return false
+		return nil, false
 	}
 	if se.Sel.Name != "Is" {
-		return false
+		return nil, false
 	}
-	// TODO: check args and get name of want
-	return true
+
+	if len(ce.Args) != 2 {
+		return nil, false
+	}
+
+	arg0, ok := ce.Args[0].(*ast.Ident)
+	if !ok {
+		return nil, false
+	}
+	if arg0.Name != errArg.Name {
+		return nil, false
+	}
+
+	return ce.Args[1], true
 }
 
 func condIsErrNotNil(errArg *ast.Ident, cond ast.Expr) bool {
@@ -144,7 +165,7 @@ func condIsErrNotNil(errArg *ast.Ident, cond ast.Expr) bool {
 	return yIdent.Name == "nil"
 }
 
-func msgErrorFromExpr(err error, expr ast.Expr) string {
+func msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) string {
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
 		return msgUnexpectedAstNode(expr, "expected a function call for the variable declaration")
@@ -153,7 +174,12 @@ func msgErrorFromExpr(err error, expr ast.Expr) string {
 	// TODO: handle not an ident for the func
 	// TODO: remove args if longer than x.
 	n, _ := source.FormatNode(call)
-	return fmt.Sprintf("%v returned an error: %v", n, err)
+	msg := fmt.Sprintf("%v returned error: %v", n, err)
+	if want != nil {
+		n, _ = source.FormatNode(want)
+		msg += fmt.Sprintf(", wanted %v", n)
+	}
+	return msg
 }
 
 func msgUnexpectedAstNode(node ast.Node, reason string) string {

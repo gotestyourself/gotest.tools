@@ -1,21 +1,28 @@
-package vt
+package vt_test
 
 import (
 	"errors"
 	"fmt"
 	"testing"
+
+	"gotest.tools/v3/vt"
 )
 
 func TestMessage(t *testing.T) {
 	type testCase struct {
-		id   TestID
-		fn   func(t *testing.T) string
+		id   vt.TestID
+		fn   func(t *testing.T)
 		want string
 	}
 
+	ft := &fakeT{}
 	run := func(t *testing.T, tc testCase) {
-		got := tc.fn(t)
-		if got != tc.want {
+		defer ft.Reset()
+		tc.fn(t)
+		if len(ft.args) != 1 {
+			t.Fatalf("no result capture")
+		}
+		if got := ft.args[0]; got != tc.want {
 			t.Fatalf("Message(...)\ngot:  %v\nwant: %v", got, tc.want)
 		}
 	}
@@ -26,53 +33,45 @@ func TestMessage(t *testing.T) {
 
 	testCases := []testCase{
 		{
-			id: ID("err assigned from function in if block"),
-			fn: func(t *testing.T) string {
-				var got string
+			id: vt.ID("err != nil assigned from function in if block"),
+			fn: func(t *testing.T) {
 				if err := someFunc("arga"); err != nil {
-					got = Message(err)
+					ft.Fatal(vt.Message(err))
 				}
-				return got
 			},
-			want: `someFunc("arga") returned an error: failed to do something`,
+			want: `someFunc("arga") returned error: failed to do something`,
 		},
 		{
-			id: ID("err assigned from function"),
-			fn: func(t *testing.T) string {
-				var got string
+			id: vt.ID("err != nil assigned from function"),
+			fn: func(t *testing.T) {
 				err := someFunc("arga")
 				if err != nil {
-					got = Message(err)
+					ft.Fatal(vt.Message(err))
 				}
-				return got
 			},
-			want: `someFunc("arga") returned an error: failed to do something`,
+			want: `someFunc("arga") returned error: failed to do something`,
 		},
 		{
-			id: ID("err declared from function"),
-			fn: func(t *testing.T) string {
-				var got string
+			id: vt.ID("err != nil declared from function"),
+			fn: func(t *testing.T) {
 				var err = someFunc("arga")
 				if err != nil {
-					got = Message(err)
+					ft.Fatal(vt.Message(err))
 				}
-				return got
 			},
-			want: `someFunc("arga") returned an error: failed to do something`,
+			want: `someFunc("arga") returned error: failed to do something`,
 		},
 		{
-			id: ID("err incorrectly used without want"),
-			fn: func(t *testing.T) string {
-				var errSentinel = fmt.Errorf("sentinel")
+			id: vt.ID("errors.Is"),
+			fn: func(t *testing.T) {
+				var errSentinel = fmt.Errorf("some text")
 
-				var got string
 				var err = someFunc("arga")
 				if !errors.Is(err, errSentinel) {
-					got = Message(err)
+					ft.Fatal(vt.Message(err))
 				}
-				return got
 			},
-			want: `someFunc("arga") returned an error: failed to do something, wanted errSentinel`,
+			want: `someFunc("arga") returned error: failed to do something, wanted errSentinel`,
 		},
 
 		// TODO: cases for assignment from other expr? channel?
@@ -84,4 +83,16 @@ func TestMessage(t *testing.T) {
 			run(t, tc)
 		})
 	}
+}
+
+type fakeT struct {
+	args []any
+}
+
+func (f *fakeT) Fatal(args ...any) {
+	f.args = args
+}
+
+func (f *fakeT) Reset() {
+	f.args = nil
 }

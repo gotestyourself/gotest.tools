@@ -18,7 +18,7 @@ type messageCallSource struct {
 
 // TODO: defer support was removed
 func getNodeAtLine(src source.FileSource, lineNum int) (messageCallSource, error) {
-	result := scanToLine(src.FileSet, src.AST, lineNum)
+	result := scanToLine(src, lineNum)
 	if result.CallExpr == nil || result.IfStmt == nil {
 		return result, fmt.Errorf("failed to find an expression on line")
 	}
@@ -26,7 +26,9 @@ func getNodeAtLine(src source.FileSource, lineNum int) (messageCallSource, error
 	return result, nil
 }
 
-func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) messageCallSource {
+func scanToLine(src source.FileSource, lineNum int) messageCallSource {
+	fileset := src.FileSet
+
 	var result messageCallSource
 
 	pre := func(current ast.Node) bool {
@@ -54,10 +56,28 @@ func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) messageCallS
 		if !ok {
 			return true // not yet at call expression
 		}
+
+		// TODO: use type system instead of name match
+		se, ok := ce.Fun.(*ast.SelectorExpr)
+		if !ok {
+			return true // not a call to vt.Message
+		}
+
+		if se.Sel.Name != "Message" {
+			return true
+		}
+		x, ok := se.X.(*ast.Ident)
+		if !ok {
+			return true
+		}
+		if x.Name != "vt" {
+			return true
+		}
+
 		result.CallExpr = ce
 		return false
 	}
-	ast.Inspect(node, pre)
+	ast.Inspect(src.AST, pre)
 	return result
 }
 
