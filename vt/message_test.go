@@ -66,16 +66,27 @@ func TestMessage(t *testing.T) {
 			fn: func(t *testing.T) {
 				var errSentinel = fmt.Errorf("some text")
 
-				var err = someFunc("arga")
+				err := someFunc("arga")
 				if !errors.Is(err, errSentinel) {
 					ft.Fatal(vt.Message(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something, wanted errSentinel`,
 		},
+		{
+			id: vt.ID("errors.As"),
+			fn: func(t *testing.T) {
+				err := someFunc("arga")
+				typedErr := &ErrorType{}
+				if !errors.As(err, &typedErr) {
+					ft.Fatal(vt.Message(err))
+				}
+			},
+			want: `someFunc("arga") returned error: failed to do something (*errors.errorString), wanted ErrorType`,
+		},
 
 		// TODO: cases for assignment from other expr? channel?
-		// TODO: cases for incorrect usage: errors.{Is,As}, err != errSentinel, etc
+		// TODO: cases for err != errSentinel, etc
 	}
 	for _, tc := range testCases {
 		t.Run(tc.id.Name, func(t *testing.T) {
@@ -83,6 +94,12 @@ func TestMessage(t *testing.T) {
 			run(t, tc)
 		})
 	}
+}
+
+type ErrorType struct{}
+
+func (e *ErrorType) Error() string {
+	return "this type of error"
 }
 
 type fakeT struct {

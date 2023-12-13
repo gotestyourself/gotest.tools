@@ -57,7 +57,6 @@ func Message(args ...any) string {
 
 	default:
 		// TODO:
-		_ = v
 	}
 
 	return "TODO"
@@ -70,35 +69,42 @@ func handleSingleArgError(err error, callSource messageCallSource) string {
 		return msgUnexpectedAstNode(arg, "expected a variable as the argument")
 	}
 
-	if condIsErrNotNil(ident, callSource.IfStmt.Cond) {
-		switch v := ident.Obj.Decl.(type) {
-		case *ast.AssignStmt:
-			// TODO: handle multiple assignment
-			return msgErrorFromExpr(err, v.Rhs[0], nil)
-
-		case *ast.ValueSpec:
-			// TODO: handle multiple declaration
-			return msgErrorFromExpr(err, v.Values[0], nil)
-
-		}
+	cond := callSource.IfStmt.Cond
+	if condIsErrNotNil(ident, cond) {
+		callExpr := exprFromObjDecl(ident)
+		return msgErrorFromExpr(err, callExpr, nil)
 	}
 
-	if wantExpr, ok := condIsNotErrorsIs(ident, callSource.IfStmt.Cond); ok {
-		switch v := ident.Obj.Decl.(type) {
-		case *ast.AssignStmt:
-			// TODO: handle multiple assignment
-			return msgErrorFromExpr(err, v.Rhs[0], wantExpr)
-
-		case *ast.ValueSpec:
-			// TODO: handle multiple declaration
-			return msgErrorFromExpr(err, v.Values[0], wantExpr)
-
-		}
+	if wantExpr, ok := condIsNotErrorsIs(ident, cond); ok {
+		callExpr := exprFromObjDecl(ident)
+		return msgErrorFromExpr(err, callExpr, wantExpr)
 	}
 
-	return msgUnexpectedAstNode(ident, "expected an assignment or a variable declaration")
+	if wantExpr, ok := condIsNotErrorsAs(ident, cond); ok {
+		callExpr := exprFromObjDecl(ident)
+		msg := msgErrorFromExpr(err, callExpr, nil)
+		n, _ := source.FormatNode(wantExpr)
+		return msg + fmt.Sprintf(" (%T), wanted %v", err, n)
+	}
+
+	return msgUnexpectedAstNode(ident, "unknown error comparison for variable")
 }
 
+func exprFromObjDecl(ident *ast.Ident) ast.Expr {
+	switch v := ident.Obj.Decl.(type) {
+	case *ast.AssignStmt:
+		// TODO: handle multiple assignment
+		return v.Rhs[0]
+
+	case *ast.ValueSpec:
+		// TODO: handle multiple declaration
+		return v.Values[0]
+	}
+	// TODO: other cases?
+	return nil
+}
+
+// !errors.Is(err, want)
 func condIsNotErrorsIs(errArg *ast.Ident, cond ast.Expr) (ast.Expr, bool) {
 	uExpr, ok := cond.(*ast.UnaryExpr)
 	if !ok {
@@ -143,6 +149,87 @@ func condIsNotErrorsIs(errArg *ast.Ident, cond ast.Expr) (ast.Expr, bool) {
 	return ce.Args[1], true
 }
 
+// !errors.As(err, want)
+func condIsNotErrorsAs(errArg *ast.Ident, cond ast.Expr) (ast.Expr, bool) {
+	uExpr, ok := cond.(*ast.UnaryExpr)
+	if !ok {
+		return nil, false
+	}
+	if uExpr.Op != token.NOT {
+		return nil, false
+	}
+	ce, ok := uExpr.X.(*ast.CallExpr)
+	if !ok {
+		return nil, false
+	}
+
+	se, ok := ce.Fun.(*ast.SelectorExpr)
+	if !ok {
+		return nil, false
+	}
+
+	x, ok := se.X.(*ast.Ident)
+	if !ok {
+		return nil, false
+	}
+	if x.Name != "errors" {
+		return nil, false
+	}
+	if se.Sel.Name != "As" {
+		return nil, false
+	}
+
+	if len(ce.Args) != 2 {
+		return nil, false
+	}
+
+	arg0, ok := ce.Args[0].(*ast.Ident)
+	if !ok {
+		return nil, false
+	}
+	if arg0.Name != errArg.Name {
+		return nil, false
+	}
+
+	// unwrap if the expr is &typedErr
+	want := ce.Args[1]
+	if uExpr, ok := want.(*ast.UnaryExpr); ok {
+		if uExpr.Op != token.AND {
+			return nil, false
+		}
+		want = uExpr.X
+	}
+
+	wantIdent, ok := want.(*ast.Ident)
+	if !ok {
+		// TODO: what else could it be?
+		return nil, false
+	}
+
+	// TODO: Use the type system here
+	declExpr := exprFromObjDecl(wantIdent)
+	// unwrap the declaration
+	// TODO: extract func
+	if uExpr, ok := declExpr.(*ast.UnaryExpr); ok {
+		if uExpr.Op != token.AND {
+			return nil, false
+		}
+		declExpr = uExpr.X
+	}
+
+	cl, ok := declExpr.(*ast.CompositeLit)
+	if !ok {
+		return nil, false
+	}
+
+	want, ok = cl.Type.(*ast.Ident)
+	if !ok {
+		return nil, false
+	}
+	return want, true
+}
+
+// err != nil
 func condIsErrNotNil(errArg *ast.Ident, cond ast.Expr) bool {
 	bExpr, ok := cond.(*ast.BinaryExpr)
 	if !ok {
