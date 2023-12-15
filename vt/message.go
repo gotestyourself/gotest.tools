@@ -5,23 +5,30 @@ import (
 	"go/ast"
 	"go/token"
 	"runtime"
+	"strings"
 
 	"gotest.tools/v3/internal/source"
 )
 
+// TODO colorize when in supported terminal
 const vtMessageName = "vt.Message"
 
+type msgResult struct {
+	got       any
+	want      any
+	extraArgs []any
+}
+
 func Message(got any, optionalWant ...any) string {
-	var want any
-	var hasWants int
-	var wantV string
-	switch hasWants = len(optionalWant); hasWants {
+	result := msgResult{got: got}
+
+	switch numWants := len(optionalWant); numWants {
 	case 0:
 	case 1:
-		want = optionalWant[0]
-		wantV = fmt.Sprintf("%v", want)
+		result.want = optionalWant[0]
 	default:
-		wantV = fmt.Sprintf("%v", optionalWant)
+		result.want = optionalWant[0]
+		result.extraArgs = optionalWant[1:]
 	}
 
 	// TODO: check if got is an error type from this package and return early
@@ -32,23 +39,24 @@ func Message(got any, optionalWant ...any) string {
 	}
 	src, err := source.ReadFile(filename)
 	if err != nil {
-		// TODO: include tips about how to prevent this, auto-fix?
-		return fmt.Sprintf("got=%v, want=%v but %v failed to lookup source: %v",
-			got, wantV, vtMessageName, err)
+		// TODO: include tips about how to prevent this?
+		return fmt.Sprintf("%v, but %v: failed to read Go source file: %v",
+			result.basicMsg(), vtMessageName, err)
 	}
 
 	callSource, err := getNodeAtLine(src, line)
 	if err != nil {
-		// TODO: include details about args, and request for a bug report
-		return fmt.Sprintf("failed to lookup call expression: %v", err)
+		// TODO: include request for a bug report
+		return fmt.Sprintf("%v, but %v failed to lookup call expression: %v",
+			result.basicMsg(), vtMessageName, err)
 	}
 
 	if len(optionalWant) > 1 {
-		// TODO: print warning about too many args instead of exit
-		// TODO: auto-fix
+		// TODO: move this into final message instad of exit early
+		// TODO: include text about auto-fix options
 		return "too many optionalWant for " + vtMessageName
 	}
-	if len(callSource.CallExpr.Args) != 1+hasWants {
+	if len(callSource.CallExpr.Args) != 1+len(optionalWant) {
 		return msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
 	switch v := got.(type) {
@@ -61,13 +69,25 @@ func Message(got any, optionalWant ...any) string {
 		// TODO:
 	case error:
 		// error comparison
-		return handleSingleArgError(v, want, callSource)
+		return handleSingleArgError(v, result.want, callSource)
 
 	default:
 		// TODO:
 	}
 
 	return "TODO"
+}
+
+func (r msgResult) basicMsg() string {
+	var buf strings.Builder
+	fmt.Fprintf(&buf, "got=%v", r.got)
+	if r.want != nil {
+		fmt.Fprintf(&buf, ", want=%v", r.want)
+	}
+	if len(r.extraArgs) > 0 {
+		fmt.Fprintf(&buf, ", extra=%v", r.extraArgs)
+	}
+	return buf.String()
 }
 
 func handleSingleArgError(err error, want any, callSource messageCallSource) string {
