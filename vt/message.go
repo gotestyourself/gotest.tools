@@ -11,30 +11,30 @@ import (
 
 const vtMessageName = "vt.Message"
 
-func Message(args ...any) string {
-	nArgs := len(args)
-	switch nArgs {
+func Message(got any, optionalWant ...any) string {
+	var want any
+	var hasWants int
+	var wantV string
+	switch hasWants = len(optionalWant); hasWants {
 	case 0:
-		return vtMessageName + "is unable to produce a useful message, called with no arguments."
 	case 1:
-	case 2:
-		// TODO:
-		return "TODO"
+		want = optionalWant[0]
+		wantV = fmt.Sprintf("%v", want)
 	default:
-		return fmt.Sprintf("too many arguments in call to %v: %d", vtMessageName, nArgs)
+		wantV = fmt.Sprintf("%v", optionalWant)
 	}
 
-	// TODO: check custom error type for errors from this package
+	// TODO: check if got is an error type from this package and return early
 
 	_, filename, line, ok := runtime.Caller(1)
 	if !ok {
 		panic("failed to get call stack")
 	}
-
 	src, err := source.ReadFile(filename)
 	if err != nil {
-		// TODO: include details about args, and tips about how to prevent this
-		return fmt.Sprintf("failed to lookup source: %v", err)
+		// TODO: include tips about how to prevent this, auto-fix?
+		return fmt.Sprintf("got=%v, want=%v but %v failed to lookup source: %v",
+			got, wantV, vtMessageName, err)
 	}
 
 	callSource, err := getNodeAtLine(src, line)
@@ -43,17 +43,25 @@ func Message(args ...any) string {
 		return fmt.Sprintf("failed to lookup call expression: %v", err)
 	}
 
-	if len(callSource.CallExpr.Args) != len(args) {
+	if len(optionalWant) > 1 {
+		// TODO: print warning about too many args instead of exit
+		// TODO: auto-fix
+		return "too many optionalWant for " + vtMessageName
+	}
+	if len(callSource.CallExpr.Args) != 1+hasWants {
 		return msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
-
-	switch v := args[0].(type) {
+	switch v := got.(type) {
+	case nil:
+		n, _ := source.FormatNode(callSource.CallExpr.Args[0])
+		return fmt.Sprintf("%v is unable to produce a useful message, called with nil %v.",
+			vtMessageName, n)
 	case string:
 		// diff from cmp.Diff
 		// TODO:
 	case error:
-		// error from NilError
-		return handleSingleArgError(v, callSource)
+		// error comparison
+		return handleSingleArgError(v, want, callSource)
 
 	default:
 		// TODO:
@@ -62,7 +70,7 @@ func Message(args ...any) string {
 	return "TODO"
 }
 
-func handleSingleArgError(err error, callSource messageCallSource) string {
+func handleSingleArgError(err error, want any, callSource messageCallSource) string {
 	arg := callSource.CallExpr.Args[0]
 	ident, ok := arg.(*ast.Ident)
 	if !ok {
