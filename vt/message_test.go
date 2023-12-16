@@ -8,7 +8,7 @@ import (
 	"gotest.tools/v3/vt"
 )
 
-func TestMessage(t *testing.T) {
+func TestGot(t *testing.T) {
 	type testCase struct {
 		id   vt.TestID
 		fn   func(t *testing.T)
@@ -23,7 +23,7 @@ func TestMessage(t *testing.T) {
 			t.Fatalf("no result capture")
 		}
 		if got := ft.args[0]; got != tc.want {
-			t.Fatalf("Message(...)\ngot:  %v\nwant: %v", got, tc.want)
+			t.Fatalf("Got(...)\ngot:  %v\nwant: %v", got, tc.want)
 		}
 	}
 
@@ -36,7 +36,7 @@ func TestMessage(t *testing.T) {
 			id: vt.ID("err != nil assigned from function in if block"),
 			fn: func(t *testing.T) {
 				if err := someFunc("arga"); err != nil {
-					ft.Fatal(vt.Message(err))
+					ft.Fatal(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something`,
@@ -46,7 +46,7 @@ func TestMessage(t *testing.T) {
 			fn: func(t *testing.T) {
 				err := someFunc("arga")
 				if err != nil {
-					ft.Fatal(vt.Message(err))
+					ft.Fatal(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something`,
@@ -56,7 +56,7 @@ func TestMessage(t *testing.T) {
 			fn: func(t *testing.T) {
 				var err = someFunc("arga")
 				if err != nil {
-					ft.Fatal(vt.Message(err))
+					ft.Fatal(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something`,
@@ -68,7 +68,7 @@ func TestMessage(t *testing.T) {
 
 				err := someFunc("arga")
 				if !errors.Is(err, errSentinel) {
-					ft.Fatal(vt.Message(err))
+					ft.Fatal(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something, wanted errSentinel`,
@@ -79,7 +79,7 @@ func TestMessage(t *testing.T) {
 				err := someFunc("arga")
 				typedErr := &ErrorType{}
 				if !errors.As(err, &typedErr) {
-					ft.Fatal(vt.Message(err))
+					ft.Fatal(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something (*errors.errorString), wanted ErrorType`,

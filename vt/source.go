@@ -7,9 +7,27 @@ import (
 	"go/format"
 	"go/token"
 	"os"
+	"runtime"
 
 	"gotest.tools/v3/internal/source"
 )
+
+func getCallSource() (messageCallSource, error) {
+	_, filename, line, ok := runtime.Caller(2)
+	if !ok {
+		panic("failed to get call stack")
+	}
+	src, err := source.ReadFile(filename)
+	if err != nil {
+		return messageCallSource{}, fmt.Errorf("failed to read Go source file: %w", err)
+	}
+
+	callSource, err := getNodeAtLine(src, line)
+	if err != nil {
+		return messageCallSource{}, fmt.Errorf("failed to lookup call expression: %w", err)
+	}
+	return callSource, nil
+}
 
 type messageCallSource struct {
 	CallExpr *ast.CallExpr
@@ -63,7 +81,9 @@ func scanToLine(src source.FileSource, lineNum int) messageCallSource {
 			return true // not a call to vt.Message
 		}
 
-		if se.Sel.Name != "Message" {
+		switch se.Sel.Name {
+		case "Got", "GotWant":
+		default:
 			return true
 		}
 		x, ok := se.X.(*ast.Ident)

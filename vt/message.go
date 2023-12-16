@@ -4,77 +4,69 @@ import (
 	"fmt"
 	"go/ast"
 	"go/token"
-	"runtime"
 	"strings"
 
 	"gotest.tools/v3/internal/source"
 )
 
-// TODO colorize when in supported terminal
-const vtMessageName = "vt.Message"
-
 type msgResult struct {
-	got       any
-	want      any
-	extraArgs []any
+	got        any
+	want       any
+	vtFuncName string
 }
 
-func Message(got any, optionalWant ...any) string {
-	result := msgResult{got: got}
+func Got(got any) string {
+	// TODO colorize when in supported terminal
+	const vtFuncName = "vt.Got"
 
-	switch numWants := len(optionalWant); numWants {
-	case 0:
-	case 1:
-		result.want = optionalWant[0]
-	default:
-		result.want = optionalWant[0]
-		result.extraArgs = optionalWant[1:]
-	}
+	result := msgResult{got: got, vtFuncName: vtFuncName}
 
 	// TODO: check if got is an error type from this package and return early
 
-	_, filename, line, ok := runtime.Caller(1)
-	if !ok {
-		panic("failed to get call stack")
-	}
-	src, err := source.ReadFile(filename)
+	callSource, err := getCallSource()
 	if err != nil {
-		// TODO: include tips about how to prevent this?
-		return fmt.Sprintf("%v, but %v: failed to read Go source file: %v",
-			result.basicMsg(), vtMessageName, err)
+		// TODO: include tips about how to prevent this
+		return fmt.Sprintf("%v, but %v: %v", result.basicMsg(), vtFuncName, err)
+	}
+	if len(callSource.CallExpr.Args) != 1 {
+		return result.msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
 
-	callSource, err := getNodeAtLine(src, line)
-	if err != nil {
-		// TODO: include request for a bug report
-		return fmt.Sprintf("%v, but %v failed to lookup call expression: %v",
-			result.basicMsg(), vtMessageName, err)
-	}
-
-	if len(optionalWant) > 1 {
-		// TODO: move this into final message instad of exit early
-		// TODO: include text about auto-fix options
-		return "too many optionalWant for " + vtMessageName
-	}
-	if len(callSource.CallExpr.Args) != 1+len(optionalWant) {
-		return msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
-	}
 	switch v := got.(type) {
 	case nil:
 		n, _ := source.FormatNode(callSource.CallExpr.Args[0])
 		return fmt.Sprintf("%v is unable to produce a useful message, called with nil %v.",
-			vtMessageName, n)
+			vtFuncName, n)
 	case string:
 		// diff from cmp.Diff
 		// TODO:
 	case error:
 		// error comparison
-		return handleSingleArgError(v, result.want, callSource)
+		return result.handleSingleArgError(v, callSource)
+	}
+	// otherwise try for comparison to constant
+	// TODO:
 
-	default:
-		// TODO:
+	return "TODO"
+}
+
+func GotWant(got any, want any) string {
+	// TODO colorize when in supported terminal
+	const vtFuncName = "vt.GotWant"
+
+	result := msgResult{got: got}
+	callSource, err := getCallSource()
+	if err != nil {
+		// TODO: include tips about how to prevent this
+		return fmt.Sprintf("%v, but %v: %v", result.basicMsg(), vtFuncName, err)
+	}
+	if len(callSource.CallExpr.Args) != 2 {
+		return result.msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
 
+	// TODO: lookup comparison and switch on token
+
+	// TODO:
 	return "TODO"
 }
 
@@ -84,38 +76,35 @@ func (r msgResult) basicMsg() string {
 	if r.want != nil {
 		fmt.Fprintf(&buf, ", want=%v", r.want)
 	}
-	if len(r.extraArgs) > 0 {
-		fmt.Fprintf(&buf, ", extra=%v", r.extraArgs)
-	}
 	return buf.String()
 }
 
-func handleSingleArgError(err error, want any, callSource messageCallSource) string {
+func (r msgResult) handleSingleArgError(err error, callSource messageCallSource) string {
 	arg := callSource.CallExpr.Args[0]
 	ident, ok := arg.(*ast.Ident)
 	if !ok {
-		return msgUnexpectedAstNode(arg, "expected a variable as the argument")
+		return r.msgUnexpectedAstNode(arg, "expected a variable as the argument")
 	}
 
 	cond := callSource.IfStmt.Cond
 	if condIsErrNotNil(ident, cond) {
 		callExpr := exprFromObjDecl(ident)
-		return msgErrorFromExpr(err, callExpr, nil)
+		return r.msgErrorFromExpr(err, callExpr, nil)
 	}
 
 	if wantExpr, ok := condIsNotErrorsIs(ident, cond); ok {
 		callExpr := exprFromObjDecl(ident)
-		return msgErrorFromExpr(err, callExpr, wantExpr)
+		return r.msgErrorFromExpr(err, callExpr, wantExpr)
 	}
 
 	if wantExpr, ok := condIsNotErrorsAs(ident, cond); ok {
 		callExpr := exprFromObjDecl(ident)
-		msg := msgErrorFromExpr(err, callExpr, nil)
+		msg := r.msgErrorFromExpr(err, callExpr, nil)
 		n, _ := source.FormatNode(wantExpr)
 		return msg + fmt.Sprintf(" (%T), wanted %v", err, n)
 	}
 
-	return msgUnexpectedAstNode(ident, "unknown error comparison for variable")
+	return r.msgUnexpectedAstNode(ident, "unknown error comparison for variable")
 }
 
 func exprFromObjDecl(ident *ast.Ident) ast.Expr {
@@ -280,10 +269,10 @@ func condIsErrNotNil(errArg *ast.Ident, cond ast.Expr) bool {
 	return yIdent.Name == "nil"
 }
 
-func msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) string {
+func (r msgResult) msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) string {
 	call, ok := expr.(*ast.CallExpr)
 	if !ok {
-		return msgUnexpectedAstNode(expr, "expected a function call for the variable declaration")
+		return r.msgUnexpectedAstNode(expr, "expected a function call for the variable declaration")
 	}
 
 	// TODO: handle not an ident for the func
@@ -297,8 +286,8 @@ func msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) string {
 	return msg
 }
 
-func msgUnexpectedAstNode(node ast.Node, reason string) string {
+func (r msgResult) msgUnexpectedAstNode(node ast.Node, reason string) string {
 	// TODO: include details about args, and request for a bug report
 	n, _ := source.FormatNode(node)
-	return fmt.Sprintf("%v: %v, got %T:\n%v", vtMessageName, reason, node, n)
+	return fmt.Sprintf("%v: %v, got %T:\n%v", r.vtFuncName, reason, node, n)
 }
