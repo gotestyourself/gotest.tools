@@ -30,8 +30,12 @@ func getCallSource() (messageCallSource, error) {
 }
 
 type messageCallSource struct {
-	CallExpr *ast.CallExpr
-	IfStmt   *ast.IfStmt
+	FileSet        *token.FileSet
+	File           *ast.File
+	CallExpr       *ast.CallExpr
+	CallComments   []*ast.CommentGroup
+	IfStmt         *ast.IfStmt
+	IfStmtComments []*ast.CommentGroup
 }
 
 // TODO: defer support was removed
@@ -47,7 +51,11 @@ func getNodeAtLine(src source.FileSource, lineNum int) (messageCallSource, error
 func scanToLine(src source.FileSource, lineNum int) messageCallSource {
 	fileset := src.FileSet
 
+	cmap := ast.NewCommentMap(src.FileSet, src.AST, src.AST.Comments)
+
 	var result messageCallSource
+	result.File = src.AST
+	result.FileSet = src.FileSet
 
 	pre := func(current ast.Node) bool {
 		if current == nil || result.CallExpr != nil {
@@ -64,10 +72,15 @@ func scanToLine(src source.FileSource, lineNum int) messageCallSource {
 
 		if ifStmt, ok := current.(*ast.IfStmt); ok {
 			result.IfStmt = ifStmt
+			result.IfStmtComments = cmap[ifStmt]
 		}
 
 		if fileset.Position(current.End()).Line != lineNum {
 			return true // not yet at call expression
+		}
+
+		if len(result.CallComments) == 0 {
+			result.CallComments = cmap[current]
 		}
 
 		ce, ok := current.(*ast.CallExpr)

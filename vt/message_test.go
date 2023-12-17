@@ -110,6 +110,17 @@ func TestGot(t *testing.T) {
 			},
 			wantPrefix: "doAThing() returned a different result (-got +want):\n",
 		},
+		{
+			id: vt.ID("err != nil with comments"),
+			fn: func(t *testing.T) {
+				if err := someFunc("arga"); err != nil {
+					ft.Fatal(vt.Got(err)) // some was not available
+				}
+			},
+			want: `someFunc("arga") returned error: failed to do something
+some was not available
+`,
+		},
 
 		// TODO: cases for assignment from other expr? channel?
 		// TODO: cases for err != errSentinel, etc

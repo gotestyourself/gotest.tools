@@ -30,6 +30,7 @@ func handleSingleArgError(err error, r msgResult, callSource messageCallSource) 
 		callExpr := exprFromObjDecl(ident)
 		msg := r.msgErrorFromExpr(err, callExpr, nil)
 		n, _ := source.FormatNode(wantExpr)
+		// TODO: this breaks with comments, find a better way to include the type of err
 		return msg + fmt.Sprintf(" (%T), wanted %v", err, n)
 	}
 

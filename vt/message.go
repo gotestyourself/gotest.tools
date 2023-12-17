@@ -12,6 +12,7 @@ type msgResult struct {
 	got        any
 	want       any
 	vtFuncName string
+	callSource messageCallSource
 }
 
 func Got(got any) string {
@@ -30,6 +31,7 @@ func Got(got any) string {
 	if len(callSource.CallExpr.Args) != 1 {
 		return result.msgUnexpectedAstNode(callSource.CallExpr, "wrong number of args")
 	}
+	result.callSource = callSource
 
 	switch v := got.(type) {
 	case nil:
@@ -96,15 +98,25 @@ func (r msgResult) msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) str
 		return r.msgUnexpectedAstNode(expr, "expected a function call for the variable declaration")
 	}
 
+	var buf strings.Builder
+
 	// TODO: handle not an ident for the func
 	// TODO: remove args if longer than x.
 	n, _ := source.FormatNode(call)
-	msg := fmt.Sprintf("%v returned error: %v", n, err)
+
+	fmt.Fprintf(&buf, "%v returned error: %v", n, err)
 	if want != nil {
 		n, _ = source.FormatNode(want)
-		msg += fmt.Sprintf(", wanted %v", n)
+		fmt.Fprintf(&buf, ", wanted %v", n)
 	}
-	return msg
+	if len(r.callSource.CallComments) != 0 {
+		buf.WriteString("\n")
+		for _, item := range r.callSource.CallComments {
+			buf.WriteString(item.Text())
+		}
+	}
+
+	return buf.String()
 }
 
 func (r msgResult) msgUnexpectedAstNode(node ast.Node, reason string) string {
