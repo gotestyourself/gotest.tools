@@ -3,16 +3,19 @@ package vt_test
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"gotest.tools/v3/vt"
 )
 
 func TestGot(t *testing.T) {
 	type testCase struct {
-		id   vt.TestID
-		fn   func(t *testing.T)
-		want string
+		id         vt.TestID
+		fn         func(t *testing.T)
+		want       string
+		wantPrefix string
 	}
 
 	ft := &fakeT{}
@@ -22,6 +25,14 @@ func TestGot(t *testing.T) {
 		if len(ft.args) != 1 {
 			t.Fatalf("no result capture")
 		}
+
+		if tc.wantPrefix != "" {
+			if got := ft.args[0]; !strings.HasPrefix(got.(string), tc.wantPrefix) {
+				t.Fatalf("Got(...)\ngot:  %v\nwanted prefix: %v", got, tc.wantPrefix)
+			}
+			return
+		}
+
 		if got := ft.args[0]; got != tc.want {
 			t.Fatalf("Got(...)\ngot:  %v\nwant: %v", got, tc.want)
 		}
@@ -79,10 +90,25 @@ func TestGot(t *testing.T) {
 				err := someFunc("arga")
 				typedErr := &ErrorType{}
 				if !errors.As(err, &typedErr) {
-					ft.Fatal(vt.Got(err))
+					ft.Error(vt.Got(err))
 				}
 			},
 			want: `someFunc("arga") returned error: failed to do something (*errors.errorString), wanted ErrorType`,
+		},
+		{
+			id: vt.ID("cmp.Diff"),
+			fn: func(t *testing.T) {
+				doAThing := func() string {
+					return "the actual value"
+				}
+				want := "the wanted value"
+				got := doAThing()
+
+				if diff := cmp.Diff(got, want); diff != "" {
+					ft.Fatal(vt.Got(diff))
+				}
+			},
+			wantPrefix: "doAThing() returned a different result (-got +want):\n",
 		},
 
 		// TODO: cases for assignment from other expr? channel?
@@ -107,6 +133,10 @@ type fakeT struct {
 }
 
 func (f *fakeT) Fatal(args ...any) {
+	f.args = args
+}
+
+func (f *fakeT) Error(args ...any) {
 	f.args = args
 }
 

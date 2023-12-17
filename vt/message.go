@@ -34,15 +34,13 @@ func Got(got any) string {
 
 	switch v := got.(type) {
 	case nil:
-		n, _ := source.FormatNode(callSource.CallExpr.Args[0])
-		return fmt.Sprintf("%v is unable to produce a useful message, called with nil %v.",
-			vtFuncName, n)
+		// TODO: could be error comparison
 	case string:
 		// diff from cmp.Diff
-		// TODO:
+		return handleSingleArgString(v, result, callSource)
 	case error:
 		// error comparison
-		return result.handleSingleArgError(v, callSource)
+		return handleSingleArgError(v, result, callSource)
 	}
 	// otherwise try for comparison to constant
 	// TODO:
@@ -79,7 +77,7 @@ func (r msgResult) basicMsg() string {
 	return buf.String()
 }
 
-func (r msgResult) handleSingleArgError(err error, callSource messageCallSource) string {
+func handleSingleArgError(err error, r msgResult, callSource messageCallSource) string {
 	arg := callSource.CallExpr.Args[0]
 	ident, ok := arg.(*ast.Ident)
 	if !ok {
@@ -287,7 +285,8 @@ func (r msgResult) msgErrorFromExpr(err error, expr ast.Expr, want ast.Expr) str
 }
 
 func (r msgResult) msgUnexpectedAstNode(node ast.Node, reason string) string {
-	// TODO: include details about args, and request for a bug report
+	// TODO: include request for a bug report
 	n, _ := source.FormatNode(node)
-	return fmt.Sprintf("%v: %v, got %T:\n%v", r.vtFuncName, reason, node, n)
+	return fmt.Sprintf("%v, %v: %v, got %T:\n%v",
+		r.basicMsg(), r.vtFuncName, reason, node, n)
 }
