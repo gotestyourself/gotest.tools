@@ -10,14 +10,9 @@ import (
 
 // TestingT is the subset of [testing.T] used by [WaitOn]
 type TestingT interface {
-	LogT
-	FailNow()
-}
-
-// LogT is a logging interface that is passed to the [WaitOn] check function
-type LogT interface {
 	Helper()
 	Logf(format string, args ...interface{})
+	FailNow()
 }
 
 type delayKeyType struct{}
@@ -27,6 +22,8 @@ var delayKey = delayKeyType{}
 func WithDelay(ctx context.Context, delay time.Duration) context.Context {
 	return context.WithValue(ctx, delayKey, delay)
 }
+
+type Check func(ctx context.Context) error
 
 // WaitOn calls check until it returns non-nil error that is not [Continue], or
 // the timeout has elapsed. WaitOn sleeps between each call.
@@ -42,12 +39,12 @@ func WaitOn(ctx context.Context, t TestingT, check Check) {
 	t.Helper()
 
 	timeout := 10 * time.Second
-	if deadline, hasTimeout := ctx.Deadline(); !hasTimeout {
+	if deadline, hasTimeout := ctx.Deadline(); hasTimeout {
+		timeout = time.Until(deadline)
+	} else {
 		var cancel func()
 		ctx, cancel = context.WithTimeout(ctx, timeout)
 		defer cancel()
-	} else {
-		timeout = time.Until(deadline)
 	}
 
 	delay, ok := ctx.Value(delayKey).(time.Duration)
@@ -68,7 +65,7 @@ func WaitOn(ctx context.Context, t TestingT, check Check) {
 		}
 
 		go func() {
-			chResult <- check(ctx, t)
+			chResult <- check(ctx)
 		}()
 		select {
 		case <-ctx.Done():
@@ -84,7 +81,7 @@ func WaitOn(ctx context.Context, t TestingT, check Check) {
 					continue
 				}
 			case err != nil: // error before timeout
-				t.Logf("check failed before timeout: %s", err)
+				t.Logf("check failed: %s", err)
 				t.FailNow()
 			default:
 				return // success
@@ -92,8 +89,6 @@ func WaitOn(ctx context.Context, t TestingT, check Check) {
 		}
 	}
 }
-
-type Check func(ctx context.Context, r LogT) error
 
 // Continue wraps an error to indicate to [WaitOn] that it should continue
 // waiting.

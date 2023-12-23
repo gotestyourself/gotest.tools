@@ -32,7 +32,7 @@ func (t *fakeT) FailNow() {
 func TestWaitOn(t *testing.T) {
 	counter := 0
 	end := 4
-	check := func(ctx context.Context, t LogT) error {
+	check := func(ctx context.Context) error {
 		if counter == end {
 			return nil
 		}
@@ -48,7 +48,7 @@ func TestWaitOn(t *testing.T) {
 func TestWaitOnWithTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(ctx context.Context, t LogT) error {
+	check := func(ctx context.Context) error {
 		return Continue(errors.New("not done"))
 	}
 
@@ -64,7 +64,7 @@ func TestWaitOnWithTimeout(t *testing.T) {
 func TestWaitOnWithCheckTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(ctx context.Context, t LogT) error {
+	check := func(ctx context.Context) error {
 		time.Sleep(1 * time.Second)
 		return Continue(errors.New("not done"))
 	}
@@ -79,11 +79,11 @@ func TestWaitOnWithCheckTimeout(t *testing.T) {
 func TestWaitOnWithCheckError(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(ctx context.Context, t LogT) error {
+	check := func(ctx context.Context) error {
 		return fmt.Errorf("broke")
 	}
 
 	ctx := context.Background()
 	assert.Assert(t, cmp.Panics(func() { WaitOn(ctx, fakeT, check) }))
-	assert.Equal(t, "check failed before timeout: broke", fakeT.failed)
+	assert.Equal(t, "check failed: broke", fakeT.failed)
 }

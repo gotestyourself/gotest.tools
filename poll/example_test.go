@@ -17,7 +17,8 @@ func numOfProcesses() (int, error) {
 func ExampleWaitOn() {
 	desired := 10
 
-	check := func(ctx context.Context, t poll.LogT) error {
+	ctx := context.Background()
+	poll.WaitOn(ctx, t, func(ctx context.Context) error {
 		actual, err := numOfProcesses()
 		if err != nil {
 			return fmt.Errorf("failed to get number of processes: %w", err)
@@ -27,26 +28,21 @@ func ExampleWaitOn() {
 		}
 		t.Logf("waiting on process count to be %d...", desired)
 		return poll.Continue(fmt.Errorf("number of processes is %d, not %d", actual, desired))
-	}
-
-	ctx := context.Background()
-	poll.WaitOn(ctx, t, check)
+	})
 }
 
 func isDesiredState() bool { return false }
 func getState() string     { return "" }
 
-func ExampleSettingOp() {
-	check := func(ctx context.Context, t poll.LogT) error {
+func ExampleWaitOn_WithDelay() {
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	poll.WaitOn(poll.WithDelay(ctx, 33*time.Millisecond), t, func(ctx context.Context) error {
 		if isDesiredState() {
 			return nil
 		}
 		return poll.Continue(fmt.Errorf("state is: %s", getState()))
-	}
-
-	ctx := poll.WithDelay(context.Background(), 33*time.Millisecond)
-	ctx, cancel := context.WithTimeout(ctx, time.Second)
-	defer cancel()
-
-	poll.WaitOn(ctx, t, check)
+	})
 }
