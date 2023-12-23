@@ -154,3 +154,25 @@ func (f *fakeT) Error(args ...any) {
 func (f *fakeT) Reset() {
 	f.args = nil
 }
+
+func TestGotWant(t *testing.T) {
+	type testCase struct {
+		name string
+		got  []any
+		want string
+	}
+
+	run := func(t *testing.T, tc testCase) {
+
+	}
+
+	for _, tc := range []testCase{
+		{
+			name: "",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			run(t, tc)
+		})
+	}
+}
