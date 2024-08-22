@@ -35,7 +35,7 @@ func isDesiredState() bool { return false }
 func getState() string     { return "" }
 
 func ExampleSettingOp() {
-	check := func(t poll.LogT) poll.Result {
+	check := func(poll.LogT) poll.Result {
 		if isDesiredState() {
 			return poll.Success()
 		}
