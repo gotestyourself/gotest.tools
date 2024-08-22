@@ -246,7 +246,7 @@ func TestCheckEqualFailure(t *testing.T) {
 func TestCheck_MultipleFunctionsOnTheSameLine(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
-	f := func(b bool) {}
+	f := func(bool) {}
 	f(Check(fakeT, false))
 	// TODO: update the expected when there is a more correct fix
 	expectFailed(t, fakeT,
