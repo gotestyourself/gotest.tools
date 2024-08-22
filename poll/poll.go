@@ -151,7 +151,7 @@ func Compare(compare cmp.Comparison) Result {
 	if assert.RunComparison(buf, assert.ArgsAtZeroIndex, compare) {
 		return Success()
 	}
-	return Continue(buf.String())
+	return Continue("%v", buf.String())
 }
 
 type logBuffer struct {
