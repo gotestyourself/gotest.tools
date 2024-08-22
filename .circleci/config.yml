@@ -24,10 +24,10 @@ workflows:
             tag:  1.19-alpine
           post-steps: *xgenerics
       - go/test:
-          name: test-golang-1.20
+          name: test-golang-1.22
           executor:
             name: go/golang
-            tag:  1.20-alpine
+            tag:  1.22-alpine
       - go/test:
           name: test-windows
           executor: windows
@@ -36,7 +36,6 @@ workflows:
                 git config --global core.autocrlf false
                 git config --global core.symlinks true
             - run: |
-                choco install golang --allow-downgrade --version=1.20
                 echo 'export PATH="$PATH:/c/Program Files/Go/bin"' > $BASH_ENV
             - run: go version
 
