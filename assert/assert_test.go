@@ -105,12 +105,14 @@ func TestAssertWithBoolMultiLineFailure(t *testing.T) {
 	fakeT := &fakeTestingT{}
 
 	Assert(fakeT, func() bool {
-		for range []int{1, 2, 3, 4} {
+		for i := range []int{1, 2, 3, 4} {
+			_ = i
 		}
 		return false
 	}())
 	expectFailNowed(t, fakeT, `assertion failed: expression is false: func() bool {
-	for range []int{1, 2, 3, 4} {
+	for i := range []int{1, 2, 3, 4} {
+		_ = i
 	}
 	return false
 }()`)
