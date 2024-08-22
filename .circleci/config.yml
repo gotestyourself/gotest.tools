@@ -36,7 +36,7 @@ workflows:
                 git config --global core.autocrlf false
                 git config --global core.symlinks true
             - run: |
-                choco upgrade golang
+                choco install golang --allow-downgrade --version=1.20
                 echo 'export PATH="$PATH:/c/Program Files/Go/bin"' > $BASH_ENV
             - run: go version
 
