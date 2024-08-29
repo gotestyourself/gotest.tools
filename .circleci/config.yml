@@ -30,6 +30,24 @@ workflows:
             tag:  1.20-alpine
           post-steps: *xgenerics
       - go/test:
+          name: test-golang-1.21
+          executor:
+            name: go/golang
+            tag:  1.21-alpine
+          post-steps: *xgenerics
+      - go/test:
+          name: test-golang-1.22
+          executor:
+            name: go/golang
+            tag:  1.22-alpine
+          post-steps: *xgenerics
+      - go/test:
+          name: test-golang-1.23
+          executor:
+            name: go/golang
+            tag:  1.23-alpine
+          post-steps: *xgenerics
+      - go/test:
           name: test-windows
           executor: windows
           pre-steps:
