@@ -12,17 +12,11 @@ workflows:
           executor:
             name: go/golang
             tag:  1.18-alpine
-          post-steps: &xgenerics
-            - run:
-                name: "test x/generics"
-                working_directory: ./x/generics
-                command: gotestsum -ftestname
       - go/test:
           name: test-golang-1.19
           executor:
             name: go/golang
             tag:  1.19-alpine
-          post-steps: *xgenerics
       - go/test:
           name: test-golang-1.20
           executor:
@@ -61,8 +55,4 @@ jobs:
     - go/install: {package: git}
     - run:
         name: Lint
-        command: golangci-lint run -v --concurrency 2
-    - run:
-        name: Lint x/generics
-        working_directory: ./x/generics
         command: golangci-lint run -v --concurrency 2
