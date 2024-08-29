@@ -44,7 +44,7 @@ func ExampleRun_tableTest() {
 	}
 }
 
-func startFakeService(t subtest.TestContext) string {
+func startFakeService(_ subtest.TestContext) string {
 	return "url"
 }
 

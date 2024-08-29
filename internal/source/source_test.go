@@ -47,13 +47,13 @@ func shim(_, _, _ string) (string, error) {
 
 func TestFormattedCallExprArg_InDefer(t *testing.T) {
 	skip.If(t, isGoVersion18)
-	cap := &capture{}
+	c := &capture{}
 	func() {
-		defer cap.shim("first", "second")
+		defer c.shim("first", "second")
 	}()
 
-	assert.NilError(t, cap.err)
-	assert.Equal(t, cap.value, `"second"`)
+	assert.NilError(t, c.err)
+	assert.Equal(t, c.value, `"second"`)
 }
 
 func isGoVersion18() bool {
@@ -70,25 +70,25 @@ func (c *capture) shim(_, _ string) {
 }
 
 func TestFormattedCallExprArg_InAnonymousDefer(t *testing.T) {
-	cap := &capture{}
+	c := &capture{}
 	func() {
 		fmt.Println()
 		defer fmt.Println()
-		defer func() { cap.shim("first", "second") }()
+		defer func() { c.shim("first", "second") }()
 	}()
 
-	assert.NilError(t, cap.err)
-	assert.Equal(t, cap.value, `"second"`)
+	assert.NilError(t, c.err)
+	assert.Equal(t, c.value, `"second"`)
 }
 
 func TestFormattedCallExprArg_InDeferMultipleDefers(t *testing.T) {
 	skip.If(t, isGoVersion18)
-	cap := &capture{}
+	c := &capture{}
 	func() {
 		fmt.Println()
 		defer fmt.Println()
-		defer cap.shim("first", "second")
+		defer c.shim("first", "second")
 	}()
 
-	assert.ErrorContains(t, cap.err, "ambiguous call expression")
+	assert.ErrorContains(t, c.err, "ambiguous call expression")
 }

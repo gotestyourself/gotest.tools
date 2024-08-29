@@ -261,5 +261,5 @@ func TestPathDebug(t *testing.T) {
 			"label1": {},
 		},
 	}
-	gocmp.Equal(fixture, fixture, gocmp.FilterPath(PathDebug, gocmp.Ignore()))
+	assert.Check(t, gocmp.Equal(fixture, fixture, gocmp.FilterPath(PathDebug, gocmp.Ignore())))
 }

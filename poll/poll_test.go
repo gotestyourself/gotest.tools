@@ -18,9 +18,9 @@ func (t *fakeT) Fatalf(format string, args ...interface{}) {
 	panic("exit wait on")
 }
 
-func (t *fakeT) Log(args ...interface{}) {}
+func (t *fakeT) Log(...interface{}) {}
 
-func (t *fakeT) Logf(format string, args ...interface{}) {}
+func (t *fakeT) Logf(string, ...interface{}) {}
 
 func TestContinueMessage(t *testing.T) {
 	tests := []struct {
@@ -52,7 +52,7 @@ func TestContinueMessage(t *testing.T) {
 func TestWaitOn(t *testing.T) {
 	counter := 0
 	end := 4
-	check := func(t LogT) Result {
+	check := func(LogT) Result {
 		if counter == end {
 			return Success()
 		}
@@ -67,7 +67,7 @@ func TestWaitOn(t *testing.T) {
 func TestWaitOnWithTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
+	check := func(LogT) Result {
 		return Continue("not done")
 	}
 
@@ -80,7 +80,7 @@ func TestWaitOnWithTimeout(t *testing.T) {
 func TestWaitOnWithCheckTimeout(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
+	check := func(LogT) Result {
 		time.Sleep(1 * time.Second)
 		return Continue("not done")
 	}
@@ -92,7 +92,7 @@ func TestWaitOnWithCheckTimeout(t *testing.T) {
 func TestWaitOnWithCheckError(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
+	check := func(LogT) Result {
 		return Error(fmt.Errorf("broke"))
 	}
 
@@ -103,7 +103,7 @@ func TestWaitOnWithCheckError(t *testing.T) {
 func TestWaitOn_WithCompare(t *testing.T) {
 	fakeT := &fakeT{}
 
-	check := func(t LogT) Result {
+	check := func(LogT) Result {
 		return Compare(cmp.Equal(3, 4))
 	}
 

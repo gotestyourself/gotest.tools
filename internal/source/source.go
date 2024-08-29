@@ -72,7 +72,7 @@ func getNodeAtLine(fileset *token.FileSet, astFile ast.Node, lineNum int) (ast.N
 			return node, err
 		}
 	}
-	return nil, nil
+	return nil, errors.New("failed to find expression")
 }
 
 func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
@@ -92,11 +92,8 @@ func scanToLine(fileset *token.FileSet, node ast.Node, lineNum int) ast.Node {
 
 func getCallExprArgs(fileset *token.FileSet, astFile ast.Node, line int) ([]ast.Expr, error) {
 	node, err := getNodeAtLine(fileset, astFile, line)
-	switch {
-	case err != nil:
+	if err != nil {
 		return nil, err
-	case node == nil:
-		return nil, fmt.Errorf("failed to find an expression")
 	}
 
 	debug("found node: %s", debugFormatNode{node})
@@ -104,7 +101,7 @@ func getCallExprArgs(fileset *token.FileSet, astFile ast.Node, line int) ([]ast.
 	visitor := &callExprVisitor{}
 	ast.Walk(visitor, node)
 	if visitor.expr == nil {
-		return nil, errors.New("failed to find call expression")
+		return nil, errors.New("failed to find an expression")
 	}
 	debug("callExpr: %s", debugFormatNode{visitor.expr})
 	return visitor.expr.Args, nil

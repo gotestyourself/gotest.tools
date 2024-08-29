@@ -184,7 +184,7 @@ func TestMatchFileContent(t *testing.T) {
 	defer dir.Remove()
 
 	t.Run("content matches", func(t *testing.T) {
-		matcher := func(b []byte) CompareResult {
+		matcher := func([]byte) CompareResult {
 			return is.ResultSuccess
 		}
 		manifest := Expected(t,
@@ -193,7 +193,7 @@ func TestMatchFileContent(t *testing.T) {
 	})
 
 	t.Run("content does not match", func(t *testing.T) {
-		matcher := func(b []byte) CompareResult {
+		matcher := func([]byte) CompareResult {
 			return is.ResultFailure("data content differs from expected")
 		}
 		manifest := Expected(t,
