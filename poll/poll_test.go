@@ -22,6 +22,33 @@ func (t *fakeT) Log(args ...interface{}) {}
 
 func (t *fakeT) Logf(format string, args ...interface{}) {}
 
+func TestContinueMessage(t *testing.T) {
+	tests := []struct {
+		msg      string
+		args     []interface{}
+		expected string
+	}{
+		{
+			msg:      "literal message",
+			expected: "literal message",
+		},
+		{
+			msg:      "templated %s",
+			args:     []interface{}{"message"},
+			expected: "templated message",
+		},
+		{
+			msg:      "literal message with percentage symbols (%USERPROFILE%)",
+			expected: "literal message with percentage symbols (%USERPROFILE%)",
+		},
+	}
+
+	for _, tc := range tests {
+		actual := Continue(tc.msg, tc.args...).Message()
+		assert.Check(t, cmp.Equal(tc.expected, actual))
+	}
+}
+
 func TestWaitOn(t *testing.T) {
 	counter := 0
 	end := 4
