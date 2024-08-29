@@ -8,7 +8,7 @@ A collection of packages to augment `testing` and support common patterns.
 
 ## Usage
 
-With Go modules enabled (go1.11+)
+With Go modules enabled
 
 ```
 $ go get gotest.tools/v3
@@ -17,10 +17,6 @@ $ go get gotest.tools/v3
 ```
 import "gotest.tools/v3/assert"
 ```
-
-To use `gotest.tools` with an older version of Go that does not understand Go
-module paths pin to version `v2.3.0`.
-
 
 ## Packages
 
