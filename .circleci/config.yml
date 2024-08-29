@@ -73,12 +73,12 @@ jobs:
   lint:
     executor:
       name: go/golang
-      tag:  1.20-alpine
+      tag:  1.23-alpine
     steps:
     - checkout
     - go/install-golangci-lint:
-        prefix: v1.51.1
-        version: 1.51.1
+        prefix: v1.60.3
+        version: 1.60.3
     - go/install: {package: git}
     - run:
         name: Lint
