@@ -3,7 +3,6 @@ package fs_test
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
@@ -31,14 +30,8 @@ func TestFromDirSymlink(t *testing.T) {
 	dir := fs.NewDir(t, "test-from-dir", fs.FromDir("testdata/copy-test-with-symlink"))
 	defer dir.Remove()
 
-	currentdir, err := os.Getwd()
-	assert.NilError(t, err)
-
 	link2 := filepath.FromSlash("../2")
-	link3 := "/some/inexistent/link"
-	if runtime.GOOS == "windows" {
-		link3 = filepath.Join(filepath.VolumeName(currentdir), link3)
-	}
+	link3 := filepath.FromSlash("/some/inexistent/link")
 
 	expected := fs.Expected(t,
 		fs.WithFile("1", "1\n"),
