@@ -8,27 +8,15 @@ workflows:
     jobs:
       - lint
       - go/test:
-          name: test-golang-1.18
+          name: test-golang-1.20
           executor:
             name: go/golang
-            tag:  1.18-alpine
+            tag:  1.20-alpine
           post-steps: &xgenerics
             - run:
                 name: "test x/generics"
                 working_directory: ./x/generics
                 command: gotestsum -ftestname
-      - go/test:
-          name: test-golang-1.19
-          executor:
-            name: go/golang
-            tag:  1.19-alpine
-          post-steps: *xgenerics
-      - go/test:
-          name: test-golang-1.20
-          executor:
-            name: go/golang
-            tag:  1.20-alpine
-          post-steps: *xgenerics
       - go/test:
           name: test-golang-1.21
           executor:
