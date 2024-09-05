@@ -8,26 +8,33 @@ workflows:
     jobs:
       - lint
       - go/test:
-          name: test-golang-1.18
+          name: test-golang-1.20
           executor:
             name: go/golang
-            tag:  1.18-alpine
+            tag:  1.20-alpine
           post-steps: &xgenerics
             - run:
                 name: "test x/generics"
                 working_directory: ./x/generics
                 command: gotestsum -ftestname
       - go/test:
-          name: test-golang-1.19
+          name: test-golang-1.21
           executor:
             name: go/golang
-            tag:  1.19-alpine
+            tag:  1.21-alpine
           post-steps: *xgenerics
       - go/test:
-          name: test-golang-1.20
+          name: test-golang-1.22
           executor:
             name: go/golang
-            tag:  1.20-alpine
+            tag:  1.22-alpine
+          post-steps: *xgenerics
+      - go/test:
+          name: test-golang-1.23
+          executor:
+            name: go/golang
+            tag:  1.23-alpine
+          post-steps: *xgenerics
       - go/test:
           name: test-windows
           executor: windows
@@ -39,6 +46,8 @@ workflows:
                 choco upgrade golang
                 echo 'export PATH="$PATH:/c/Program Files/Go/bin"' > $BASH_ENV
             - run: go version
+            - run: go install gotest.tools/gotestsum@latest
+          post-steps: *xgenerics
 
 executors:
   windows:
@@ -52,12 +61,12 @@ jobs:
   lint:
     executor:
       name: go/golang
-      tag:  1.20-alpine
+      tag:  1.23-alpine
     steps:
     - checkout
     - go/install-golangci-lint:
-        prefix: v1.51.1
-        version: 1.51.1
+        prefix: v1.60.3
+        version: 1.60.3
     - go/install: {package: git}
     - run:
         name: Lint
