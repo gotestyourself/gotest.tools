@@ -2,6 +2,7 @@ package poll
 
 import (
 	"fmt"
+	"net"
 	"os"
 	"testing"
 
@@ -35,8 +36,12 @@ func TestWaitOnSocketWithTimeout(t *testing.T) {
 		assert.Equal(t, r.Message(), "socket tcp://foo.bar:55555 not available")
 	})
 
-	t.Run("connection to ", func(t *testing.T) {
-		check := Connection("tcp", "google.com:80")
+	t.Run("connection to available address", func(t *testing.T) {
+		listener, err := net.Listen("tcp", "127.0.0.1:0")
+		assert.NilError(t, err)
+		defer listener.Close()
+
+		check := Connection("tcp", listener.Addr().String())
 		assert.Assert(t, check(t).Done())
 	})
 }
