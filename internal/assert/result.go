@@ -21,13 +21,13 @@ func RunComparison(
 	if ht, ok := t.(helperT); ok {
 		ht.Helper()
 	}
-	result := f()
-	if result.Success() {
+	res := f()
+	if res.Success() {
 		return true
 	}
 
 	if source.IsUpdate() {
-		if updater, ok := result.(updateExpected); ok {
+		if updater, ok := res.(updateExpected); ok {
 			const stackIndex = 3 // Assert/Check, assert, RunComparison
 			err := updater.UpdatedExpected(stackIndex)
 			switch {
@@ -43,7 +43,7 @@ func RunComparison(
 	}
 
 	var message string
-	switch typed := result.(type) {
+	switch typed := res.(type) {
 	case resultWithComparisonArgs:
 		const stackIndex = 3 // Assert/Check, assert, RunComparison
 		args, err := source.CallExprArgs(stackIndex)
@@ -54,7 +54,7 @@ func RunComparison(
 	case resultBasic:
 		message = typed.FailureMessage()
 	default:
-		message = fmt.Sprintf("comparison returned invalid Result type: %T", result)
+		message = fmt.Sprintf("comparison returned invalid Result type: %T", res)
 	}
 
 	t.Log(format.WithCustomMessage(failureMessage+message, msgAndArgs...))
@@ -82,19 +82,19 @@ type updateExpected interface {
 // their value, which is already available.
 // Other types are ignored for now, but could be added if they are relevant.
 func filterPrintableExpr(args []ast.Expr) []ast.Expr {
-	result := make([]ast.Expr, len(args))
+	res := make([]ast.Expr, len(args))
 	for i, arg := range args {
 		if isShortPrintableExpr(arg) {
-			result[i] = arg
+			res[i] = arg
 			continue
 		}
 
 		if starExpr, ok := arg.(*ast.StarExpr); ok {
-			result[i] = starExpr.X
+			res[i] = starExpr.X
 			continue
 		}
 	}
-	return result
+	return res
 }
 
 func isShortPrintableExpr(expr ast.Expr) bool {
