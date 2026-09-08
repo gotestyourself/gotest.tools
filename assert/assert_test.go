@@ -517,3 +517,41 @@ string "foo" does not contain "baz"`,
 		})
 	}
 }
+
+func TestCheckNotFailure(t *testing.T) {
+	tests := []struct {
+		name  string
+		check func(*fakeTestingT)
+		want  string
+	}{
+		{
+			name: "comparison",
+			check: func(fakeT *fakeTestingT) {
+				actual := 1
+				Check(fakeT, cmp.Not(cmp.Equal(actual, 1)))
+			},
+			want: `assertion failed: expected cmp.Equal(actual, 1) to fail`,
+		},
+		{
+			name: "composite comparison",
+			check: func(fakeT *fakeTestingT) {
+				actual := 1
+				Check(fakeT, cmp.Not(cmp.Any(
+					cmp.Equal(actual, 1),
+					cmp.Equal(actual, 2),
+				)))
+			},
+			want: `assertion failed: expected cmp.Any(cmp.Equal(actual, 1), cmp.Equal(actual, 2)) to fail`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeT := &fakeTestingT{}
+
+			tc.check(fakeT)
+
+			expectFailed(t, fakeT, tc.want)
+		})
+	}
+}

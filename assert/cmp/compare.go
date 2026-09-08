@@ -416,3 +416,13 @@ func Any(comparisons ...Comparison) Comparison {
 		return anyResult{results: results}
 	}
 }
+
+// Not returns a Comparison that succeeds if comparison fails.
+func Not(comparison Comparison) Comparison {
+	return func() Result {
+		if !comparison().Success() {
+			return ResultSuccess
+		}
+		return notResult{}
+	}
+}
