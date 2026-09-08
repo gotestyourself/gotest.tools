@@ -2,6 +2,7 @@ package fs
 
 import (
 	"fmt"
+	"os"
 	"path/filepath"
 	"runtime"
 	"testing"
@@ -12,13 +13,14 @@ import (
 )
 
 func TestEqualMissingRoot(t *testing.T) {
-	result := Equal("/bogus/path/does/not/exist", Expected(t))()
+	const path = "/bogus/path/does/not/exist"
+
+	_, err := os.Stat(path)
+	assert.Assert(t, err != nil)
+
+	result := Equal(path, Expected(t))()
 	assert.Assert(t, !result.Success())
-	expected := "stat /bogus/path/does/not/exist: no such file or directory"
-	if runtime.GOOS == "windows" {
-		expected = "CreateFile /bogus/path/does/not/exist"
-	}
-	assert.Assert(t, is.Contains(result.(cmpFailure).FailureMessage(), expected))
+	assert.Assert(t, is.Contains(result.(cmpFailure).FailureMessage(), err.Error()))
 }
 
 func TestEqualModeMismatch(t *testing.T) {
