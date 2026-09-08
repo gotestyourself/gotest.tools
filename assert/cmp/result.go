@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"go/ast"
 	"reflect"
+	"strings"
 	"text/template"
 
+	"gotest.tools/v3/internal/result"
 	"gotest.tools/v3/internal/source"
 )
 
@@ -107,4 +109,28 @@ func renderMessage(result templatedResult, args []ast.Expr) (string, error) {
 		"Data": result.data,
 	})
 	return buf.String(), err
+}
+
+type anyResult struct {
+	results []Result
+}
+
+func (r anyResult) Success() bool {
+	return false
+}
+
+func (r anyResult) FailureMessageRaw(args []ast.Expr) string {
+	messages := make([]string, 0, len(r.results))
+	for i, res := range r.results {
+		var childArgs []ast.Expr
+		if i < len(args) {
+			if call, ok := args[i].(*ast.CallExpr); ok {
+				childArgs = call.Args
+			}
+		}
+
+		messages = append(messages, result.FailureMessage(res, childArgs))
+	}
+
+	return "none of the comparisons succeeded:\n" + strings.Join(messages, "\n")
 }

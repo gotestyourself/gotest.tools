@@ -401,3 +401,18 @@ func ErrorIs(actual error, expected error) Comparison {
 			map[string]interface{}{"a": actual, "x": expected})
 	}
 }
+
+// Any returns a Comparison that succeeds if any of the comparisons succeed.
+func Any(comparisons ...Comparison) Comparison {
+	return func() Result {
+		results := make([]Result, 0, len(comparisons))
+		for _, comparison := range comparisons {
+			res := comparison()
+			if res.Success() {
+				return ResultSuccess
+			}
+			results = append(results, res)
+		}
+		return anyResult{results: results}
+	}
+}
