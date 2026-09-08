@@ -518,6 +518,20 @@ string "foo" does not contain "baz"`,
 	}
 }
 
+func TestCheckAllFailure(t *testing.T) {
+	fakeT := &fakeTestingT{}
+
+	actual := 1
+	expected := 2
+
+	Check(fakeT, cmp.All(
+		cmp.Equal(actual, actual),
+		cmp.Equal(actual, expected),
+	))
+
+	expectFailed(t, fakeT, `assertion failed: 1 (actual int) != 2 (expected int)`)
+}
+
 func TestCheckNotFailure(t *testing.T) {
 	tests := []struct {
 		name  string

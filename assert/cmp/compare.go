@@ -417,6 +417,22 @@ func Any(comparisons ...Comparison) Comparison {
 	}
 }
 
+// All returns a Comparison that succeeds if all comparisons succeed.
+func All(comparisons ...Comparison) Comparison {
+	return func() Result {
+		for i, comparison := range comparisons {
+			res := comparison()
+			if !res.Success() {
+				return allResult{
+					result: res,
+					index:  i,
+				}
+			}
+		}
+		return ResultSuccess
+	}
+}
+
 // Not returns a Comparison that succeeds if comparison fails.
 func Not(comparison Comparison) Comparison {
 	return func() Result {

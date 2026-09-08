@@ -135,6 +135,28 @@ func (r anyResult) FailureMessageRaw(args []ast.Expr) string {
 	return "none of the comparisons succeeded:\n" + strings.Join(messages, "\n")
 }
 
+type allResult struct {
+	result Result
+	index  int
+}
+
+func (r allResult) Success() bool {
+	return false
+}
+
+func (r allResult) FailureMessageRaw(args []ast.Expr) string {
+	if r.index >= len(args) {
+		return result.FailureMessage(r.result, nil)
+	}
+
+	call, ok := args[r.index].(*ast.CallExpr)
+	if !ok {
+		return result.FailureMessage(r.result, nil)
+	}
+
+	return result.FailureMessage(r.result, call.Args)
+}
+
 type notResult struct{}
 
 func (notResult) Success() bool {
