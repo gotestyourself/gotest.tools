@@ -10,6 +10,10 @@ type withComparisonArgs interface {
 	FailureMessage(args []ast.Expr) string
 }
 
+type withRawComparisonArgs interface {
+	FailureMessageRaw(args []ast.Expr) string
+}
+
 type basic interface {
 	FailureMessage() string
 }
@@ -19,6 +23,8 @@ type basic interface {
 // are useful when printed.
 func FailureMessage(result interface{}, args []ast.Expr) string {
 	switch typed := result.(type) {
+	case withRawComparisonArgs:
+		return typed.FailureMessageRaw(args)
 	case withComparisonArgs:
 		return typed.FailureMessage(filterPrintableExpr(args))
 	case basic:
@@ -31,8 +37,12 @@ func FailureMessage(result interface{}, args []ast.Expr) string {
 // UsesArgs reports whether result requires comparison arguments to
 // produce its failure message.
 func UsesArgs(result interface{}) bool {
-	_, ok := result.(withComparisonArgs)
-	return ok
+	switch result.(type) {
+	case withRawComparisonArgs, withComparisonArgs:
+		return true
+	default:
+		return false
+	}
 }
 
 // filterPrintableExpr filters the ast.Expr slice to only include Expr that are

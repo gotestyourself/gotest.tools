@@ -28,6 +28,21 @@ func (argsResult) FailureMessage(args []ast.Expr) string {
 	}
 }
 
+type rawArgsResult struct{}
+
+func (rawArgsResult) FailureMessageRaw(args []ast.Expr) string {
+	if len(args) != 1 {
+		return "unexpected args"
+	}
+	if args[0] == nil {
+		return "arg missing"
+	}
+	if _, ok := args[0].(*ast.CallExpr); !ok {
+		return "unexpected arg type"
+	}
+	return "raw args"
+}
+
 func TestFailureMessage(t *testing.T) {
 	tests := []struct {
 		name   string
@@ -53,6 +68,14 @@ func TestFailureMessage(t *testing.T) {
 			name:   "invalid result",
 			result: struct{}{},
 			want:   "comparison returned invalid Result type: struct {}",
+		},
+		{
+			name:   "with raw comparison args",
+			result: rawArgsResult{},
+			args: []ast.Expr{
+				&ast.CallExpr{},
+			},
+			want: "raw args",
 		},
 	}
 
@@ -81,6 +104,11 @@ func TestUsesArgs(t *testing.T) {
 			name:   "basic",
 			result: basicResult{},
 			want:   false,
+		},
+		{
+			name:   "with raw comparison args",
+			result: rawArgsResult{},
+			want:   true,
 		},
 	}
 
