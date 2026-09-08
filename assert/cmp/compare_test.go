@@ -678,3 +678,49 @@ func TestErrorIs(t *testing.T) {
 		assertFailureTemplate(t, result, args, expected)
 	})
 }
+
+func TestAny(t *testing.T) {
+	tests := []struct {
+		name        string
+		comparisons []Comparison
+		want        bool
+	}{
+		{
+			name: "one succeeds",
+			comparisons: []Comparison{
+				Equal(1, 2),
+				Equal(1, 1),
+			},
+			want: true,
+		},
+		{
+			name: "all succeed",
+			comparisons: []Comparison{
+				Equal(1, 1),
+				Equal(2, 2),
+			},
+			want: true,
+		},
+		{
+			name: "all fail",
+			comparisons: []Comparison{
+				Equal(1, 2),
+				Equal(1, 3),
+			},
+			want: false,
+		},
+		{
+			name: "no comparisons",
+			want: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Any(tc.comparisons...)()
+			if got.Success() != tc.want {
+				t.Fatalf("Any().Success() = %v; want %v", got.Success(), tc.want)
+			}
+		})
+	}
+}
