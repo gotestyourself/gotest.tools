@@ -724,3 +724,47 @@ func TestAny(t *testing.T) {
 		})
 	}
 }
+
+func TestNot(t *testing.T) {
+	tests := []struct {
+		name       string
+		comparison Comparison
+		want       bool
+	}{
+		{
+			name:       "comparison succeeds",
+			comparison: Equal(1, 1),
+			want:       false,
+		},
+		{
+			name:       "comparison fails",
+			comparison: Equal(1, 2),
+			want:       true,
+		},
+		{
+			name: "any succeeds",
+			comparison: Any(
+				Equal(1, 1),
+				Equal(2, 3),
+			),
+			want: false,
+		},
+		{
+			name: "any fails",
+			comparison: Any(
+				Equal(1, 2),
+				Equal(2, 3),
+			),
+			want: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Not(tc.comparison)()
+			if got.Success() != tc.want {
+				t.Fatalf("Not().Success() = %v; want %v", got.Success(), tc.want)
+			}
+		})
+	}
+}

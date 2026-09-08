@@ -134,3 +134,27 @@ func (r anyResult) FailureMessageRaw(args []ast.Expr) string {
 
 	return "none of the comparisons succeeded:\n" + strings.Join(messages, "\n")
 }
+
+type notResult struct{}
+
+func (notResult) Success() bool {
+	return false
+}
+
+func (notResult) FailureMessageRaw(args []ast.Expr) string {
+	if len(args) == 0 {
+		return "expected comparison to fail"
+	}
+
+	call, ok := args[0].(*ast.CallExpr)
+	if !ok {
+		return "expected comparison to fail"
+	}
+
+	expr, err := source.FormatNode(call)
+	if err != nil {
+		return "expected comparison to fail"
+	}
+
+	return fmt.Sprintf("expected %s to fail", expr)
+}
