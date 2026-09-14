@@ -678,3 +678,139 @@ func TestErrorIs(t *testing.T) {
 		assertFailureTemplate(t, result, args, expected)
 	})
 }
+
+func TestAny(t *testing.T) {
+	tests := []struct {
+		name        string
+		comparisons []Comparison
+		want        bool
+	}{
+		{
+			name: "one succeeds",
+			comparisons: []Comparison{
+				Equal(1, 2),
+				Equal(1, 1),
+			},
+			want: true,
+		},
+		{
+			name: "all succeed",
+			comparisons: []Comparison{
+				Equal(1, 1),
+				Equal(2, 2),
+			},
+			want: true,
+		},
+		{
+			name: "all fail",
+			comparisons: []Comparison{
+				Equal(1, 2),
+				Equal(1, 3),
+			},
+			want: false,
+		},
+		{
+			name: "no comparisons",
+			want: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Any(tc.comparisons...)()
+			if got.Success() != tc.want {
+				t.Fatalf("Any().Success() = %v; want %v", got.Success(), tc.want)
+			}
+		})
+	}
+}
+
+func TestAll(t *testing.T) {
+	tests := []struct {
+		name        string
+		comparisons []Comparison
+		want        bool
+	}{
+		{
+			name: "all succeed",
+			comparisons: []Comparison{
+				Equal(1, 1),
+				Equal(2, 2),
+			},
+			want: true,
+		},
+		{
+			name: "one fails",
+			comparisons: []Comparison{
+				Equal(1, 1),
+				Equal(1, 2),
+			},
+			want: false,
+		},
+		{
+			name: "all fail",
+			comparisons: []Comparison{
+				Equal(1, 2),
+				Equal(2, 3),
+			},
+			want: false,
+		},
+		{
+			name: "no comparisons",
+			want: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := All(tc.comparisons...)()
+			if got.Success() != tc.want {
+				t.Fatalf("All().Success() = %v; want %v", got.Success(), tc.want)
+			}
+		})
+	}
+}
+
+func TestNot(t *testing.T) {
+	tests := []struct {
+		name       string
+		comparison Comparison
+		want       bool
+	}{
+		{
+			name:       "comparison succeeds",
+			comparison: Equal(1, 1),
+			want:       false,
+		},
+		{
+			name:       "comparison fails",
+			comparison: Equal(1, 2),
+			want:       true,
+		},
+		{
+			name: "any succeeds",
+			comparison: Any(
+				Equal(1, 1),
+				Equal(2, 3),
+			),
+			want: false,
+		},
+		{
+			name: "any fails",
+			comparison: Any(
+				Equal(1, 2),
+				Equal(2, 3),
+			),
+			want: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got := Not(tc.comparison)()
+			if got.Success() != tc.want {
+				t.Fatalf("Not().Success() = %v; want %v", got.Success(), tc.want)
+			}
+		})
+	}
+}

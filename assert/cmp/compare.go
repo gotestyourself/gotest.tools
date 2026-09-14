@@ -401,3 +401,44 @@ func ErrorIs(actual error, expected error) Comparison {
 			map[string]interface{}{"a": actual, "x": expected})
 	}
 }
+
+// Any returns a Comparison that succeeds if any of the comparisons succeed.
+func Any(comparisons ...Comparison) Comparison {
+	return func() Result {
+		results := make([]Result, 0, len(comparisons))
+		for _, comparison := range comparisons {
+			res := comparison()
+			if res.Success() {
+				return ResultSuccess
+			}
+			results = append(results, res)
+		}
+		return anyResult{results: results}
+	}
+}
+
+// All returns a Comparison that succeeds if all comparisons succeed.
+func All(comparisons ...Comparison) Comparison {
+	return func() Result {
+		for i, comparison := range comparisons {
+			res := comparison()
+			if !res.Success() {
+				return allResult{
+					result: res,
+					index:  i,
+				}
+			}
+		}
+		return ResultSuccess
+	}
+}
+
+// Not returns a Comparison that succeeds if comparison fails.
+func Not(comparison Comparison) Comparison {
+	return func() Result {
+		if !comparison().Success() {
+			return ResultSuccess
+		}
+		return notResult{}
+	}
+}
