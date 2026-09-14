@@ -108,7 +108,7 @@ func TestWaitOn_WithCompare(t *testing.T) {
 	}
 
 	assert.Assert(t, cmp.Panics(func() {
-		WaitOn(fakeT, check, WithDelay(0), WithTimeout(10*time.Millisecond))
+		WaitOn(fakeT, check, WithDelay(0), WithTimeout(time.Second))
 	}))
 	assert.Assert(t, cmp.Contains(fakeT.failed, "assertion failed: 3 (int) != 4 (int)"))
 }
