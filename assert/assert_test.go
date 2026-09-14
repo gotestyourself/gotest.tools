@@ -470,3 +470,88 @@ func TestErrorIs(t *testing.T) {
 		expectSuccess(t, fakeT)
 	})
 }
+
+func TestCheckAnyFailure(t *testing.T) {
+	tests := []struct {
+		name  string
+		check func(*fakeTestingT)
+		want  string
+	}{
+		{
+			name: "basic results",
+			check: func(fakeT *fakeTestingT) {
+				Check(fakeT, cmp.Any(
+					cmp.Contains("foo", "bar"),
+					cmp.Contains("foo", "baz"),
+				))
+			},
+			want: `assertion failed: none of the comparisons succeeded:
+string "foo" does not contain "bar"
+string "foo" does not contain "baz"`,
+		},
+		{
+			name: "templated results",
+			check: func(fakeT *fakeTestingT) {
+				actual := 1
+				expected1 := 2
+				expected2 := 3
+
+				Check(fakeT, cmp.Any(
+					cmp.Equal(actual, expected1),
+					cmp.Equal(actual, expected2),
+				))
+			},
+			want: `assertion failed: none of the comparisons succeeded:
+1 (actual int) != 2 (expected1 int)
+1 (actual int) != 3 (expected2 int)`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeT := &fakeTestingT{}
+
+			tc.check(fakeT)
+
+			expectFailed(t, fakeT, tc.want)
+		})
+	}
+}
+
+func TestCheckNotFailure(t *testing.T) {
+	tests := []struct {
+		name  string
+		check func(*fakeTestingT)
+		want  string
+	}{
+		{
+			name: "comparison",
+			check: func(fakeT *fakeTestingT) {
+				actual := 1
+				Check(fakeT, cmp.Not(cmp.Equal(actual, 1)))
+			},
+			want: `assertion failed: expected cmp.Equal(actual, 1) to fail`,
+		},
+		{
+			name: "composite comparison",
+			check: func(fakeT *fakeTestingT) {
+				actual := 1
+				Check(fakeT, cmp.Not(cmp.Any(
+					cmp.Equal(actual, 1),
+					cmp.Equal(actual, 2),
+				)))
+			},
+			want: `assertion failed: expected cmp.Any(cmp.Equal(actual, 1), cmp.Equal(actual, 2)) to fail`,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fakeT := &fakeTestingT{}
+
+			tc.check(fakeT)
+
+			expectFailed(t, fakeT, tc.want)
+		})
+	}
+}
