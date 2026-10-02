@@ -118,13 +118,18 @@ func fileName(t *testing.T) string {
 	t.Helper()
 	_, filename, _, ok := runtime.Caller(1)
 	assert.Assert(t, ok, "failed to get call stack")
-	return filename
+	resolved, err := source.ResolveSourceFile(filename)
+	assert.NilError(t, err)
+	return resolved
 }
 
 func resetVariable(t *testing.T, varName string, value string) {
 	t.Helper()
 	_, filename, _, ok := runtime.Caller(1)
 	assert.Assert(t, ok, "failed to get call stack")
+	var err error
+	filename, err = source.ResolveSourceFile(filename)
+	assert.NilError(t, err)
 
 	fileset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors|parser.ParseComments)

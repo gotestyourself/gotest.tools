@@ -57,6 +57,11 @@ func UpdateExpectedValue(stackIndex int, x, y interface{}) error {
 	}
 	debug("call stack position: %s:%d", filename, line)
 
+	filename, err := ResolveSourceFile(filename)
+	if err != nil {
+		return err
+	}
+
 	fileset := token.NewFileSet()
 	astFile, err := parser.ParseFile(fileset, filename, nil, parser.AllErrors|parser.ParseComments)
 	if err != nil {
