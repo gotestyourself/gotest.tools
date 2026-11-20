@@ -243,6 +243,9 @@ func copyFile(source, dest string) error {
 //
 // Note: the argument order is the inverse of [os.Symlink] to be consistent with
 // the other functions in this package.
+//
+// Deprecated: use [WithRelativeSymlink] or [WithAbsoluteSymlink] to specify
+// the same target on disk and in a [Manifest].
 func WithSymlink(path, target string) PathOp {
 	return func(root Path) error {
 		if v, ok := root.(manifestDirectory); ok {
@@ -250,6 +253,38 @@ func WithSymlink(path, target string) PathOp {
 		}
 		return os.Symlink(filepath.Join(root.Path(), target), filepath.Join(root.Path(), path))
 	}
+}
+
+// WithRelativeSymlink creates a symlink named name in the directory.
+// Use [WithDir] to place the link in a subdirectory. Its target is relative
+// to the directory containing the symlink.
+func WithRelativeSymlink(name, target string) PathOp {
+	return func(root Path) error {
+		if target == "" || os.IsPathSeparator(target[0]) || filepath.VolumeName(target) != "" {
+			return fmt.Errorf("symlink target %q must be relative", target)
+		}
+		return createSymlink(root, name, target)
+	}
+}
+
+// WithAbsoluteSymlink creates a symlink named name in the directory.
+// Use [WithDir] to place the link in a subdirectory. Its target must be
+// an absolute path.
+func WithAbsoluteSymlink(name, target string) PathOp {
+	return func(root Path) error {
+		if !filepath.IsAbs(target) {
+			return fmt.Errorf("symlink target %q must be absolute", target)
+		}
+		return createSymlink(root, name, target)
+	}
+}
+
+func createSymlink(root Path, name, target string) error {
+	target = filepath.FromSlash(target)
+	if dir, ok := root.(manifestDirectory); ok {
+		return dir.AddSymlink(name, target)
+	}
+	return os.Symlink(target, filepath.Join(root.Path(), name))
 }
 
 // WithHardlink creates a link in the directory which links to target.

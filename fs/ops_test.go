@@ -48,6 +48,37 @@ func TestFromDirSymlink(t *testing.T) {
 	assert.Assert(t, fs.Equal(dir.Path(), expected))
 }
 
+func TestExplicitSymlinkTargets(t *testing.T) {
+	dir := fs.NewDir(t, t.Name())
+	defer dir.Remove()
+
+	absolute := dir.Join("target")
+	relative := filepath.Join("..", "target")
+	contents := []fs.PathOp{
+		fs.WithFile("target", "data"),
+		fs.WithDir("links",
+			fs.WithRelativeSymlink("relative", "../target"),
+			fs.WithAbsoluteSymlink("absolute", absolute),
+			fs.WithRelativeSymlink("dangling", "missing"),
+		),
+	}
+
+	fs.Apply(t, dir, contents...)
+	assert.Assert(t, fs.Equal(dir.Path(), fs.Expected(t, contents...)))
+	for link, want := range map[string]string{"relative": relative, "absolute": absolute, "dangling": "missing"} {
+		got, err := os.Readlink(dir.Join("links", link))
+		assert.NilError(t, err)
+		assert.Equal(t, got, want)
+	}
+}
+
+func TestExplicitSymlinkTargetKind(t *testing.T) {
+	dir := fs.NewDir(t, t.Name())
+	defer dir.Remove()
+	assert.ErrorContains(t, fs.WithAbsoluteSymlink("link", "relative")(dir), "must be absolute")
+	assert.ErrorContains(t, fs.WithRelativeSymlink("link", dir.Join("target"))(dir), "must be relative")
+}
+
 func TestWithTimestamps(t *testing.T) {
 	stamp := time.Date(2011, 11, 11, 5, 55, 55, 0, time.UTC)
 	tmpFile := fs.NewFile(t, t.Name(), fs.WithTimestamps(stamp, stamp))
