@@ -162,6 +162,26 @@ func TestAssert_WithCarriageReturnInActual(t *testing.T) {
 	assert.Assert(t, !fakeT.Failed)
 }
 
+func TestAssert_WithCarriageReturnInExpected(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "foo\r\nbar\r\n")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	Assert(fakeT, "foo\nbar\n", filename)
+	assert.Assert(t, !fakeT.Failed)
+}
+
+func TestAssertBytes_DoesNotNormalizeCarriageReturn(t *testing.T) {
+	filename, clean := setupGoldenFile(t, "foo\r\nbar\r\n")
+	defer clean()
+
+	fakeT := new(fakeT)
+
+	AssertBytes(fakeT, []byte("foo\nbar\n"), filename)
+	assert.Assert(t, fakeT.Failed)
+}
+
 func TestAssert_WithCarriageReturnInActual_UpdateGolden(t *testing.T) {
 	filename, clean := setupGoldenFile(t, "")
 	defer clean()

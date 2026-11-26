@@ -109,14 +109,14 @@ func Assert(t assert.TestingT, actual string, filename string, msgAndArgs ...int
 // Running `go test pkgname -update` will write the value of actual
 // to the golden file.
 //
-// Any \r\n substrings in actual are converted to a single \n character
-// before comparing it to the expected string. When updating the golden file the
-// normalized version will be written to the file. This allows Windows to use
-// the same golden files as other operating systems.
+// Any \r\n substrings in actual or in the golden file are converted to a
+// single \n character before comparing. When updating the golden file the
+// normalized version of actual will be written to the file. This allows
+// Windows to use the same golden files as other operating systems.
 func String(actual string, filename string) cmp.Comparison {
 	return func() cmp.Result {
 		actualBytes := removeCarriageReturn([]byte(actual))
-		result, expected := compare(actualBytes, filename)
+		result, expected := compare(actualBytes, filename, true)
 		if result != nil {
 			return result
 		}
@@ -162,7 +162,7 @@ func AssertBytes(
 // to the golden file.
 func Bytes(actual []byte, filename string) cmp.Comparison {
 	return func() cmp.Result {
-		result, expected := compare(actual, filename)
+		result, expected := compare(actual, filename, false)
 		if result != nil {
 			return result
 		}
@@ -171,13 +171,16 @@ func Bytes(actual []byte, filename string) cmp.Comparison {
 	}
 }
 
-func compare(actual []byte, filename string) (cmp.Result, []byte) {
+func compare(actual []byte, filename string, normalize bool) (cmp.Result, []byte) {
 	if err := update(filename, actual); err != nil {
 		return cmp.ResultFromError(err), nil
 	}
 	expected, err := os.ReadFile(Path(filename))
 	if err != nil {
 		return cmp.ResultFromError(err), nil
+	}
+	if normalize {
+		expected = removeCarriageReturn(expected)
 	}
 	if bytes.Equal(expected, actual) {
 		return cmp.ResultSuccess, nil
